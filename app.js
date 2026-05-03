@@ -79,7 +79,7 @@ const copy = {
     name: "Name",
     email: "Email",
     enter: "Enter App",
-    overview: "Overview",
+    overview: "Dashboard",
     cars: "My Cars",
     booklet: "Service Booklet",
     shop: "Shop",
@@ -136,6 +136,13 @@ const copy = {
     addServiceHistory: "Add service",
     servicesFor: "Services for",
     latestRecords: "Latest service records",
+    addNewCar: "Add new car",
+    close: "Close",
+    serviceSummary: "Service summary",
+    serviceDetails: "Service details",
+    addAnotherService: "Add another service",
+    createdNotification: "Created successfully.",
+    redirectingShop: "Opening Sayarati.online...",
   },
   ar: {
     appName: "سيارتي",
@@ -145,7 +152,7 @@ const copy = {
     name: "الاسم",
     email: "البريد الإلكتروني",
     enter: "دخول التطبيق",
-    overview: "الرئيسية",
+    overview: "لوحة التحكم",
     cars: "سياراتي",
     booklet: "دفتر الصيانة",
     shop: "المتجر",
@@ -202,6 +209,13 @@ const copy = {
     addServiceHistory: "إضافة خدمة",
     servicesFor: "الخدمات الخاصة بـ",
     latestRecords: "آخر سجلات الصيانة",
+    addNewCar: "إضافة سيارة جديدة",
+    close: "إغلاق",
+    serviceSummary: "ملخص الصيانة",
+    serviceDetails: "تفاصيل الصيانة",
+    addAnotherService: "إضافة خدمة أخرى",
+    createdNotification: "تم الإنشاء بنجاح.",
+    redirectingShop: "جارٍ فتح Sayarati.online...",
   },
 };
 
@@ -224,6 +238,9 @@ function loadState() {
     cars: [],
     records: [],
     notice: "",
+    carFormOpen: false,
+    serviceMode: "summary",
+    selectedRecordId: null,
   };
 }
 
@@ -390,6 +407,19 @@ function overviewView() {
       <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate(car?.id)}</strong></div>
     </section>
     <section class="panel" style="margin-top: 16px;">
+      ${car ? `
+        <div class="selected-car-panel selected-car-top">
+          <div>
+            <span class="pill green">${t("selectedCar")}</span>
+            <h3>${carLabel(car)}</h3>
+            <p class="muted">${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}</p>
+          </div>
+          <div class="actions">
+            <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
+            <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
+          </div>
+        </div>
+      ` : ""}
       <div class="row section-head">
         <div>
           <h2>${t("chooseCar")}</h2>
@@ -403,60 +433,83 @@ function overviewView() {
       <div class="list garage-list">
         ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
       </div>
-      ${car ? `
-        <div class="selected-car-panel">
-          <div>
-            <span class="pill green">${t("selectedCar")}</span>
-            <h3>${carLabel(car)}</h3>
-            <p class="muted">${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}</p>
-          </div>
-          <div class="actions">
-            <button class="ghost" data-view="booklet">${t("viewHistory")}</button>
-            <button class="primary" data-view="booklet">${t("addServiceHistory")}</button>
-          </div>
-        </div>
-      ` : ""}
     </section>
   `;
 }
 
 function carsView() {
   return `
-    <section class="grid two-col">
+    <section class="grid">
       <div class="panel">
-        <h2>${t("addCar")}</h2>
-        <form class="form" id="car-form">
-          ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), "Toyota", t("chooseBrand"))}
-          ${selectField("model", t("model"), modelsForBrand("Toyota"), "RAV4", t("chooseModel"))}
-          ${field("year", t("year"), "number", "2022")}
-          ${field("plate", t("plate"), "text", "123456")}
-          ${field("mileage", t("mileage"), "number", "45000")}
-          ${field("vin", t("vin"), "text", "")}
-          ${textarea("notes", t("notes"), "")}
-          <button class="primary" type="submit">${t("saveCar")}</button>
-        </form>
-      </div>
-      <div class="panel">
-        <h2>${t("carDetails")}</h2>
+        <div class="row section-head">
+          <div>
+            <h2>${t("carGarage")}</h2>
+            <p class="muted">${t("selectedCarHelp")}</p>
+          </div>
+          <button class="primary" data-toggle-car-form>${state.carFormOpen ? t("close") : t("addNewCar")}</button>
+        </div>
         <div class="list">
           ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
         </div>
       </div>
+      ${state.carFormOpen ? `
+        <div class="panel">
+          <h2>${t("addCar")}</h2>
+          <form class="form" id="car-form">
+            ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), "Toyota", t("chooseBrand"))}
+            ${selectField("model", t("model"), modelsForBrand("Toyota"), "RAV4", t("chooseModel"))}
+            ${field("year", t("year"), "number", "2022")}
+            ${field("plate", t("plate"), "text", "123456")}
+            ${field("mileage", t("mileage"), "number", "45000")}
+            ${field("vin", t("vin"), "text", "")}
+            ${textarea("notes", t("notes"), "")}
+            <button class="primary" type="submit" data-submit-car>${t("saveCar")}</button>
+          </form>
+        </div>
+      ` : ""}
     </section>
   `;
 }
 
 function bookletView() {
   const car = selectedCar();
+  const record = selectedRecord(car?.id);
   return `
-    <section class="grid two-col">
+    <section class="grid">
       <div class="panel">
-        <h2>${t("addRecord")}</h2>
-        ${car ? `
-          <p><span class="pill green">${carLabel(car)}</span></p>
-          <form class="form" id="record-form">
-            ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
-            ${field("mileage", t("mileage"), "number", car.mileage || "")}
+        <div class="row section-head">
+          <div>
+            <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
+            <p class="muted">${car ? `${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}` : t("noCars")}</p>
+          </div>
+          <div class="actions">
+            ${car ? `<button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>` : `<button class="primary" data-view="cars">${t("addCar")}</button>`}
+          </div>
+        </div>
+        <div class="list">
+          ${car ? renderRecordSummaries(car.id) : `<p class="muted">${t("noRecords")}</p>`}
+        </div>
+      </div>
+      ${state.serviceMode === "detail" && record ? serviceDetailView(record) : ""}
+      ${state.serviceMode === "add" ? serviceFormView(car) : ""}
+    </section>
+  `;
+}
+
+function serviceFormView(car) {
+  return `
+    <div class="panel">
+      <div class="row section-head">
+        <div>
+          <h2>${t("addRecord")}</h2>
+          ${car ? `<p><span class="pill green">${carLabel(car)}</span></p>` : ""}
+        </div>
+        <button class="ghost" data-service-summary>${t("close")}</button>
+      </div>
+      ${car ? `
+        <form class="form" id="record-form">
+          ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
+          ${field("mileage", t("mileage"), "number", car.mileage || "")}
           ${serviceCheckboxes()}
           ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
           ${field("cost", t("cost"), "number", "")}
@@ -464,21 +517,18 @@ function bookletView() {
           ${field("invoice", t("invoice"), "text", "")}
           ${fileField("partPhotos", t("partPhotos"))}
           ${textarea("notes", t("notes"), "")}
-            <button class="primary" type="submit">${t("saveRecord")}</button>
-          </form>
-        ` : `<p class="muted">${t("noCars")}</p><button class="primary" data-view="cars">${t("addCar")}</button>`}
-      </div>
-      <div class="panel">
-        <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
-        <div class="list">
-          ${car ? renderRecords(car.id) : `<p class="muted">${t("noRecords")}</p>`}
-        </div>
-      </div>
-    </section>
+          <button class="primary" type="submit" data-submit-record>${t("saveRecord")}</button>
+        </form>
+      ` : `<p class="muted">${t("noCars")}</p>`}
+    </div>
   `;
 }
 
 function shopView() {
+  setTimeout(() => {
+    if (state.view === "shop") window.location.href = SHOP_URL;
+  }, 250);
+
   return `
     <section class="panel">
       <div class="shop-tools">
@@ -491,7 +541,7 @@ function shopView() {
       <div class="shop-launcher">
         <div class="shop-logo"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
         <h2>${t("shop")}</h2>
-        <p>${t("shopHint")}</p>
+        <p>${t("redirectingShop")}</p>
         <button class="primary" data-open-shop>${t("shop")}</button>
         <span>${SHOP_URL}</span>
       </div>
@@ -585,8 +635,8 @@ function carCard(car) {
       <div class="muted">${t("plate")}: ${car.plate || "-"} | ${t("mileage")}: ${car.mileage || "-"} km</div>
       <div class="muted">${t("vin")}: ${car.vin || "-"}</div>
       <div class="actions">
-        <button class="ghost" data-select-car="${car.id}" data-view="booklet">${t("viewHistory")}</button>
-        <button class="primary" data-select-car="${car.id}" data-view="booklet">${t("addServiceHistory")}</button>
+        <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
+        <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
         <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
       ${car.notes ? `<div>${car.notes}</div>` : ""}
@@ -594,26 +644,51 @@ function carCard(car) {
   `;
 }
 
-function renderRecords(carId) {
+function renderRecordSummaries(carId) {
   const records = carRecords(carId);
   if (!records.length) return `<p class="muted">${t("noRecords")}</p>`;
   return records.map((record) => `
-    <article class="record">
+    <article class="record summary-record" data-view-record="${record.id}">
       <div class="row">
         <strong>${formatServices(record)}</strong>
         <span class="pill gold">${record.date || "-"}</span>
       </div>
       <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}</p>
-      <p>${record.parts || ""}</p>
-      ${renderPhotos(record.partPhotos)}
-      ${record.invoice ? `<p><span class="pill">${record.invoice}</span></p>` : ""}
       ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
-      ${record.notes ? `<p class="muted">${record.notes}</p>` : ""}
-      <div class="actions">
-        <button class="danger" data-delete-record="${record.id}">${t("delete")}</button>
-      </div>
     </article>
   `).join("");
+}
+
+function serviceDetailView(record) {
+  return `
+    <div class="panel">
+      <div class="row section-head">
+        <div>
+          <h2>${t("serviceDetails")}</h2>
+          <p class="muted">${record.date || "-"} | ${t("mileage")}: ${record.mileage || "-"} km</p>
+        </div>
+        <div class="actions">
+          <button class="ghost" data-service-summary>${t("close")}</button>
+          <button class="danger" data-delete-record="${record.id}">${t("delete")}</button>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div><span>${t("selectedServices")}</span><strong>${formatServices(record)}</strong></div>
+        <div><span>${t("parts")}</span><strong>${record.parts || "-"}</strong></div>
+        <div><span>${t("cost")}</span><strong>${record.cost || "-"}</strong></div>
+        <div><span>${t("nextDue")}</span><strong>${record.nextDue || "-"}</strong></div>
+        <div><span>${t("invoice")}</span><strong>${record.invoice || "-"}</strong></div>
+      </div>
+      ${record.notes ? `<p class="muted detail-notes">${record.notes}</p>` : ""}
+      ${renderPhotos(record.partPhotos)}
+    </div>
+  `;
+}
+
+function selectedRecord(carId) {
+  if (!carId) return null;
+  const records = carRecords(carId);
+  return records.find((record) => record.id === state.selectedRecordId) || records[0] || null;
 }
 
 function formatServices(record) {
@@ -670,6 +745,44 @@ function bindApp() {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
 
+  document.querySelectorAll("[data-toggle-car-form]").forEach((button) => {
+    button.addEventListener("click", () => setState({ carFormOpen: !state.carFormOpen, view: "cars" }));
+  });
+
+  document.querySelectorAll("[data-open-history]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setState({
+        selectedCarId: button.dataset.openHistory,
+        view: "booklet",
+        serviceMode: "summary",
+        selectedRecordId: null,
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-add-service]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setState({
+        selectedCarId: button.dataset.addService,
+        view: "booklet",
+        serviceMode: "add",
+        selectedRecordId: null,
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-view-record]").forEach((record) => {
+    record.addEventListener("click", () => {
+      setState({ selectedRecordId: record.dataset.viewRecord, serviceMode: "detail" });
+    });
+  });
+
+  document.querySelectorAll("[data-service-summary]").forEach((button) => {
+    button.addEventListener("click", () => setState({ serviceMode: "summary", selectedRecordId: null }));
+  });
+
   document.querySelectorAll("[data-lang]").forEach((button) => {
     button.addEventListener("click", () => setState({ lang: button.dataset.lang }));
   });
@@ -689,6 +802,8 @@ function bindApp() {
         records: state.records.filter((record) => record.carId !== carId),
         selectedCarId: remainingCars[0]?.id || null,
         view: "overview",
+        serviceMode: "summary",
+        selectedRecordId: null,
         notice: t("carDeleted"),
       });
     });
@@ -724,11 +839,15 @@ function bindApp() {
         setState({ notice: t("carRequired") });
         return;
       }
+      const submit = carForm.querySelector("[data-submit-car]");
+      if (submit?.disabled) return;
+      if (submit) submit.disabled = true;
       const car = { id: uid("car"), ...data };
       setState({
         cars: [car, ...state.cars],
         selectedCarId: car.id,
         view: "overview",
+        carFormOpen: false,
         notice: t("carSaved"),
       });
     });
@@ -739,6 +858,9 @@ function bindApp() {
     recordForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const car = selectedCar();
+      const submit = recordForm.querySelector("[data-submit-record]");
+      if (submit?.disabled) return;
+      if (submit) submit.disabled = true;
       const data = formData(recordForm);
       const services = checkedValues(recordForm, "serviceTypes");
       const partPhotos = await readImageFiles(recordForm.querySelector("#partPhotos"));
@@ -750,7 +872,12 @@ function bindApp() {
         serviceTypes: services,
         partPhotos,
       };
-      setState({ records: [record, ...state.records], notice: t("recordSaved") });
+      setState({
+        records: [record, ...state.records],
+        serviceMode: "detail",
+        selectedRecordId: record.id,
+        notice: t("recordSaved"),
+      });
     });
   }
 
