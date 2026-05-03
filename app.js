@@ -1,4 +1,5 @@
 const SHOP_URL = "https://sayarati.online/";
+const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BDSbUBb-200x200.png";
 const STORAGE_KEY = "sayarati-test-app";
 
 const carCatalog = [
@@ -118,6 +119,13 @@ const copy = {
     carSaved: "Your car was successfully created.",
     carRequired: "Please choose the car brand and model.",
     recordSaved: "Service record saved.",
+    delete: "Delete",
+    deleteCarConfirm: "Delete this vehicle and all its service records?",
+    deleteRecordConfirm: "Delete this service record?",
+    carDeleted: "Vehicle deleted.",
+    recordDeleted: "Service record deleted.",
+    partPhotos: "Photos of changed parts",
+    selectedServices: "Selected services",
     chooseBrand: "Choose brand",
     chooseModel: "Choose model",
     chooseService: "Choose service",
@@ -177,6 +185,13 @@ const copy = {
     carSaved: "تم إنشاء سيارتك بنجاح.",
     carRequired: "يرجى اختيار شركة السيارة والموديل.",
     recordSaved: "تم حفظ سجل الصيانة.",
+    delete: "حذف",
+    deleteCarConfirm: "هل تريد حذف هذه السيارة وكل سجلات الصيانة الخاصة بها؟",
+    deleteRecordConfirm: "هل تريد حذف سجل الصيانة هذا؟",
+    carDeleted: "تم حذف السيارة.",
+    recordDeleted: "تم حذف سجل الصيانة.",
+    partPhotos: "صور القطع المستبدلة",
+    selectedServices: "الخدمات المختارة",
     chooseBrand: "اختر الشركة",
     chooseModel: "اختر الموديل",
     chooseService: "اختر الخدمة",
@@ -268,7 +283,7 @@ function render() {
     <div class="shell">
       <aside class="sidebar">
         <div class="brand">
-          <div class="mark">S</div>
+          <div class="logo-box"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
           <div>
             <strong>${t("appName")}</strong>
             <span>${t("subtitle")}</span>
@@ -301,7 +316,7 @@ function loginView() {
     <section class="login-wrap">
       <form class="login-card" id="login-form">
         <div class="brand" style="margin-bottom: 20px;">
-          <div class="mark">S</div>
+          <div class="logo-box"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
           <div>
             <strong>${t("appName")}</strong>
             <span>${t("subtitle")}</span>
@@ -442,12 +457,13 @@ function bookletView() {
           <form class="form" id="record-form">
             ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
             ${field("mileage", t("mileage"), "number", car.mileage || "")}
-            ${selectField("serviceType", t("serviceType"), serviceTypes, "Oil change", t("chooseService"))}
-            ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
-            ${field("cost", t("cost"), "number", "")}
-            ${field("nextDue", t("nextDue"), "date", "")}
-            ${field("invoice", t("invoice"), "text", "")}
-            ${textarea("notes", t("notes"), "")}
+          ${serviceCheckboxes()}
+          ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
+          ${field("cost", t("cost"), "number", "")}
+          ${field("nextDue", t("nextDue"), "date", "")}
+          ${field("invoice", t("invoice"), "text", "")}
+          ${fileField("partPhotos", t("partPhotos"))}
+          ${textarea("notes", t("notes"), "")}
             <button class="primary" type="submit">${t("saveRecord")}</button>
           </form>
         ` : `<p class="muted">${t("noCars")}</p><button class="primary" data-view="cars">${t("addCar")}</button>`}
@@ -473,7 +489,7 @@ function shopView() {
         </div>
       </div>
       <div class="shop-launcher">
-        <div class="shop-logo">S</div>
+        <div class="shop-logo"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
         <h2>${t("shop")}</h2>
         <p>${t("shopHint")}</p>
         <button class="primary" data-open-shop>${t("shop")}</button>
@@ -516,6 +532,31 @@ function selectField(name, label, options, value, placeholder) {
   `;
 }
 
+function serviceCheckboxes() {
+  return `
+    <div class="field">
+      <label>${t("serviceType")}</label>
+      <div class="checkbox-grid">
+        ${serviceTypes.map((service) => `
+          <label class="check-option">
+            <input type="checkbox" name="serviceTypes" value="${service}" ${service === "Oil change" ? "checked" : ""} />
+            <span>${service}</span>
+          </label>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function fileField(name, label) {
+  return `
+    <div class="field">
+      <label for="${name}">${label}</label>
+      <input id="${name}" name="${name}" type="file" accept="image/*" multiple />
+    </div>
+  `;
+}
+
 function textarea(name, label, value) {
   return `
     <div class="field">
@@ -546,6 +587,7 @@ function carCard(car) {
       <div class="actions">
         <button class="ghost" data-select-car="${car.id}" data-view="booklet">${t("viewHistory")}</button>
         <button class="primary" data-select-car="${car.id}" data-view="booklet">${t("addServiceHistory")}</button>
+        <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
       ${car.notes ? `<div>${car.notes}</div>` : ""}
     </article>
@@ -558,20 +600,57 @@ function renderRecords(carId) {
   return records.map((record) => `
     <article class="record">
       <div class="row">
-        <strong>${record.serviceType}</strong>
+        <strong>${formatServices(record)}</strong>
         <span class="pill gold">${record.date || "-"}</span>
       </div>
       <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}</p>
       <p>${record.parts || ""}</p>
+      ${renderPhotos(record.partPhotos)}
       ${record.invoice ? `<p><span class="pill">${record.invoice}</span></p>` : ""}
       ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
       ${record.notes ? `<p class="muted">${record.notes}</p>` : ""}
+      <div class="actions">
+        <button class="danger" data-delete-record="${record.id}">${t("delete")}</button>
+      </div>
     </article>
   `).join("");
 }
 
+function formatServices(record) {
+  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  return services.length ? services.join(", ") : "-";
+}
+
+function renderPhotos(photos = []) {
+  if (!photos.length) return "";
+  return `
+    <div class="photo-grid">
+      ${photos.map((photo) => `
+        <figure>
+          <img src="${photo.dataUrl}" alt="${photo.name}" />
+          <figcaption>${photo.name}</figcaption>
+        </figure>
+      `).join("")}
+    </div>
+  `;
+}
+
 function formData(form) {
   return Object.fromEntries(new FormData(form).entries());
+}
+
+function checkedValues(form, name) {
+  return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map((input) => input.value);
+}
+
+function readImageFiles(input) {
+  const files = Array.from(input?.files || []);
+  return Promise.all(files.map((file) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, dataUrl: reader.result });
+    reader.onerror = () => resolve({ name: file.name, dataUrl: "" });
+    reader.readAsDataURL(file);
+  }))).then((photos) => photos.filter((photo) => photo.dataUrl));
 }
 
 function bindLogin() {
@@ -597,6 +676,34 @@ function bindApp() {
 
   document.querySelectorAll("[data-select-car]").forEach((card) => {
     card.addEventListener("click", () => setState({ selectedCarId: card.dataset.selectCar }));
+  });
+
+  document.querySelectorAll("[data-delete-car]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const carId = button.dataset.deleteCar;
+      if (!confirm(t("deleteCarConfirm"))) return;
+      const remainingCars = state.cars.filter((car) => car.id !== carId);
+      setState({
+        cars: remainingCars,
+        records: state.records.filter((record) => record.carId !== carId),
+        selectedCarId: remainingCars[0]?.id || null,
+        view: "overview",
+        notice: t("carDeleted"),
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-delete-record]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const recordId = button.dataset.deleteRecord;
+      if (!confirm(t("deleteRecordConfirm"))) return;
+      setState({
+        records: state.records.filter((record) => record.id !== recordId),
+        notice: t("recordDeleted"),
+      });
+    });
   });
 
   const carForm = document.querySelector("#car-form");
@@ -629,10 +736,20 @@ function bindApp() {
 
   const recordForm = document.querySelector("#record-form");
   if (recordForm) {
-    recordForm.addEventListener("submit", (event) => {
+    recordForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const car = selectedCar();
-      const record = { id: uid("record"), carId: car.id, ...formData(recordForm) };
+      const data = formData(recordForm);
+      const services = checkedValues(recordForm, "serviceTypes");
+      const partPhotos = await readImageFiles(recordForm.querySelector("#partPhotos"));
+      const record = {
+        id: uid("record"),
+        carId: car.id,
+        ...data,
+        serviceType: services[0] || "",
+        serviceTypes: services,
+        partPhotos,
+      };
       setState({ records: [record, ...state.records], notice: t("recordSaved") });
     });
   }
@@ -682,6 +799,7 @@ function addSampleData() {
         date: "2026-04-20",
         mileage: "62000",
         serviceType: "Oil change",
+        serviceTypes: ["Oil change", "Oil filter", "Cabin filter"],
         parts: "Engine oil, oil filter, cabin filter",
         cost: "95",
         nextDue: "2026-08-20",
