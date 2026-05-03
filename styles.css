@@ -289,6 +289,10 @@ h1 {
   align-items: center;
 }
 
+.section-head {
+  margin-bottom: 14px;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -315,6 +319,28 @@ h1 {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.garage-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.selected-car-panel {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #bfe4cf;
+  border-radius: 8px;
+  background: #f5fbf8;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.selected-car-panel h3 {
+  margin: 8px 0 6px;
+  font-size: 24px;
 }
 
 .shop-tools {
@@ -451,8 +477,13 @@ h1 {
   }
 
   .dashboard-grid,
-  .two-col {
+  .two-col,
+  .garage-list {
     grid-template-columns: 1fr;
+  }
+
+  .selected-car-panel {
+    display: grid;
   }
 
   .shop-launcher {

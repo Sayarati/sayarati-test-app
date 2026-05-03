@@ -1,6 +1,74 @@
 const SHOP_URL = "https://sayarati.online/";
 const STORAGE_KEY = "sayarati-test-app";
 
+const carCatalog = [
+  { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
+  { brand: "Alfa Romeo", models: ["Giulia", "Giulietta", "Stelvio", "Tonale"] },
+  { brand: "Aston Martin", models: ["DB11", "DB12", "DBX", "Vantage"] },
+  { brand: "Audi", models: ["A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q5", "Q7", "Q8", "e-tron"] },
+  { brand: "BMW", models: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "X1", "X3", "X5", "X6", "X7", "iX"] },
+  { brand: "BYD", models: ["Atto 3", "Dolphin", "Han", "Seal", "Song Plus", "Tang"] },
+  { brand: "Cadillac", models: ["CT4", "CT5", "Escalade", "XT4", "XT5", "XT6"] },
+  { brand: "Chery", models: ["Arrizo 5", "Tiggo 2", "Tiggo 4", "Tiggo 7", "Tiggo 8"] },
+  { brand: "Chevrolet", models: ["Aveo", "Camaro", "Captiva", "Corvette", "Cruze", "Malibu", "Silverado", "Spark", "Tahoe", "Trailblazer"] },
+  { brand: "Citroen", models: ["C3", "C3 Aircross", "C4", "C5 Aircross", "Berlingo"] },
+  { brand: "Dacia", models: ["Duster", "Logan", "Sandero", "Stepway"] },
+  { brand: "Dodge", models: ["Challenger", "Charger", "Durango", "Ram"] },
+  { brand: "Ferrari", models: ["296", "812", "F8", "Portofino", "Purosangue", "Roma"] },
+  { brand: "Fiat", models: ["500", "500X", "Doblo", "Panda", "Tipo"] },
+  { brand: "Ford", models: ["Bronco", "EcoSport", "Edge", "Escape", "Explorer", "F-150", "Fiesta", "Focus", "Mustang", "Ranger", "Territory"] },
+  { brand: "Geely", models: ["Azkarra", "Coolray", "Emgrand", "Geometry C", "Monjaro", "Okavango"] },
+  { brand: "GMC", models: ["Acadia", "Sierra", "Terrain", "Yukon"] },
+  { brand: "Honda", models: ["Accord", "City", "Civic", "CR-V", "HR-V", "Jazz", "Pilot"] },
+  { brand: "Hyundai", models: ["Accent", "Creta", "Elantra", "i10", "i20", "Kona", "Santa Fe", "Sonata", "Tucson", "Venue"] },
+  { brand: "Infiniti", models: ["Q30", "Q50", "Q60", "QX50", "QX55", "QX60", "QX80"] },
+  { brand: "Isuzu", models: ["D-Max", "MU-X"] },
+  { brand: "Jaguar", models: ["E-Pace", "F-Pace", "F-Type", "I-Pace", "XE", "XF"] },
+  { brand: "Jeep", models: ["Cherokee", "Compass", "Gladiator", "Grand Cherokee", "Renegade", "Wrangler"] },
+  { brand: "Kia", models: ["Carnival", "Cerato", "K5", "Picanto", "Rio", "Seltos", "Sorento", "Sportage", "Telluride"] },
+  { brand: "Land Rover", models: ["Defender", "Discovery", "Discovery Sport", "Range Rover", "Range Rover Evoque", "Range Rover Sport", "Range Rover Velar"] },
+  { brand: "Lexus", models: ["ES", "GS", "GX", "IS", "LC", "LS", "LX", "NX", "RX", "UX"] },
+  { brand: "Maserati", models: ["Ghibli", "GranTurismo", "Grecale", "Levante", "Quattroporte"] },
+  { brand: "Mazda", models: ["2", "3", "6", "CX-3", "CX-30", "CX-5", "CX-9", "MX-5"] },
+  { brand: "Mercedes-Benz", models: ["A-Class", "C-Class", "CLA", "CLS", "E-Class", "G-Class", "GLA", "GLB", "GLC", "GLE", "GLS", "S-Class", "V-Class"] },
+  { brand: "MG", models: ["3", "5", "6", "GT", "HS", "RX5", "ZS", "ZS EV"] },
+  { brand: "Mini", models: ["Clubman", "Cooper", "Countryman"] },
+  { brand: "Mitsubishi", models: ["ASX", "Attrage", "Eclipse Cross", "L200", "Mirage", "Montero", "Outlander", "Pajero"] },
+  { brand: "Nissan", models: ["Altima", "Armada", "Juke", "Kicks", "Micra", "Murano", "Navara", "Patrol", "Qashqai", "Sentra", "Sunny", "X-Trail"] },
+  { brand: "Opel", models: ["Astra", "Corsa", "Crossland", "Grandland", "Mokka"] },
+  { brand: "Peugeot", models: ["2008", "208", "3008", "301", "308", "5008", "Partner"] },
+  { brand: "Porsche", models: ["718", "911", "Cayenne", "Macan", "Panamera", "Taycan"] },
+  { brand: "Renault", models: ["Captur", "Clio", "Duster", "Koleos", "Megane", "Symbol", "Trafic"] },
+  { brand: "Seat", models: ["Arona", "Ateca", "Ibiza", "Leon", "Tarraco"] },
+  { brand: "Skoda", models: ["Fabia", "Kamiq", "Karoq", "Kodiaq", "Octavia", "Superb"] },
+  { brand: "Subaru", models: ["BRZ", "Crosstrek", "Forester", "Impreza", "Legacy", "Outback", "WRX", "XV"] },
+  { brand: "Suzuki", models: ["Baleno", "Ciaz", "Ertiga", "Jimny", "Swift", "Vitara"] },
+  { brand: "Tesla", models: ["Model 3", "Model S", "Model X", "Model Y"] },
+  { brand: "Toyota", models: ["4Runner", "Camry", "Corolla", "C-HR", "Fortuner", "Hilux", "Land Cruiser", "Prado", "Prius", "RAV4", "Rush", "Yaris"] },
+  { brand: "Volkswagen", models: ["Arteon", "Golf", "ID.4", "Jetta", "Passat", "Polo", "T-Cross", "Tiguan", "Touareg"] },
+  { brand: "Volvo", models: ["S60", "S90", "V60", "XC40", "XC60", "XC90"] },
+  { brand: "Other", models: ["Other"] },
+];
+
+const serviceTypes = [
+  "Oil change",
+  "Oil filter",
+  "Air filter",
+  "Cabin filter",
+  "Brake pads",
+  "Brake discs",
+  "Tires",
+  "Battery",
+  "Spark plugs",
+  "Transmission service",
+  "Coolant service",
+  "AC service",
+  "Wheel alignment",
+  "Inspection",
+  "Repair",
+  "Other",
+];
+
 const copy = {
   en: {
     appName: "Sayarati",
@@ -21,7 +89,7 @@ const copy = {
     model: "Model",
     year: "Year",
     plate: "Plate Number",
-    mileage: "Mileage",
+    mileage: "Mileage (km)",
     vin: "VIN / Chassis",
     notes: "Notes",
     saveCar: "Save Car",
@@ -47,9 +115,19 @@ const copy = {
     dashboardTitle: "Your garage at a glance",
     dashboardText: "Track cars, service history, invoices, and upcoming maintenance from one mobile app.",
     sample: "Add sample data",
-    carSaved: "Car saved. You can see it in the list.",
-    carRequired: "Please enter at least the brand or model.",
+    carSaved: "Your car was successfully created.",
+    carRequired: "Please choose the car brand and model.",
     recordSaved: "Service record saved.",
+    chooseBrand: "Choose brand",
+    chooseModel: "Choose model",
+    chooseService: "Choose service",
+    chooseCar: "Choose a car",
+    carGarage: "Your cars",
+    selectedCarHelp: "Select a car first, then view its service history or add a new service.",
+    viewHistory: "View history",
+    addServiceHistory: "Add service",
+    servicesFor: "Services for",
+    latestRecords: "Latest service records",
   },
   ar: {
     appName: "سيارتي",
@@ -70,7 +148,7 @@ const copy = {
     model: "الموديل",
     year: "السنة",
     plate: "رقم اللوحة",
-    mileage: "عداد الكيلومترات",
+    mileage: "عداد الكيلومترات (كم)",
     vin: "رقم الشاسيه",
     notes: "ملاحظات",
     saveCar: "حفظ السيارة",
@@ -96,9 +174,19 @@ const copy = {
     dashboardTitle: "مرآبك في لمحة",
     dashboardText: "تابع السيارات وسجل الصيانة والفواتير ومواعيد الصيانة القادمة من تطبيق واحد.",
     sample: "إضافة بيانات تجريبية",
-    carSaved: "تم حفظ السيارة. يمكنك رؤيتها في القائمة.",
-    carRequired: "يرجى إدخال الشركة أو الموديل على الأقل.",
+    carSaved: "تم إنشاء سيارتك بنجاح.",
+    carRequired: "يرجى اختيار شركة السيارة والموديل.",
     recordSaved: "تم حفظ سجل الصيانة.",
+    chooseBrand: "اختر الشركة",
+    chooseModel: "اختر الموديل",
+    chooseService: "اختر الخدمة",
+    chooseCar: "اختر سيارة",
+    carGarage: "سياراتك",
+    selectedCarHelp: "اختر سيارة أولاً، ثم شاهد سجل الصيانة أو أضف خدمة جديدة.",
+    viewHistory: "عرض السجل",
+    addServiceHistory: "إضافة خدمة",
+    servicesFor: "الخدمات الخاصة بـ",
+    latestRecords: "آخر سجلات الصيانة",
   },
 };
 
@@ -156,8 +244,9 @@ function carRecords(carId) {
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 
-function nextServiceDate() {
-  const dates = state.records
+function nextServiceDate(carId) {
+  const records = carId ? state.records.filter((record) => record.carId === carId) : state.records;
+  const dates = records
     .map((record) => record.nextDue)
     .filter(Boolean)
     .sort();
@@ -278,23 +367,40 @@ function currentView() {
 }
 
 function overviewView() {
+  const car = selectedCar();
   return `
     <section class="grid dashboard-grid">
       <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
       <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
-      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
+      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate(car?.id)}</strong></div>
     </section>
     <section class="panel" style="margin-top: 16px;">
-      <div class="row">
+      <div class="row section-head">
         <div>
-          <h2>${t("selectedCar")}</h2>
-          <p class="muted">${selectedCar() ? carLabel(selectedCar()) : t("noCars")}</p>
+          <h2>${t("chooseCar")}</h2>
+          <p class="muted">${t("selectedCarHelp")}</p>
         </div>
         <div class="actions">
           <button class="ghost" data-sample>${t("sample")}</button>
           <button class="primary" data-view="cars">${t("addCar")}</button>
         </div>
       </div>
+      <div class="list garage-list">
+        ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
+      </div>
+      ${car ? `
+        <div class="selected-car-panel">
+          <div>
+            <span class="pill green">${t("selectedCar")}</span>
+            <h3>${carLabel(car)}</h3>
+            <p class="muted">${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}</p>
+          </div>
+          <div class="actions">
+            <button class="ghost" data-view="booklet">${t("viewHistory")}</button>
+            <button class="primary" data-view="booklet">${t("addServiceHistory")}</button>
+          </div>
+        </div>
+      ` : ""}
     </section>
   `;
 }
@@ -305,8 +411,8 @@ function carsView() {
       <div class="panel">
         <h2>${t("addCar")}</h2>
         <form class="form" id="car-form">
-          ${field("brand", t("brand"), "text", "Toyota")}
-          ${field("model", t("model"), "text", "RAV4")}
+          ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), "Toyota", t("chooseBrand"))}
+          ${selectField("model", t("model"), modelsForBrand("Toyota"), "RAV4", t("chooseModel"))}
           ${field("year", t("year"), "number", "2022")}
           ${field("plate", t("plate"), "text", "123456")}
           ${field("mileage", t("mileage"), "number", "45000")}
@@ -336,7 +442,7 @@ function bookletView() {
           <form class="form" id="record-form">
             ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
             ${field("mileage", t("mileage"), "number", car.mileage || "")}
-            ${field("serviceType", t("serviceType"), "text", "Oil change")}
+            ${selectField("serviceType", t("serviceType"), serviceTypes, "Oil change", t("chooseService"))}
             ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
             ${field("cost", t("cost"), "number", "")}
             ${field("nextDue", t("nextDue"), "date", "")}
@@ -347,7 +453,7 @@ function bookletView() {
         ` : `<p class="muted">${t("noCars")}</p><button class="primary" data-view="cars">${t("addCar")}</button>`}
       </div>
       <div class="panel">
-        <h2>${t("records")}</h2>
+        <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
         <div class="list">
           ${car ? renderRecords(car.id) : `<p class="muted">${t("noRecords")}</p>`}
         </div>
@@ -398,6 +504,18 @@ function field(name, label, type, value) {
   `;
 }
 
+function selectField(name, label, options, value, placeholder) {
+  return `
+    <div class="field">
+      <label for="${name}">${label}</label>
+      <select id="${name}" name="${name}">
+        <option value="">${placeholder}</option>
+        ${options.map((option) => `<option value="${option}" ${option === value ? "selected" : ""}>${option}</option>`).join("")}
+      </select>
+    </div>
+  `;
+}
+
 function textarea(name, label, value) {
   return `
     <div class="field">
@@ -405,6 +523,10 @@ function textarea(name, label, value) {
       <textarea id="${name}" name="${name}">${value || ""}</textarea>
     </div>
   `;
+}
+
+function modelsForBrand(brand) {
+  return (carCatalog.find((item) => item.brand === brand) || carCatalog[0]).models;
 }
 
 function carLabel(car) {
@@ -421,6 +543,10 @@ function carCard(car) {
       </div>
       <div class="muted">${t("plate")}: ${car.plate || "-"} | ${t("mileage")}: ${car.mileage || "-"} km</div>
       <div class="muted">${t("vin")}: ${car.vin || "-"}</div>
+      <div class="actions">
+        <button class="ghost" data-select-car="${car.id}" data-view="booklet">${t("viewHistory")}</button>
+        <button class="primary" data-select-car="${car.id}" data-view="booklet">${t("addServiceHistory")}</button>
+      </div>
       ${car.notes ? `<div>${car.notes}</div>` : ""}
     </article>
   `;
@@ -475,10 +601,19 @@ function bindApp() {
 
   const carForm = document.querySelector("#car-form");
   if (carForm) {
+    const brandSelect = carForm.querySelector("#brand");
+    const modelSelect = carForm.querySelector("#model");
+    if (brandSelect && modelSelect) {
+      brandSelect.addEventListener("change", () => {
+        const models = modelsForBrand(brandSelect.value);
+        modelSelect.innerHTML = `<option value="">${t("chooseModel")}</option>${models.map((model) => `<option value="${model}">${model}</option>`).join("")}`;
+      });
+    }
+
     carForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const data = formData(carForm);
-      if (!String(data.brand || data.model || "").trim()) {
+      if (!String(data.brand || "").trim() || !String(data.model || "").trim()) {
         setState({ notice: t("carRequired") });
         return;
       }
@@ -486,7 +621,7 @@ function bindApp() {
       setState({
         cars: [car, ...state.cars],
         selectedCarId: car.id,
-        view: "cars",
+        view: "overview",
         notice: t("carSaved"),
       });
     });
