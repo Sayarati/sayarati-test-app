@@ -1,0 +1,5 @@
+.git-db/
+.ssh/
+git-write-test/
+server-out-*.log
+server-err-*.log
