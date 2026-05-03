@@ -47,6 +47,9 @@ const copy = {
     dashboardTitle: "Your garage at a glance",
     dashboardText: "Track cars, service history, invoices, and upcoming maintenance from one mobile app.",
     sample: "Add sample data",
+    carSaved: "Car saved. You can see it in the list.",
+    carRequired: "Please enter at least the brand or model.",
+    recordSaved: "Service record saved.",
   },
   ar: {
     appName: "سيارتي",
@@ -93,6 +96,9 @@ const copy = {
     dashboardTitle: "مرآبك في لمحة",
     dashboardText: "تابع السيارات وسجل الصيانة والفواتير ومواعيد الصيانة القادمة من تطبيق واحد.",
     sample: "إضافة بيانات تجريبية",
+    carSaved: "تم حفظ السيارة. يمكنك رؤيتها في القائمة.",
+    carRequired: "يرجى إدخال الشركة أو الموديل على الأقل.",
+    recordSaved: "تم حفظ سجل الصيانة.",
   },
 };
 
@@ -100,7 +106,13 @@ let state = loadState();
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) return JSON.parse(saved);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
   return {
     lang: "en",
     view: "overview",
@@ -108,11 +120,12 @@ function loadState() {
     selectedCarId: null,
     cars: [],
     records: [],
+    notice: "",
   };
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, notice: "" }));
 }
 
 function t(key) {
@@ -185,6 +198,7 @@ function render() {
       </aside>
       <main class="main">
         ${header()}
+        ${state.notice ? `<div class="notice">${state.notice}</div>` : ""}
         ${currentView()}
       </main>
     </div>
@@ -463,11 +477,17 @@ function bindApp() {
   if (carForm) {
     carForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const car = { id: uid("car"), ...formData(carForm) };
+      const data = formData(carForm);
+      if (!String(data.brand || data.model || "").trim()) {
+        setState({ notice: t("carRequired") });
+        return;
+      }
+      const car = { id: uid("car"), ...data };
       setState({
         cars: [car, ...state.cars],
         selectedCarId: car.id,
-        view: "booklet",
+        view: "cars",
+        notice: t("carSaved"),
       });
     });
   }
@@ -478,7 +498,7 @@ function bindApp() {
       event.preventDefault();
       const car = selectedCar();
       const record = { id: uid("record"), carId: car.id, ...formData(recordForm) };
-      setState({ records: [record, ...state.records] });
+      setState({ records: [record, ...state.records], notice: t("recordSaved") });
     });
   }
 
@@ -496,12 +516,11 @@ function bindApp() {
     sample.addEventListener("click", addSampleData);
   }
 
-  const shopButton = document.querySelector("[data-open-shop]");
-  if (shopButton) {
+  document.querySelectorAll("[data-open-shop]").forEach((shopButton) => {
     shopButton.addEventListener("click", () => {
       window.open(SHOP_URL, "_blank", "noopener,noreferrer");
     });
-  }
+  });
 }
 
 function addSampleData() {

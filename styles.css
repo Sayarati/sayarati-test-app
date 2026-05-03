@@ -164,6 +164,16 @@ h1 {
   line-height: 1.5;
 }
 
+.notice {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #bfe4cf;
+  border-radius: 8px;
+  background: #eefaf3;
+  color: var(--green);
+  font-weight: 700;
+}
+
 .grid {
   display: grid;
   gap: 16px;
