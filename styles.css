@@ -576,6 +576,13 @@ button:disabled {
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.shop-tools strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .shop-launcher {
@@ -606,9 +613,10 @@ button:disabled {
 }
 
 .shop-filters {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) 240px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  min-width: 0;
 }
 
 .shop-filters input,
@@ -618,6 +626,16 @@ button:disabled {
   border-radius: 8px;
   background: #fff;
   padding: 0 12px;
+  min-width: 0;
+}
+
+.shop-filters input,
+.shop-filters select {
+  flex: 1 1 190px;
+}
+
+.category-back {
+  width: fit-content;
 }
 
 .product-grid {
@@ -726,6 +744,11 @@ button:disabled {
 .category-tile strong {
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.category-tile small {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .stock-in,
@@ -926,6 +949,18 @@ button:disabled {
     display: grid;
   }
 
+  .shop-tools .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .shop-tools .actions .primary,
+  .shop-tools .actions .ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
   h1 {
     font-size: 26px;
   }
@@ -936,9 +971,14 @@ button:disabled {
   .checkbox-grid,
   .photo-grid,
   .detail-grid,
-  .shop-filters,
   .product-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .shop-filters input,
+  .shop-filters select {
+    flex-basis: 100%;
+    width: 100%;
   }
 
   .category-grid,

@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v4";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v5";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -167,6 +167,7 @@ const copy = {
     searchProducts: "Search products",
     allCategories: "All categories",
     chooseCategoryFirst: "Choose a category to browse products.",
+    backToCategories: "Back to categories",
     loadMore: "Load more",
     productDetails: "Product details",
     addToCart: "Add to cart",
@@ -272,6 +273,7 @@ const copy = {
     searchProducts: "البحث عن منتجات",
     allCategories: "كل الفئات",
     chooseCategoryFirst: "اختر فئة لعرض المنتجات.",
+    backToCategories: "العودة إلى الفئات",
     loadMore: "تحميل المزيد",
     productDetails: "تفاصيل المنتج",
     addToCart: "إضافة إلى السلة",
@@ -328,9 +330,13 @@ function loadShopCache() {
     offset: 0,
     keyword: "",
     categoryId: "",
+    parentCategoryId: 0,
+    categoryTrail: [],
     loading: false,
     error: "",
     selectedProduct: null,
+    parentCategoryId: 0,
+    categoryTrail: [],
     cartCount: 0,
     lastLoaded: "",
   };
@@ -736,10 +742,11 @@ function shopView() {
         <div class="shop-filters">
           <input type="search" value="${escapeAttr(shopState.keyword)}" placeholder="${t("searchProducts")}" data-shop-search />
           <select data-shop-category>
-            <option value="">${t("allCategories")}</option>
+            <option value="">${shopState.categoryTrail.length ? t("backToCategories") : t("allCategories")}</option>
             ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}
           </select>
         </div>
+        ${shopState.categoryTrail.length ? `<button class="ghost category-back" data-category-back>${t("backToCategories")}</button>` : ""}
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
         ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : shopState.categoryId ? productGridView() : categoryLandingView(activeCategory)}
       </div>
@@ -757,6 +764,7 @@ function categoryLandingView() {
           <button class="category-tile" data-category-tile="${category.id}">
             ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(category.name)}" />` : `<span>${escapeHtml(category.name).slice(0, 1)}</span>`}
             <strong>${escapeHtml(category.name)}</strong>
+            ${Number(category.productCount || 0) ? `<small>${category.productCount}</small>` : ""}
           </button>
         `).join("")}
       </div>
@@ -844,7 +852,7 @@ function escapeAttr(value = "") {
 async function ensureShopLoaded() {
   if (state.view !== "shop" || shopState.loading) return;
   loadEcwidCartScript();
-  if (!shopState.categories.length) await loadShopCategories();
+  if (!shopState.categories.length) await loadShopCategories(shopState.parentCategoryId || 0);
   if (shopState.categoryId && !shopState.products.length && !shopState.error) await loadShopProducts({ reset: true });
 }
 
@@ -860,16 +868,16 @@ async function ecwidFetch(path, params = {}) {
   return response.json();
 }
 
-async function loadShopCategories() {
+async function loadShopCategories(parentCategoryId = 0) {
   try {
     const [data, sortData] = await Promise.all([
       ecwidFetch("/categories", {
       limit: 100,
-        parent: 0,
+        parent: parentCategoryId,
         responseFields: "items(id,name,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
       }),
       ecwidFetch("/categories/sort", {
-        parentCategory: 0,
+        parentCategory: parentCategoryId,
       }).catch(() => null),
     ]);
 
@@ -877,14 +885,14 @@ async function loadShopCategories() {
     const orderMap = new Map(orderedIds.map((id, index) => [String(id), index]));
     const categories = (data.items || [])
       .filter((category) => category.enabled !== false)
-      .filter((category) => Number(category.productCount || 0) > 0)
-      .filter((category) => !category.parentId || Number(category.parentId) === 0)
+      .filter((category) => Number(category.productCount || 0) > 0 || Number(category.id) > 0)
+      .filter((category) => Number(category.parentId || 0) === Number(parentCategoryId || 0))
       .sort((a, b) => {
         const aOrder = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : Number(a.orderBy ?? 999999);
         const bOrder = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : Number(b.orderBy ?? 999999);
         return aOrder - bOrder;
       });
-    updateShopState({ categories, error: "" });
+    updateShopState({ categories, parentCategoryId, error: "" });
   } catch {
     updateShopState({ error: t("shopError") });
   }
@@ -915,6 +923,57 @@ async function loadShopProducts({ reset = false } = {}) {
   } catch {
     updateShopState({ loading: false, products: reset ? [] : shopState.products, total: reset ? 0 : shopState.total, error: t("shopError") });
   }
+}
+
+async function openShopCategory(categoryId) {
+  if (!categoryId) {
+    shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, error: "", loading: false };
+    saveShopCache();
+    render();
+    await loadShopCategories(0);
+    return;
+  }
+
+  const category = shopState.categories.find((item) => String(item.id) === String(categoryId));
+  updateShopState({ loading: true, error: "" });
+  try {
+    const subData = await ecwidFetch("/categories", {
+      parent: categoryId,
+      limit: 100,
+      responseFields: "items(id,name,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
+    });
+    const subcategories = (subData.items || []).filter((item) => item.enabled !== false && Number(item.productCount || 0) > 0);
+    if (subcategories.length) {
+      shopState = {
+        ...shopState,
+        categories: subcategories,
+        parentCategoryId: categoryId,
+        categoryTrail: [...shopState.categoryTrail, { id: categoryId, name: category?.name || "" }],
+        categoryId: "",
+        products: [],
+        total: 0,
+        selectedProduct: null,
+        loading: false,
+      };
+      saveShopCache();
+      render();
+      return;
+    }
+
+    shopState = { ...shopState, categoryId, products: [], total: 0, selectedProduct: null, loading: false };
+    saveShopCache();
+    render();
+    await loadShopProducts({ reset: true });
+  } catch {
+    updateShopState({ loading: false, error: t("shopError") });
+  }
+}
+
+async function backShopCategory() {
+  shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, error: "", loading: false };
+  saveShopCache();
+  render();
+  await loadShopCategories(0);
 }
 
 async function openProductDetails(productId) {
@@ -963,10 +1022,10 @@ function openCheckout() {
 }
 
 function resetShopHome() {
-  shopState = { ...shopState, keyword: "", categoryId: "", selectedProduct: null, products: [], total: 0 };
+  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], selectedProduct: null, products: [], total: 0, categories: [] };
   saveShopCache();
   render();
-  if (!shopState.categories.length) loadShopCategories();
+  loadShopCategories(0);
 }
 
 function profileView() {
@@ -1444,12 +1503,14 @@ function bindApp() {
         products: [],
         total: 0,
         categoryId: "",
+        parentCategoryId: 0,
+        categoryTrail: [],
         selectedProduct: null,
         error: "",
       };
       saveShopCache();
       render();
-      await loadShopCategories();
+      await loadShopCategories(0);
       notify(t("shopUpdated"));
     });
   });
@@ -1471,20 +1532,18 @@ function bindApp() {
 
   document.querySelectorAll("[data-shop-category]").forEach((select) => {
     select.addEventListener("change", () => {
-      shopState = { ...shopState, categoryId: select.value, products: [], total: 0, selectedProduct: null, error: "", loading: false };
-      saveShopCache();
-      if (select.value) loadShopProducts({ reset: true });
-      else render();
+      openShopCategory(select.value);
     });
   });
 
   document.querySelectorAll("[data-category-tile]").forEach((button) => {
     button.addEventListener("click", () => {
-      shopState = { ...shopState, categoryId: button.dataset.categoryTile, products: [], total: 0, selectedProduct: null, error: "", loading: false };
-      saveShopCache();
-      render();
-      loadShopProducts({ reset: true });
+      openShopCategory(button.dataset.categoryTile);
     });
+  });
+
+  document.querySelectorAll("[data-category-back]").forEach((button) => {
+    button.addEventListener("click", backShopCategory);
   });
 
   document.querySelectorAll("[data-load-more-products]").forEach((button) => {
