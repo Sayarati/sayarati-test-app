@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v1";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v2";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -849,9 +849,13 @@ async function loadShopCategories() {
   try {
     const data = await ecwidFetch("/categories", {
       limit: 100,
-      responseFields: "items(id,name,enabled),total",
+      responseFields: "items(id,name,enabled,productCount,thumbnailUrl,imageUrl),total",
     });
-    updateShopState({ categories: (data.items || []).filter((category) => category.enabled !== false), error: "" });
+    const categories = (data.items || [])
+      .filter((category) => category.enabled !== false)
+      .filter((category) => Number(category.productCount || 0) > 0)
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    updateShopState({ categories, error: "" });
   } catch {
     updateShopState({ error: t("shopError") });
   }
@@ -1404,7 +1408,21 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-refresh-shop]").forEach((shopButton) => {
-    shopButton.addEventListener("click", () => loadShopProducts({ reset: true }));
+    shopButton.addEventListener("click", async () => {
+      shopState = {
+        ...shopState,
+        categories: [],
+        products: [],
+        total: 0,
+        categoryId: "",
+        selectedProduct: null,
+        error: "",
+      };
+      saveShopCache();
+      render();
+      await loadShopCategories();
+      notify(t("shopUpdated"));
+    });
   });
 
   document.querySelectorAll("[data-shop-checkout]").forEach((shopButton) => {
