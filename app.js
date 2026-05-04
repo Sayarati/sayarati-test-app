@@ -166,6 +166,7 @@ const copy = {
     shopBack: "Back",
     searchProducts: "Search products",
     allCategories: "All categories",
+    chooseCategoryFirst: "Choose a category to browse products.",
     loadMore: "Load more",
     productDetails: "Product details",
     addToCart: "Add to cart",
@@ -269,6 +270,7 @@ const copy = {
     shopBack: "رجوع",
     searchProducts: "البحث عن منتجات",
     allCategories: "كل الفئات",
+    chooseCategoryFirst: "اختر فئة لعرض المنتجات.",
     loadMore: "تحميل المزيد",
     productDetails: "تفاصيل المنتج",
     addToCart: "إضافة إلى السلة",
@@ -715,6 +717,7 @@ function serviceFormView(car) {
 
 function shopView() {
   setTimeout(() => ensureShopLoaded(), 80);
+  const activeCategory = shopState.categories.find((category) => String(category.id) === String(shopState.categoryId));
 
   return `
     <section class="panel">
@@ -736,9 +739,26 @@ function shopView() {
           </select>
         </div>
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
-        ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : productGridView()}
+        ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : shopState.categoryId ? productGridView() : categoryLandingView(activeCategory)}
       </div>
     </section>
+  `;
+}
+
+function categoryLandingView() {
+  if (shopState.loading && !shopState.categories.length) return `<p class="muted">${t("shopLoading")}</p>`;
+  return `
+    <div class="category-landing">
+      <p class="muted">${t("chooseCategoryFirst")}</p>
+      <div class="category-grid">
+        ${shopState.categories.map((category) => `
+          <button class="category-tile" data-category-tile="${category.id}">
+            ${category.thumbnailUrl || category.imageUrl ? `<img src="${category.thumbnailUrl || category.imageUrl}" alt="${escapeAttr(category.name)}" />` : `<span>${escapeHtml(category.name).slice(0, 1)}</span>`}
+            <strong>${escapeHtml(category.name)}</strong>
+          </button>
+        `).join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -810,7 +830,7 @@ async function ensureShopLoaded() {
   if (state.view !== "shop" || shopState.loading) return;
   loadEcwidCartScript();
   if (!shopState.categories.length) await loadShopCategories();
-  if (!shopState.products.length) await loadShopProducts({ reset: true });
+  if (shopState.categoryId && !shopState.products.length) await loadShopProducts({ reset: true });
 }
 
 async function ecwidFetch(path, params = {}) {
@@ -846,7 +866,7 @@ async function loadShopProducts({ reset = false } = {}) {
       offset,
       limit: SHOP_PAGE_SIZE,
       keyword: shopState.keyword ? `${shopState.keyword}*` : "",
-      category: shopState.categoryId || "",
+      category: shopState.categoryId || undefined,
       enabled: true,
       responseFields: "total,count,items(id,sku,name,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url)",
     });
@@ -913,7 +933,7 @@ function resetShopHome() {
   shopState = { ...shopState, keyword: "", categoryId: "", selectedProduct: null, products: [], total: 0 };
   saveShopCache();
   render();
-  loadShopProducts({ reset: true });
+  if (!shopState.categories.length) loadShopCategories();
 }
 
 function profileView() {
@@ -1406,6 +1426,16 @@ function bindApp() {
     select.addEventListener("change", () => {
       shopState = { ...shopState, categoryId: select.value, products: [], total: 0, selectedProduct: null };
       saveShopCache();
+      if (select.value) loadShopProducts({ reset: true });
+      else render();
+    });
+  });
+
+  document.querySelectorAll("[data-category-tile]").forEach((button) => {
+    button.addEventListener("click", () => {
+      shopState = { ...shopState, categoryId: button.dataset.categoryTile, products: [], total: 0, selectedProduct: null };
+      saveShopCache();
+      render();
       loadShopProducts({ reset: true });
     });
   });
