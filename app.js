@@ -1,7 +1,10 @@
 const SHOP_URL = "https://sayarati.online/";
 const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BDSbUBb-200x200.png";
 const ECWID_STORE_ID = "43948359";
+const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v1";
+const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -161,6 +164,18 @@ const copy = {
     shopLoading: "Loading Sayarati shop...",
     shopHome: "Shop home",
     shopBack: "Back",
+    searchProducts: "Search products",
+    allCategories: "All categories",
+    loadMore: "Load more",
+    productDetails: "Product details",
+    addToCart: "Add to cart",
+    checkout: "Checkout",
+    addedToCart: "Added to cart.",
+    inStock: "In stock",
+    outOfStock: "Out of stock",
+    shopUpdated: "Shop updated.",
+    shopError: "Could not load shop products. Try refresh.",
+    refreshShop: "Refresh shop",
     addCarPhoto: "Add car photo",
   },
   ar: {
@@ -252,11 +267,24 @@ const copy = {
     shopLoading: "جارٍ تحميل متجر سيارتي...",
     shopHome: "الرئيسية",
     shopBack: "رجوع",
+    searchProducts: "البحث عن منتجات",
+    allCategories: "كل الفئات",
+    loadMore: "تحميل المزيد",
+    productDetails: "تفاصيل المنتج",
+    addToCart: "إضافة إلى السلة",
+    checkout: "الدفع",
+    addedToCart: "تمت الإضافة إلى السلة.",
+    inStock: "متوفر",
+    outOfStock: "غير متوفر",
+    shopUpdated: "تم تحديث المتجر.",
+    shopError: "تعذر تحميل منتجات المتجر. جرّب التحديث.",
+    refreshShop: "تحديث المتجر",
     addCarPhoto: "إضافة صورة السيارة",
   },
 };
 
 let state = loadState();
+let shopState = loadShopCache();
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -286,6 +314,46 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, notice: "" }));
+}
+
+function loadShopCache() {
+  const empty = {
+    categories: [],
+    products: [],
+    total: 0,
+    offset: 0,
+    keyword: "",
+    categoryId: "",
+    loading: false,
+    error: "",
+    selectedProduct: null,
+    cartCount: 0,
+    lastLoaded: "",
+  };
+
+  try {
+    return { ...empty, ...JSON.parse(localStorage.getItem(SHOP_CACHE_KEY) || "{}") };
+  } catch {
+    return empty;
+  }
+}
+
+function saveShopCache() {
+  localStorage.setItem(SHOP_CACHE_KEY, JSON.stringify({
+    categories: shopState.categories,
+    products: shopState.products,
+    total: shopState.total,
+    offset: shopState.offset,
+    keyword: shopState.keyword,
+    categoryId: shopState.categoryId,
+    lastLoaded: shopState.lastLoaded,
+  }));
+}
+
+function updateShopState(update) {
+  shopState = { ...shopState, ...update };
+  saveShopCache();
+  render();
 }
 
 function t(key) {
@@ -646,63 +714,206 @@ function serviceFormView(car) {
 }
 
 function shopView() {
-  setTimeout(loadEcwidStore, 80);
+  setTimeout(() => ensureShopLoaded(), 80);
 
   return `
     <section class="panel">
       <div class="shop-tools">
         <strong>${SHOP_URL}</strong>
         <div class="actions">
-          <button class="ghost" data-shop-back>${t("shopBack")}</button>
-          <button class="primary" data-shop-home>${t("shopHome")}</button>
+          <button class="ghost" data-shop-home>${t("shopHome")}</button>
+          <button class="ghost" data-refresh-shop>${t("refreshShop")}</button>
+          <button class="primary" data-shop-checkout>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
           <a class="ghost" href="${SHOP_URL}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">${t("openExternal")}</a>
         </div>
       </div>
-      <div class="ecwid-shell">
-        <div id="my-store-${ECWID_STORE_ID}">
-          <p class="muted">${t("shopLoading")}</p>
+      <div class="custom-shop">
+        <div class="shop-filters">
+          <input type="search" value="${escapeAttr(shopState.keyword)}" placeholder="${t("searchProducts")}" data-shop-search />
+          <select data-shop-category>
+            <option value="">${t("allCategories")}</option>
+            ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}
+          </select>
         </div>
+        ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
+        ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : productGridView()}
       </div>
     </section>
   `;
 }
 
-function loadEcwidStore() {
-  const storeContainer = document.getElementById(`my-store-${ECWID_STORE_ID}`);
-  if (!storeContainer) return;
-
-  window.ecwid_script_defer = true;
-  window.ecwid_dynamic_widgets = true;
-  window._xnext_initialization_scripts = [{
-    widgetType: "ProductBrowser",
-    id: `my-store-${ECWID_STORE_ID}`,
-    arg: [`id=my-store-${ECWID_STORE_ID}`],
-  }];
-
-  if (!document.getElementById("ecwid-script")) {
-    const script = document.createElement("script");
-    script.id = "ecwid-script";
-    script.charset = "utf-8";
-    script.type = "text/javascript";
-    script.src = `https://app.ecwid.com/script.js?${ECWID_STORE_ID}&data_platform=code`;
-    document.body.appendChild(script);
-    return;
-  }
-
-  if (window.Ecwid?.destroy) window.Ecwid.destroy();
-  if (typeof window.ecwid_onBodyDone === "function") window.ecwid_onBodyDone();
+function productGridView() {
+  if (shopState.loading && !shopState.products.length) return `<p class="muted">${t("shopLoading")}</p>`;
+  return `
+    <div class="product-grid">
+      ${shopState.products.map(productCard).join("")}
+    </div>
+    <div class="shop-footer-actions">
+      <span class="muted">${shopState.products.length} / ${shopState.total || shopState.products.length}</span>
+      ${shopState.products.length < shopState.total ? `<button class="primary" data-load-more-products ${shopState.loading ? "disabled" : ""}>${shopState.loading ? t("shopLoading") : t("loadMore")}</button>` : ""}
+    </div>
+  `;
 }
 
-function goShopHome() {
-  const root = document.getElementById(`my-store-${ECWID_STORE_ID}`);
-  if (root) root.innerHTML = `<p class="muted">${t("shopLoading")}</p>`;
+function productCard(product) {
+  return `
+    <article class="product-card" data-product-id="${product.id}">
+      <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(product.name)}" />
+      <div>
+        <strong>${escapeHtml(product.name)}</strong>
+        <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
+        <small class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</small>
+      </div>
+    </article>
+  `;
+}
 
-  if (window.Ecwid?.openPage) {
-    window.Ecwid.openPage("category", { id: 0 });
-    return;
+function productDetailView(product) {
+  const images = product.galleryImages?.length ? product.galleryImages : [{ url: product.imageUrl || product.thumbnailUrl || LOGO_URL }];
+  return `
+    <div class="product-detail" id="shop-detail">
+      <button class="ghost" data-close-product>${t("shopBack")}</button>
+      <div class="product-detail-grid">
+        <div class="product-images">
+          ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}
+        </div>
+        <div>
+          <span class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</span>
+          <h2>${escapeHtml(product.name)}</h2>
+          <strong class="product-price">${product.defaultDisplayedPriceFormatted || product.price || ""}</strong>
+          <div class="product-description">${product.description || ""}</div>
+          <div class="actions">
+            <button class="primary" data-add-product="${product.id}" ${product.inStock === false ? "disabled" : ""}>${t("addToCart")}</button>
+            <button class="ghost" data-shop-checkout>${t("checkout")}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[char]);
+}
+
+function escapeAttr(value = "") {
+  return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+async function ensureShopLoaded() {
+  if (state.view !== "shop" || shopState.loading) return;
+  loadEcwidCartScript();
+  if (!shopState.categories.length) await loadShopCategories();
+  if (!shopState.products.length) await loadShopProducts({ reset: true });
+}
+
+async function ecwidFetch(path, params = {}) {
+  const url = new URL(`https://app.ecwid.com/api/v3/${ECWID_STORE_ID}${path}`);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) url.searchParams.set(key, value);
+  });
+  const response = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${ECWID_PUBLIC_TOKEN}` },
+  });
+  if (!response.ok) throw new Error(`Ecwid API error ${response.status}`);
+  return response.json();
+}
+
+async function loadShopCategories() {
+  try {
+    const data = await ecwidFetch("/categories", {
+      limit: 100,
+      responseFields: "items(id,name,enabled),total",
+    });
+    updateShopState({ categories: (data.items || []).filter((category) => category.enabled !== false), error: "" });
+  } catch {
+    updateShopState({ error: t("shopError") });
   }
+}
 
-  loadEcwidStore();
+async function loadShopProducts({ reset = false } = {}) {
+  if (shopState.loading) return;
+  const offset = reset ? 0 : shopState.products.length;
+  updateShopState({ loading: true, error: "" });
+  try {
+    const data = await ecwidFetch("/products", {
+      offset,
+      limit: SHOP_PAGE_SIZE,
+      keyword: shopState.keyword ? `${shopState.keyword}*` : "",
+      category: shopState.categoryId || "",
+      enabled: true,
+      responseFields: "total,count,items(id,sku,name,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url)",
+    });
+    updateShopState({
+      products: reset ? (data.items || []) : [...shopState.products, ...(data.items || [])],
+      total: data.total || 0,
+      offset,
+      loading: false,
+      selectedProduct: null,
+      lastLoaded: new Date().toISOString(),
+      error: "",
+    });
+  } catch {
+    updateShopState({ loading: false, error: t("shopError") });
+  }
+}
+
+async function openProductDetails(productId) {
+  updateShopState({ loading: true, error: "" });
+  try {
+    const product = await ecwidFetch(`/products/${productId}`);
+    updateShopState({ selectedProduct: product, loading: false, error: "" });
+    scrollAfterRender("shop-detail");
+  } catch {
+    updateShopState({ loading: false, error: t("shopError") });
+  }
+}
+
+function loadEcwidCartScript() {
+  if (document.getElementById("ecwid-script")) return;
+  window.ecwid_script_defer = true;
+  const script = document.createElement("script");
+  script.id = "ecwid-script";
+  script.charset = "utf-8";
+  script.type = "text/javascript";
+  script.src = `https://app.ecwid.com/script.js?${ECWID_STORE_ID}&data_platform=code`;
+  document.body.appendChild(script);
+}
+
+function addEcwidProduct(productId) {
+  loadEcwidCartScript();
+  const add = () => {
+    if (!window.Ecwid?.Cart?.addProduct) {
+      window.open(`${SHOP_URL}#!/~/cart/create=${encodeURIComponent(JSON.stringify({ products: [{ id: Number(productId), quantity: 1 }] }))}`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    window.Ecwid.Cart.addProduct({
+      id: Number(productId),
+      quantity: 1,
+      callback: (success, product, cart) => {
+        updateShopState({ cartCount: cart?.items?.length || shopState.cartCount + 1 });
+        notify(success ? t("addedToCart") : t("shopError"));
+      },
+    });
+  };
+  setTimeout(add, 300);
+}
+
+function openCheckout() {
+  window.open(`${SHOP_URL}#!/~/cart`, "_blank", "noopener,noreferrer");
+}
+
+function resetShopHome() {
+  shopState = { ...shopState, keyword: "", categoryId: "", selectedProduct: null, products: [], total: 0 };
+  saveShopCache();
+  render();
+  loadShopProducts({ reset: true });
 }
 
 function profileView() {
@@ -1169,14 +1380,50 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-shop-home]").forEach((shopButton) => {
-    shopButton.addEventListener("click", goShopHome);
+    shopButton.addEventListener("click", resetShopHome);
   });
 
-  document.querySelectorAll("[data-shop-back]").forEach((shopButton) => {
-    shopButton.addEventListener("click", () => {
-      if (history.length > 1) history.back();
-      else goShopHome();
+  document.querySelectorAll("[data-refresh-shop]").forEach((shopButton) => {
+    shopButton.addEventListener("click", () => loadShopProducts({ reset: true }));
+  });
+
+  document.querySelectorAll("[data-shop-checkout]").forEach((shopButton) => {
+    shopButton.addEventListener("click", openCheckout);
+  });
+
+  document.querySelectorAll("[data-shop-search]").forEach((input) => {
+    input.addEventListener("input", () => {
+      clearTimeout(window.sayaratiShopSearchTimer);
+      window.sayaratiShopSearchTimer = setTimeout(() => {
+        shopState = { ...shopState, keyword: input.value, products: [], total: 0, selectedProduct: null };
+        saveShopCache();
+        loadShopProducts({ reset: true });
+      }, 420);
     });
+  });
+
+  document.querySelectorAll("[data-shop-category]").forEach((select) => {
+    select.addEventListener("change", () => {
+      shopState = { ...shopState, categoryId: select.value, products: [], total: 0, selectedProduct: null };
+      saveShopCache();
+      loadShopProducts({ reset: true });
+    });
+  });
+
+  document.querySelectorAll("[data-load-more-products]").forEach((button) => {
+    button.addEventListener("click", () => loadShopProducts());
+  });
+
+  document.querySelectorAll("[data-product-id]").forEach((card) => {
+    card.addEventListener("click", () => openProductDetails(card.dataset.productId));
+  });
+
+  document.querySelectorAll("[data-close-product]").forEach((button) => {
+    button.addEventListener("click", () => updateShopState({ selectedProduct: null }));
+  });
+
+  document.querySelectorAll("[data-add-product]").forEach((button) => {
+    button.addEventListener("click", () => addEcwidProduct(button.dataset.addProduct));
   });
 }
 
