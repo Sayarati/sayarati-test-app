@@ -125,6 +125,8 @@ const copy = {
     carDeleted: "Vehicle deleted.",
     recordDeleted: "Service record deleted.",
     partPhotos: "Photos of changed parts",
+    carPhoto: "Car photo",
+    otherServiceDetails: "If Other, describe the service",
     selectedServices: "Selected services",
     chooseBrand: "Choose brand",
     chooseModel: "Choose model",
@@ -143,6 +145,7 @@ const copy = {
     addAnotherService: "Add another service",
     createdNotification: "Created successfully.",
     redirectingShop: "Opening Sayarati.online...",
+    shopInAppNote: "For this test version, the app navigation stays available here. Open the shop when needed; the real mobile app will keep this screen inside a WebView.",
   },
   ar: {
     appName: "سيارتي",
@@ -198,6 +201,8 @@ const copy = {
     carDeleted: "تم حذف السيارة.",
     recordDeleted: "تم حذف سجل الصيانة.",
     partPhotos: "صور القطع المستبدلة",
+    carPhoto: "صورة السيارة",
+    otherServiceDetails: "إذا اخترت أخرى، اكتب تفاصيل الخدمة",
     selectedServices: "الخدمات المختارة",
     chooseBrand: "اختر الشركة",
     chooseModel: "اختر الموديل",
@@ -216,6 +221,7 @@ const copy = {
     addAnotherService: "إضافة خدمة أخرى",
     createdNotification: "تم الإنشاء بنجاح.",
     redirectingShop: "جارٍ فتح Sayarati.online...",
+    shopInAppNote: "في نسخة التجربة تبقى أزرار التطبيق متاحة هنا. افتح المتجر عند الحاجة؛ في تطبيق الهاتف الحقيقي ستكون الصفحة داخل WebView.",
   },
 };
 
@@ -401,14 +407,10 @@ function currentView() {
 function overviewView() {
   const car = selectedCar();
   return `
-    <section class="grid dashboard-grid">
-      <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
-      <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
-      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate(car?.id)}</strong></div>
-    </section>
     <section class="panel" style="margin-top: 16px;">
       ${car ? `
         <div class="selected-car-panel selected-car-top">
+          ${carPhoto(car)}
           <div>
             <span class="pill green">${t("selectedCar")}</span>
             <h3>${carLabel(car)}</h3>
@@ -427,12 +429,19 @@ function overviewView() {
         </div>
         <div class="actions">
           <button class="ghost" data-sample>${t("sample")}</button>
-          <button class="primary" data-view="cars">${t("addCar")}</button>
         </div>
       </div>
       <div class="list garage-list">
         ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
       </div>
+      <div class="actions bottom-actions">
+        <button class="primary" data-view="cars">${t("addNewCar")}</button>
+      </div>
+    </section>
+    <section class="grid dashboard-grid">
+      <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
+      <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
+      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate(car?.id)}</strong></div>
     </section>
   `;
 }
@@ -462,6 +471,7 @@ function carsView() {
             ${field("plate", t("plate"), "text", "123456")}
             ${field("mileage", t("mileage"), "number", "45000")}
             ${field("vin", t("vin"), "text", "")}
+            ${fileField("carPhoto", t("carPhoto"))}
             ${textarea("notes", t("notes"), "")}
             <button class="primary" type="submit" data-submit-car>${t("saveCar")}</button>
           </form>
@@ -511,6 +521,7 @@ function serviceFormView(car) {
           ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
           ${field("mileage", t("mileage"), "number", car.mileage || "")}
           ${serviceCheckboxes()}
+          ${field("otherServiceDetails", t("otherServiceDetails"), "text", "")}
           ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
           ${field("cost", t("cost"), "number", "")}
           ${field("nextDue", t("nextDue"), "date", "")}
@@ -525,10 +536,6 @@ function serviceFormView(car) {
 }
 
 function shopView() {
-  setTimeout(() => {
-    if (state.view === "shop") window.location.href = SHOP_URL;
-  }, 250);
-
   return `
     <section class="panel">
       <div class="shop-tools">
@@ -541,7 +548,7 @@ function shopView() {
       <div class="shop-launcher">
         <div class="shop-logo"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
         <h2>${t("shop")}</h2>
-        <p>${t("redirectingShop")}</p>
+        <p>${t("shopInAppNote")}</p>
         <button class="primary" data-open-shop>${t("shop")}</button>
         <span>${SHOP_URL}</span>
       </div>
@@ -624,16 +631,28 @@ function carLabel(car) {
   return `${car.brand || ""} ${car.model || ""} ${car.year || ""}`.trim();
 }
 
+function carPhoto(car) {
+  if (car.photo?.dataUrl) {
+    return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
+  }
+  return `<div class="car-photo placeholder-car">▰</div>`;
+}
+
 function carCard(car) {
   const records = carRecords(car.id).length;
   return `
     <article class="car-card ${selectedCar()?.id === car.id ? "selected" : ""}" data-select-car="${car.id}">
+      <div class="car-card-head">
+        ${carPhoto(car)}
+        <div>
       <div class="row">
         <strong>${carLabel(car)}</strong>
         <span class="pill">${records} ${t("records")}</span>
       </div>
       <div class="muted">${t("plate")}: ${car.plate || "-"} | ${t("mileage")}: ${car.mileage || "-"} km</div>
       <div class="muted">${t("vin")}: ${car.vin || "-"}</div>
+        </div>
+      </div>
       <div class="actions">
         <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
         <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
@@ -693,7 +712,11 @@ function selectedRecord(carId) {
 
 function formatServices(record) {
   const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
-  return services.length ? services.join(", ") : "-";
+  const namedServices = services.map((service) => {
+    if (service === "Other" && record.otherServiceDetails) return `Other: ${record.otherServiceDetails}`;
+    return service;
+  });
+  return namedServices.length ? namedServices.join(", ") : "-";
 }
 
 function renderPhotos(photos = []) {
@@ -832,7 +855,7 @@ function bindApp() {
       });
     }
 
-    carForm.addEventListener("submit", (event) => {
+    carForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = formData(carForm);
       if (!String(data.brand || "").trim() || !String(data.model || "").trim()) {
@@ -842,7 +865,9 @@ function bindApp() {
       const submit = carForm.querySelector("[data-submit-car]");
       if (submit?.disabled) return;
       if (submit) submit.disabled = true;
-      const car = { id: uid("car"), ...data };
+      const photos = await readImageFiles(carForm.querySelector("#carPhoto"));
+      delete data.carPhoto;
+      const car = { id: uid("car"), ...data, photo: photos[0] || null };
       setState({
         cars: [car, ...state.cars],
         selectedCarId: car.id,
@@ -864,6 +889,8 @@ function bindApp() {
       const data = formData(recordForm);
       const services = checkedValues(recordForm, "serviceTypes");
       const partPhotos = await readImageFiles(recordForm.querySelector("#partPhotos"));
+      delete data.partPhotos;
+      delete data.serviceTypes;
       const record = {
         id: uid("record"),
         carId: car.id,

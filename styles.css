@@ -2,10 +2,10 @@
   --ink: #0b0f12;
   --muted: #65707a;
   --line: #dfe6e8;
-  --paper: #f7f9f9;
+  --paper: #f7f5ee;
   --panel: #ffffff;
-  --accent: #00b8b0;
-  --accent-dark: #008b86;
+  --accent: #ffd21f;
+  --accent-dark: #e2b800;
   --danger: #d62922;
   --danger-dark: #9f1f1a;
   --green: #1f7a4d;
@@ -113,8 +113,9 @@ button {
 }
 
 .nav button.active {
-  background: #fff;
+  background: var(--accent);
   color: var(--ink);
+  border-color: var(--accent);
 }
 
 .nav-icon {
@@ -140,7 +141,8 @@ button {
 
 .language button.active {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--ink);
+  background: var(--accent);
   font-weight: 700;
 }
 
@@ -159,7 +161,7 @@ button {
 }
 
 .eyebrow {
-  color: var(--accent);
+  color: #8a6a00;
   font-weight: 700;
   font-size: 13px;
   text-transform: uppercase;
@@ -273,7 +275,7 @@ h1 {
   border: 0;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--ink);
   font-weight: 800;
   padding: 0 16px;
 }
@@ -343,8 +345,8 @@ h1 {
 }
 
 .pill.green {
-  background: #e3f3eb;
-  color: var(--green);
+  background: #fff5c2;
+  color: #5f4900;
 }
 
 .pill.gold {
@@ -457,12 +459,42 @@ button:disabled {
   margin-top: 10px;
 }
 
+.bottom-actions {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+.car-card-head {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.car-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  object-fit: cover;
+  background: #fff;
+}
+
+.placeholder-car {
+  display: grid;
+  place-items: center;
+  background: #0b0f12;
+  color: var(--accent);
+  font-size: 30px;
+  font-weight: 800;
+}
+
 .selected-car-panel {
   margin-top: 16px;
   padding: 16px;
-  border: 1px solid #bfe4cf;
+  border: 1px solid #ead06b;
   border-radius: 8px;
-  background: #f5fbf8;
+  background: #fff9da;
   display: flex;
   justify-content: space-between;
   gap: 14px;
