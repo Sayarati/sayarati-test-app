@@ -803,7 +803,7 @@ function productDetailView(product) {
   const images = product.galleryImages?.length ? product.galleryImages : [{ url: product.imageUrl || product.thumbnailUrl || LOGO_URL }];
   return `
     <div class="product-detail" id="shop-detail">
-      <button class="ghost" data-close-product>${t("shopBack")}</button>
+      <button class="ghost back-to-products" data-close-product>← ${t("shopBack")}</button>
       <div class="product-detail-grid">
         <div class="product-images">
           ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}

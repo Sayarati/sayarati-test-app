@@ -916,10 +916,46 @@ button:disabled {
   .photo-grid,
   .detail-grid,
   .shop-filters,
-  .category-grid,
-  .product-grid,
   .product-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .category-grid,
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .category-tile {
+    min-height: 126px;
+    padding: 10px;
+  }
+
+  .category-tile img {
+    width: 66px;
+    height: 66px;
+  }
+
+  .product-card {
+    min-height: 220px;
+    grid-template-rows: 128px 1fr;
+  }
+
+  .product-card img {
+    height: 128px;
+  }
+
+  .product-card div {
+    padding: 9px;
+  }
+
+  .product-card strong {
+    font-size: 13px;
+  }
+
+  .product-card span,
+  .product-price {
+    font-size: 15px;
   }
 
   .selected-car-panel {
