@@ -148,6 +148,9 @@ const copy = {
     servicesFor: "Services for",
     latestRecords: "Latest service records",
     addNewCar: "Add new car",
+    editCar: "Edit car",
+    updateCar: "Update car",
+    carUpdated: "Vehicle updated.",
     close: "Close",
     serviceSummary: "Service summary",
     serviceDetails: "Service details",
@@ -156,6 +159,8 @@ const copy = {
     redirectingShop: "Opening Sayarati.online...",
     shopInAppNote: "Browse Sayarati products inside the app. Your app navigation stays available.",
     shopLoading: "Loading Sayarati shop...",
+    shopHome: "Shop home",
+    shopBack: "Back",
     addCarPhoto: "Add car photo",
   },
   ar: {
@@ -234,6 +239,9 @@ const copy = {
     servicesFor: "الخدمات الخاصة بـ",
     latestRecords: "آخر سجلات الصيانة",
     addNewCar: "إضافة سيارة جديدة",
+    editCar: "تعديل السيارة",
+    updateCar: "تحديث السيارة",
+    carUpdated: "تم تحديث السيارة.",
     close: "إغلاق",
     serviceSummary: "ملخص الصيانة",
     serviceDetails: "تفاصيل الصيانة",
@@ -242,6 +250,8 @@ const copy = {
     redirectingShop: "جارٍ فتح Sayarati.online...",
     shopInAppNote: "تصفح منتجات سيارتي داخل التطبيق مع بقاء أزرار التنقل متاحة.",
     shopLoading: "جارٍ تحميل متجر سيارتي...",
+    shopHome: "الرئيسية",
+    shopBack: "رجوع",
     addCarPhoto: "إضافة صورة السيارة",
   },
 };
@@ -270,6 +280,7 @@ function loadState() {
     selectedRecordId: null,
     expenseFilter: "thisYear",
     expenseYear: String(new Date().getFullYear()),
+    editingCarId: null,
   };
 }
 
@@ -536,6 +547,10 @@ function overviewView() {
 }
 
 function carsView() {
+  const editingCar = state.cars.find((car) => car.id === state.editingCarId);
+  const formCar = editingCar || {};
+  const formBrand = formCar.brand || "Toyota";
+  const formModel = formCar.model || modelsForBrand(formBrand)[0] || "";
   return `
     <section class="grid">
       <div class="panel">
@@ -552,17 +567,17 @@ function carsView() {
       </div>
       ${state.carFormOpen ? `
         <div class="panel" id="car-form-panel">
-          <h2>${t("addCar")}</h2>
+          <h2>${editingCar ? t("editCar") : t("addCar")}</h2>
           <form class="form" id="car-form">
-            ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), "Toyota", t("chooseBrand"))}
-            ${selectField("model", t("model"), modelsForBrand("Toyota"), "RAV4", t("chooseModel"))}
-            ${field("year", t("year"), "number", "2022")}
-            ${field("plate", t("plate"), "text", "123456")}
-            ${field("mileage", t("mileage"), "number", "45000")}
-            ${field("vin", t("vin"), "text", "")}
+            ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), formBrand, t("chooseBrand"))}
+            ${selectField("model", t("model"), modelsForBrand(formBrand), formModel, t("chooseModel"))}
+            ${field("year", t("year"), "number", formCar.year || "2022")}
+            ${field("plate", t("plate"), "text", formCar.plate || "123456")}
+            ${field("mileage", t("mileage"), "number", formCar.mileage || "45000")}
+            ${field("vin", t("vin"), "text", formCar.vin || "")}
             ${fileField("carPhoto", t("carPhoto"))}
-            ${textarea("notes", t("notes"), "")}
-            <button class="primary" type="submit" data-submit-car>${t("saveCar")}</button>
+            ${textarea("notes", t("notes"), formCar.notes || "")}
+            <button class="primary" type="submit" data-submit-car>${editingCar ? t("updateCar") : t("saveCar")}</button>
           </form>
         </div>
       ` : ""}
@@ -638,7 +653,8 @@ function shopView() {
       <div class="shop-tools">
         <strong>${SHOP_URL}</strong>
         <div class="actions">
-          <button class="primary" data-reload-shop>${t("shop")}</button>
+          <button class="ghost" data-shop-back>${t("shopBack")}</button>
+          <button class="primary" data-shop-home>${t("shopHome")}</button>
           <a class="ghost" href="${SHOP_URL}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">${t("openExternal")}</a>
         </div>
       </div>
@@ -675,6 +691,18 @@ function loadEcwidStore() {
 
   if (window.Ecwid?.destroy) window.Ecwid.destroy();
   if (typeof window.ecwid_onBodyDone === "function") window.ecwid_onBodyDone();
+}
+
+function goShopHome() {
+  const root = document.getElementById(`my-store-${ECWID_STORE_ID}`);
+  if (root) root.innerHTML = `<p class="muted">${t("shopLoading")}</p>`;
+
+  if (window.Ecwid?.openPage) {
+    window.Ecwid.openPage("category", { id: 0 });
+    return;
+  }
+
+  loadEcwidStore();
 }
 
 function profileView() {
@@ -802,6 +830,7 @@ function carCard(car) {
       <div class="actions">
         <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
         <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
+        <button class="ghost" data-edit-car="${car.id}">${t("editCar")}</button>
         <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
       ${car.notes ? `<div>${car.notes}</div>` : ""}
@@ -826,7 +855,7 @@ function renderRecordSummaries(carId) {
 
 function serviceDetailView(record) {
   return `
-    <div class="panel">
+    <div class="panel" id="service-detail-panel">
       <div class="row section-head">
         <div>
           <h2>${t("serviceDetails")}</h2>
@@ -916,8 +945,21 @@ function bindApp() {
 
   document.querySelectorAll("[data-toggle-car-form]").forEach((button) => {
     button.addEventListener("click", () => {
-      setState({ carFormOpen: !state.carFormOpen, view: "cars" });
+      setState({ carFormOpen: !state.carFormOpen, view: "cars", editingCarId: state.carFormOpen ? null : state.editingCarId });
       if (!state.carFormOpen) scrollAfterRender("car-form-panel");
+    });
+  });
+
+  document.querySelectorAll("[data-edit-car]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setState({
+        selectedCarId: button.dataset.editCar,
+        editingCarId: button.dataset.editCar,
+        carFormOpen: true,
+        view: "cars",
+      });
+      scrollAfterRender("car-form-panel");
     });
   });
 
@@ -962,6 +1004,7 @@ function bindApp() {
   document.querySelectorAll("[data-view-record]").forEach((record) => {
     record.addEventListener("click", () => {
       setState({ selectedRecordId: record.dataset.viewRecord, serviceMode: "detail" });
+      scrollAfterRender("service-detail-panel");
     });
   });
 
@@ -1049,13 +1092,27 @@ function bindApp() {
       const photos = await readImageFiles(carForm.querySelector("#carPhoto"));
       delete data.carPhoto;
       const car = { id: uid("car"), ...data, photo: photos[0] || null };
-      setState({
-        cars: [car, ...state.cars],
-        selectedCarId: car.id,
-        view: "overview",
-        carFormOpen: false,
-      });
-      notify(t("carSaved"));
+      if (state.editingCarId) {
+        setState({
+          cars: state.cars.map((existingCar) => existingCar.id === state.editingCarId
+            ? { ...existingCar, ...data, photo: photos[0] || existingCar.photo || null }
+            : existingCar),
+          selectedCarId: state.editingCarId,
+          view: "cars",
+          carFormOpen: false,
+          editingCarId: null,
+        });
+        notify(t("carUpdated"));
+      } else {
+        setState({
+          cars: [car, ...state.cars],
+          selectedCarId: car.id,
+          view: "overview",
+          carFormOpen: false,
+          editingCarId: null,
+        });
+        notify(t("carSaved"));
+      }
       scrollAfterRender("app");
     });
   }
@@ -1111,8 +1168,15 @@ function bindApp() {
     });
   });
 
-  document.querySelectorAll("[data-reload-shop]").forEach((shopButton) => {
-    shopButton.addEventListener("click", loadEcwidStore);
+  document.querySelectorAll("[data-shop-home]").forEach((shopButton) => {
+    shopButton.addEventListener("click", goShopHome);
+  });
+
+  document.querySelectorAll("[data-shop-back]").forEach((shopButton) => {
+    shopButton.addEventListener("click", () => {
+      if (history.length > 1) history.back();
+      else goShopHome();
+    });
   });
 }
 
