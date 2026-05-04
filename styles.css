@@ -588,17 +588,6 @@ button:disabled {
   padding: 26px;
 }
 
-.compact-shop-header {
-  min-height: auto;
-  padding: 18px;
-  margin-bottom: 14px;
-}
-
-.compact-shop-header .shop-logo {
-  width: 112px;
-  height: 64px;
-}
-
 .ecwid-shell {
   min-height: 520px;
   border: 1px solid var(--line);
@@ -606,6 +595,21 @@ button:disabled {
   padding: 14px;
   background: #fff;
   overflow: hidden;
+}
+
+.expense-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.expense-filter select {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px;
 }
 
 .shop-launcher h2 {

@@ -116,6 +116,12 @@ const copy = {
     nextService: "Next service",
     totalExpenses: "Total expenses",
     expensesByCar: "Expenses by car",
+    expenseFilter: "Expense filter",
+    thisYear: "This year",
+    thisMonth: "This month",
+    lastYear: "Last year",
+    lastMonth: "Last month",
+    chooseYear: "Choose year",
     dashboardTitle: "Your garage at a glance",
     dashboardText: "Track cars, service history, invoices, and upcoming maintenance from one mobile app.",
     sample: "Add sample data",
@@ -196,6 +202,12 @@ const copy = {
     nextService: "الصيانة القادمة",
     totalExpenses: "إجمالي المصاريف",
     expensesByCar: "المصاريف حسب السيارة",
+    expenseFilter: "فلتر المصاريف",
+    thisYear: "هذه السنة",
+    thisMonth: "هذا الشهر",
+    lastYear: "السنة الماضية",
+    lastMonth: "الشهر الماضي",
+    chooseYear: "اختر السنة",
     dashboardTitle: "مرآبك في لمحة",
     dashboardText: "تابع السيارات وسجل الصيانة والفواتير ومواعيد الصيانة القادمة من تطبيق واحد.",
     sample: "إضافة بيانات تجريبية",
@@ -256,6 +268,8 @@ function loadState() {
     carFormOpen: false,
     serviceMode: "summary",
     selectedRecordId: null,
+    expenseFilter: "thisYear",
+    expenseYear: String(new Date().getFullYear()),
   };
 }
 
@@ -275,6 +289,16 @@ function setState(update) {
   state = { ...state, ...update };
   saveState();
   render();
+}
+
+function notify(message) {
+  setState({ notice: message });
+  clearTimeout(window.sayaratiNoticeTimer);
+  window.sayaratiNoticeTimer = setTimeout(() => {
+    state = { ...state, notice: "" };
+    saveState();
+    render();
+  }, 2600);
 }
 
 function setView(view) {
@@ -307,11 +331,39 @@ function parseCost(value) {
 
 function totalExpenses(carId) {
   const records = carId ? state.records.filter((record) => record.carId === carId) : state.records;
-  return records.reduce((sum, record) => sum + parseCost(record.cost), 0);
+  return records
+    .filter(recordMatchesExpenseFilter)
+    .reduce((sum, record) => sum + parseCost(record.cost), 0);
 }
 
 function formatMoney(value) {
   return value ? `$${value.toFixed(2)}` : "$0.00";
+}
+
+function recordMatchesExpenseFilter(record) {
+  if (!record.date) return false;
+  const date = new Date(`${record.date}T00:00:00`);
+  const now = new Date();
+  const filter = state.expenseFilter || "thisYear";
+
+  if (filter === "thisMonth") {
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  }
+  if (filter === "lastMonth") {
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return date.getFullYear() === lastMonth.getFullYear() && date.getMonth() === lastMonth.getMonth();
+  }
+  if (filter === "lastYear") return date.getFullYear() === now.getFullYear() - 1;
+  if (filter === "year") return String(date.getFullYear()) === String(state.expenseYear || now.getFullYear());
+  return date.getFullYear() === now.getFullYear();
+}
+
+function availableYears() {
+  const years = new Set([new Date().getFullYear()]);
+  state.records.forEach((record) => {
+    if (record.date) years.add(new Date(`${record.date}T00:00:00`).getFullYear());
+  });
+  return Array.from(years).sort((a, b) => b - a);
 }
 
 function render() {
@@ -453,7 +505,24 @@ function overviewView() {
       <div class="panel stat"><span>${t("totalExpenses")}</span><strong style="font-size: 24px;">${formatMoney(totalExpenses())}</strong></div>
     </section>
     <section class="panel">
-      <h2>${t("expensesByCar")}</h2>
+      <div class="row section-head">
+        <div>
+          <h2>${t("expensesByCar")}</h2>
+          <p class="muted">${t("expenseFilter")}</p>
+        </div>
+        <div class="expense-filter">
+          <select data-expense-filter>
+            <option value="thisYear" ${state.expenseFilter === "thisYear" ? "selected" : ""}>${t("thisYear")}</option>
+            <option value="thisMonth" ${state.expenseFilter === "thisMonth" ? "selected" : ""}>${t("thisMonth")}</option>
+            <option value="lastYear" ${state.expenseFilter === "lastYear" ? "selected" : ""}>${t("lastYear")}</option>
+            <option value="lastMonth" ${state.expenseFilter === "lastMonth" ? "selected" : ""}>${t("lastMonth")}</option>
+            <option value="year" ${state.expenseFilter === "year" ? "selected" : ""}>${t("chooseYear")}</option>
+          </select>
+          <select data-expense-year ${state.expenseFilter === "year" ? "" : "disabled"}>
+            ${availableYears().map((year) => `<option value="${year}" ${String(state.expenseYear) === String(year) ? "selected" : ""}>${year}</option>`).join("")}
+          </select>
+        </div>
+      </div>
       <div class="expense-list">
         ${state.cars.length ? state.cars.map((car) => `
           <div>
@@ -567,16 +636,11 @@ function shopView() {
   return `
     <section class="panel">
       <div class="shop-tools">
-        <strong>Sayarati Ecwid Store</strong>
+        <strong>${SHOP_URL}</strong>
         <div class="actions">
           <button class="primary" data-reload-shop>${t("shop")}</button>
           <a class="ghost" href="${SHOP_URL}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">${t("openExternal")}</a>
         </div>
-      </div>
-      <div class="shop-launcher compact-shop-header">
-        <div class="shop-logo"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
-        <h2>${t("shop")}</h2>
-        <p>${t("shopInAppNote")}</p>
       </div>
       <div class="ecwid-shell">
         <div id="my-store-${ECWID_STORE_ID}">
@@ -890,8 +954,8 @@ function bindApp() {
       if (!photos[0]) return;
       setState({
         cars: state.cars.map((car) => car.id === input.dataset.updateCarPhoto ? { ...car, photo: photos[0] } : car),
-        notice: t("carSaved"),
       });
+      notify(t("carSaved"));
     });
   });
 
@@ -915,6 +979,14 @@ function bindApp() {
     button.addEventListener("click", () => setState({ serviceMode: "summary", selectedRecordId: null }));
   });
 
+  document.querySelectorAll("[data-expense-filter]").forEach((select) => {
+    select.addEventListener("change", () => setState({ expenseFilter: select.value }));
+  });
+
+  document.querySelectorAll("[data-expense-year]").forEach((select) => {
+    select.addEventListener("change", () => setState({ expenseFilter: "year", expenseYear: select.value }));
+  });
+
   document.querySelectorAll("[data-lang]").forEach((button) => {
     button.addEventListener("click", () => setState({ lang: button.dataset.lang }));
   });
@@ -936,8 +1008,8 @@ function bindApp() {
         view: "overview",
         serviceMode: "summary",
         selectedRecordId: null,
-        notice: t("carDeleted"),
       });
+      notify(t("carDeleted"));
     });
   });
 
@@ -948,8 +1020,8 @@ function bindApp() {
       if (!confirm(t("deleteRecordConfirm"))) return;
       setState({
         records: state.records.filter((record) => record.id !== recordId),
-        notice: t("recordDeleted"),
       });
+      notify(t("recordDeleted"));
     });
   });
 
@@ -982,8 +1054,8 @@ function bindApp() {
         selectedCarId: car.id,
         view: "overview",
         carFormOpen: false,
-        notice: t("carSaved"),
       });
+      notify(t("carSaved"));
       scrollAfterRender("app");
     });
   }
@@ -1011,10 +1083,10 @@ function bindApp() {
       };
       setState({
         records: [record, ...state.records],
-        serviceMode: "detail",
+        serviceMode: "summary",
         selectedRecordId: record.id,
-        notice: t("recordSaved"),
       });
+      notify(t("recordSaved"));
       scrollAfterRender("app");
     });
   }
