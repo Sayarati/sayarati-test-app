@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v5";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v6";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -342,14 +342,14 @@ function loadShopCache() {
   };
 
   try {
-    return { ...empty, ...JSON.parse(localStorage.getItem(SHOP_CACHE_KEY) || "{}") };
+    return { ...empty, ...JSON.parse(localStorage.getItem(shopCacheKey()) || "{}") };
   } catch {
     return empty;
   }
 }
 
 function saveShopCache() {
-  localStorage.setItem(SHOP_CACHE_KEY, JSON.stringify({
+  localStorage.setItem(shopCacheKey(), JSON.stringify({
     categories: shopState.categories,
     products: shopState.products,
     total: shopState.total,
@@ -358,6 +358,10 @@ function saveShopCache() {
     categoryId: shopState.categoryId,
     lastLoaded: shopState.lastLoaded,
   }));
+}
+
+function shopCacheKey() {
+  return `${SHOP_CACHE_KEY}-${state.lang || "en"}`;
 }
 
 function updateShopState(update) {
@@ -388,6 +392,15 @@ function notify(message) {
     saveState();
     render();
   }, 2600);
+}
+
+function switchLanguage(lang) {
+  setState({ lang });
+  shopState = loadShopCache();
+  if (state.view === "shop") {
+    render();
+    ensureShopLoaded();
+  }
 }
 
 function setView(view) {
@@ -743,7 +756,7 @@ function shopView() {
           <input type="search" value="${escapeAttr(shopState.keyword)}" placeholder="${t("searchProducts")}" data-shop-search />
           <select data-shop-category>
             <option value="">${shopState.categoryTrail.length ? t("backToCategories") : t("allCategories")}</option>
-            ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}
+            ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(translatedText(category, "name"))}</option>`).join("")}
           </select>
         </div>
         ${shopState.categoryTrail.length ? `<button class="ghost category-back" data-category-back>${t("backToCategories")}</button>` : ""}
@@ -762,8 +775,8 @@ function categoryLandingView() {
       <div class="category-grid">
         ${shopState.categories.map((category) => `
           <button class="category-tile" data-category-tile="${category.id}">
-            ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(category.name)}" />` : `<span>${escapeHtml(category.name).slice(0, 1)}</span>`}
-            <strong>${escapeHtml(category.name)}</strong>
+            ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(translatedText(category, "name"))}" />` : `<span>${escapeHtml(translatedText(category, "name")).slice(0, 1)}</span>`}
+            <strong>${escapeHtml(translatedText(category, "name"))}</strong>
             ${Number(category.productCount || 0) ? `<small>${category.productCount}</small>` : ""}
           </button>
         `).join("")}
@@ -799,11 +812,12 @@ function productGridView() {
 }
 
 function productCard(product) {
+  const productName = translatedText(product, "name");
   return `
     <article class="product-card" data-product-id="${product.id}">
-      <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(product.name)}" />
+      <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" />
       <div>
-        <strong>${escapeHtml(product.name)}</strong>
+        <strong>${escapeHtml(productName)}</strong>
         <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
         <small class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</small>
       </div>
@@ -813,6 +827,8 @@ function productCard(product) {
 
 function productDetailView(product) {
   const images = product.galleryImages?.length ? product.galleryImages : [{ url: product.imageUrl || product.thumbnailUrl || LOGO_URL }];
+  const productName = translatedText(product, "name");
+  const productDescription = translatedText(product, "description");
   return `
     <div class="product-detail" id="shop-detail">
       <button class="ghost back-to-products" data-close-product>← ${t("shopBack")}</button>
@@ -822,9 +838,9 @@ function productDetailView(product) {
         </div>
         <div>
           <span class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</span>
-          <h2>${escapeHtml(product.name)}</h2>
+          <h2>${escapeHtml(productName)}</h2>
           <strong class="product-price">${product.defaultDisplayedPriceFormatted || product.price || ""}</strong>
-          <div class="product-description">${product.description || ""}</div>
+          <div class="product-description">${productDescription || ""}</div>
           <div class="actions">
             <button class="primary" data-add-product="${product.id}" ${product.inStock === false ? "disabled" : ""}>${t("addToCart")}</button>
             <button class="ghost" data-shop-checkout>${t("checkout")}</button>
@@ -833,6 +849,16 @@ function productDetailView(product) {
       </div>
     </div>
   `;
+}
+
+function translatedText(item, field) {
+  const lang = state.lang || "en";
+  const translated = item?.[`${field}Translated`];
+  if (translated && typeof translated === "object") {
+    return translated[lang] || translated[lang.split("-")[0]] || translated.en || item?.[field] || "";
+  }
+  if (typeof translated === "string" && translated) return translated;
+  return item?.[field] || "";
 }
 
 function escapeHtml(value = "") {
@@ -858,11 +884,16 @@ async function ensureShopLoaded() {
 
 async function ecwidFetch(path, params = {}) {
   const url = new URL(`https://app.ecwid.com/api/v3/${ECWID_STORE_ID}${path}`);
+  const lang = state.lang || "en";
   Object.entries(params).forEach(([key, value]) => {
     if (value !== "" && value !== null && value !== undefined) url.searchParams.set(key, value);
   });
+  url.searchParams.set("lang", lang);
   const response = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${ECWID_PUBLIC_TOKEN}` },
+    headers: {
+      Authorization: `Bearer ${ECWID_PUBLIC_TOKEN}`,
+      "Accept-Language": lang,
+    },
   });
   if (!response.ok) throw new Error(`Ecwid API error ${response.status}`);
   return response.json();
@@ -874,7 +905,7 @@ async function loadShopCategories(parentCategoryId = 0) {
       ecwidFetch("/categories", {
       limit: 100,
         parent: parentCategoryId,
-        responseFields: "items(id,name,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
+        responseFields: "items(id,name,nameTranslated,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
       }),
       ecwidFetch("/categories/sort", {
         parentCategory: parentCategoryId,
@@ -909,7 +940,7 @@ async function loadShopProducts({ reset = false } = {}) {
       keyword: shopState.keyword ? `${shopState.keyword}*` : "",
       category: shopState.categoryId || undefined,
       enabled: true,
-      responseFields: "total,count,items(id,sku,name,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url)",
+      responseFields: "total,count,items(id,sku,name,nameTranslated,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url)",
     });
     updateShopState({
       products: reset ? (data.items || []) : [...shopState.products, ...(data.items || [])],
@@ -940,7 +971,7 @@ async function openShopCategory(categoryId) {
     const subData = await ecwidFetch("/categories", {
       parent: categoryId,
       limit: 100,
-      responseFields: "items(id,name,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
+      responseFields: "items(id,name,nameTranslated,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
     });
     const subcategories = (subData.items || []).filter((item) => item.enabled !== false && Number(item.productCount || 0) > 0);
     if (subcategories.length) {
@@ -1251,7 +1282,7 @@ function readImageFiles(input) {
 
 function bindLogin() {
   document.querySelectorAll("[data-lang]").forEach((button) => {
-    button.addEventListener("click", () => setState({ lang: button.dataset.lang }));
+    button.addEventListener("click", () => switchLanguage(button.dataset.lang));
   });
 
   document.querySelector("#login-form").addEventListener("submit", (event) => {
@@ -1354,7 +1385,7 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-lang]").forEach((button) => {
-    button.addEventListener("click", () => setState({ lang: button.dataset.lang }));
+    button.addEventListener("click", () => switchLanguage(button.dataset.lang));
   });
 
   document.querySelectorAll("[data-select-car]").forEach((card) => {
