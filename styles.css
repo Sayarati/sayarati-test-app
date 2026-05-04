@@ -205,7 +205,7 @@ h1 {
 }
 
 .dashboard-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .two-col {
@@ -527,6 +527,35 @@ button:disabled {
   align-items: center;
 }
 
+.dashboard-car {
+  cursor: default;
+}
+
+.car-picker {
+  margin-bottom: 16px;
+}
+
+.expense-list {
+  display: grid;
+  gap: 10px;
+}
+
+.expense-list div {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+}
+
+.expense-list span {
+  color: var(--muted);
+}
+
 .selected-car-top {
   margin-top: 0;
   margin-bottom: 16px;
@@ -557,6 +586,26 @@ button:disabled {
   gap: 14px;
   text-align: center;
   padding: 26px;
+}
+
+.compact-shop-header {
+  min-height: auto;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.compact-shop-header .shop-logo {
+  width: 112px;
+  height: 64px;
+}
+
+.ecwid-shell {
+  min-height: 520px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+  overflow: hidden;
 }
 
 .shop-launcher h2 {

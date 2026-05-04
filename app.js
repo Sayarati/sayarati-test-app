@@ -1,5 +1,6 @@
 const SHOP_URL = "https://sayarati.online/";
 const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BDSbUBb-200x200.png";
+const ECWID_STORE_ID = "43948359";
 const STORAGE_KEY = "sayarati-test-app";
 
 const carCatalog = [
@@ -113,6 +114,8 @@ const copy = {
     totalCars: "Cars",
     totalRecords: "Service records",
     nextService: "Next service",
+    totalExpenses: "Total expenses",
+    expensesByCar: "Expenses by car",
     dashboardTitle: "Your garage at a glance",
     dashboardText: "Track cars, service history, invoices, and upcoming maintenance from one mobile app.",
     sample: "Add sample data",
@@ -145,7 +148,8 @@ const copy = {
     addAnotherService: "Add another service",
     createdNotification: "Created successfully.",
     redirectingShop: "Opening Sayarati.online...",
-    shopInAppNote: "For this test version, the app navigation stays available here. Open the shop when needed; the real mobile app will keep this screen inside a WebView.",
+    shopInAppNote: "Browse Sayarati products inside the app. Your app navigation stays available.",
+    shopLoading: "Loading Sayarati shop...",
     addCarPhoto: "Add car photo",
   },
   ar: {
@@ -190,6 +194,8 @@ const copy = {
     totalCars: "السيارات",
     totalRecords: "سجلات الصيانة",
     nextService: "الصيانة القادمة",
+    totalExpenses: "إجمالي المصاريف",
+    expensesByCar: "المصاريف حسب السيارة",
     dashboardTitle: "مرآبك في لمحة",
     dashboardText: "تابع السيارات وسجل الصيانة والفواتير ومواعيد الصيانة القادمة من تطبيق واحد.",
     sample: "إضافة بيانات تجريبية",
@@ -222,7 +228,8 @@ const copy = {
     addAnotherService: "إضافة خدمة أخرى",
     createdNotification: "تم الإنشاء بنجاح.",
     redirectingShop: "جارٍ فتح Sayarati.online...",
-    shopInAppNote: "في نسخة التجربة تبقى أزرار التطبيق متاحة هنا. افتح المتجر عند الحاجة؛ في تطبيق الهاتف الحقيقي ستكون الصفحة داخل WebView.",
+    shopInAppNote: "تصفح منتجات سيارتي داخل التطبيق مع بقاء أزرار التنقل متاحة.",
+    shopLoading: "جارٍ تحميل متجر سيارتي...",
     addCarPhoto: "إضافة صورة السيارة",
   },
 };
@@ -291,6 +298,20 @@ function nextServiceDate(carId) {
     .filter(Boolean)
     .sort();
   return dates[0] || "-";
+}
+
+function parseCost(value) {
+  const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function totalExpenses(carId) {
+  const records = carId ? state.records.filter((record) => record.carId === carId) : state.records;
+  return records.reduce((sum, record) => sum + parseCost(record.cost), 0);
+}
+
+function formatMoney(value) {
+  return value ? `$${value.toFixed(2)}` : "$0.00";
 }
 
 function render() {
@@ -407,34 +428,19 @@ function currentView() {
 }
 
 function overviewView() {
-  const car = selectedCar();
   return `
     <section class="panel" style="margin-top: 16px;">
-      ${car ? `
-        <div class="selected-car-panel selected-car-top">
-          ${carPhoto(car)}
-          <div>
-            <span class="pill green">${t("selectedCar")}</span>
-            <h3>${carLabel(car)}</h3>
-            <p class="muted">${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}</p>
-          </div>
-          <div class="actions">
-            <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
-            <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
-          </div>
-        </div>
-      ` : ""}
       <div class="row section-head">
         <div>
-          <h2>${t("chooseCar")}</h2>
-          <p class="muted">${t("selectedCarHelp")}</p>
+          <h2>${t("carGarage")}</h2>
+          <p class="muted">${t("dashboardText")}</p>
         </div>
         <div class="actions">
           <button class="ghost" data-sample>${t("sample")}</button>
         </div>
       </div>
       <div class="list garage-list">
-        ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
+        ${state.cars.length ? state.cars.map(dashboardCarCard).join("") : `<p class="muted">${t("noCars")}</p>`}
       </div>
       <div class="actions bottom-actions">
         <button class="primary" data-view="cars">${t("addNewCar")}</button>
@@ -443,7 +449,19 @@ function overviewView() {
     <section class="grid dashboard-grid">
       <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
       <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
-      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate(car?.id)}</strong></div>
+      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
+      <div class="panel stat"><span>${t("totalExpenses")}</span><strong style="font-size: 24px;">${formatMoney(totalExpenses())}</strong></div>
+    </section>
+    <section class="panel">
+      <h2>${t("expensesByCar")}</h2>
+      <div class="expense-list">
+        ${state.cars.length ? state.cars.map((car) => `
+          <div>
+            <span>${carLabel(car)}</span>
+            <strong>${formatMoney(totalExpenses(car.id))}</strong>
+          </div>
+        `).join("") : `<p class="muted">${t("noCars")}</p>`}
+      </div>
     </section>
   `;
 }
@@ -489,6 +507,12 @@ function bookletView() {
   return `
     <section class="grid">
       <div class="panel">
+        <div class="field car-picker">
+          <label for="bookletCarSelect">${t("chooseCar")}</label>
+          <select id="bookletCarSelect" data-booklet-car>
+            ${state.cars.length ? state.cars.map((item) => `<option value="${item.id}" ${item.id === car?.id ? "selected" : ""}>${carLabel(item)}</option>`).join("") : `<option value="">${t("noCars")}</option>`}
+          </select>
+        </div>
         <div class="row section-head">
           <div>
             <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
@@ -538,24 +562,55 @@ function serviceFormView(car) {
 }
 
 function shopView() {
+  setTimeout(loadEcwidStore, 80);
+
   return `
     <section class="panel">
       <div class="shop-tools">
-        <strong>${SHOP_URL}</strong>
+        <strong>Sayarati Ecwid Store</strong>
         <div class="actions">
-          <button class="primary" data-open-shop>${t("shop")}</button>
+          <button class="primary" data-reload-shop>${t("shop")}</button>
           <a class="ghost" href="${SHOP_URL}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">${t("openExternal")}</a>
         </div>
       </div>
-      <div class="shop-launcher">
+      <div class="shop-launcher compact-shop-header">
         <div class="shop-logo"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
         <h2>${t("shop")}</h2>
         <p>${t("shopInAppNote")}</p>
-        <button class="primary" data-open-shop>${t("shop")}</button>
-        <span>${SHOP_URL}</span>
+      </div>
+      <div class="ecwid-shell">
+        <div id="my-store-${ECWID_STORE_ID}">
+          <p class="muted">${t("shopLoading")}</p>
+        </div>
       </div>
     </section>
   `;
+}
+
+function loadEcwidStore() {
+  const storeContainer = document.getElementById(`my-store-${ECWID_STORE_ID}`);
+  if (!storeContainer) return;
+
+  window.ecwid_script_defer = true;
+  window.ecwid_dynamic_widgets = true;
+  window._xnext_initialization_scripts = [{
+    widgetType: "ProductBrowser",
+    id: `my-store-${ECWID_STORE_ID}`,
+    arg: [`id=my-store-${ECWID_STORE_ID}`],
+  }];
+
+  if (!document.getElementById("ecwid-script")) {
+    const script = document.createElement("script");
+    script.id = "ecwid-script";
+    script.charset = "utf-8";
+    script.type = "text/javascript";
+    script.src = `https://app.ecwid.com/script.js?${ECWID_STORE_ID}&data_platform=code`;
+    document.body.appendChild(script);
+    return;
+  }
+
+  if (window.Ecwid?.destroy) window.Ecwid.destroy();
+  if (typeof window.ecwid_onBodyDone === "function") window.ecwid_onBodyDone();
 }
 
 function profileView() {
@@ -638,6 +693,28 @@ function carPhoto(car) {
     return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
   }
   return `<div class="car-photo placeholder-car"><span>⌁</span><small>${t("addCarPhoto")}</small></div>`;
+}
+
+function dashboardCarCard(car) {
+  const records = carRecords(car.id).length;
+  return `
+    <article class="car-card dashboard-car">
+      <div class="car-card-head">
+        <label class="photo-upload-trigger" title="${t("addCarPhoto")}">
+          ${carPhoto(car)}
+          <input type="file" accept="image/*" data-update-car-photo="${car.id}" />
+        </label>
+        <div>
+          <div class="row">
+            <strong>${carLabel(car)}</strong>
+            <span class="pill">${records} ${t("records")}</span>
+          </div>
+          <div class="muted">${t("mileage")}: ${car.mileage || "-"} km</div>
+          <div class="muted">${t("totalExpenses")}: ${formatMoney(totalExpenses(car.id))}</div>
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 function carCard(car) {
@@ -824,6 +901,16 @@ function bindApp() {
     });
   });
 
+  document.querySelectorAll("[data-booklet-car]").forEach((select) => {
+    select.addEventListener("change", () => {
+      setState({
+        selectedCarId: select.value,
+        serviceMode: "summary",
+        selectedRecordId: null,
+      });
+    });
+  });
+
   document.querySelectorAll("[data-service-summary]").forEach((button) => {
     button.addEventListener("click", () => setState({ serviceMode: "summary", selectedRecordId: null }));
   });
@@ -950,6 +1037,10 @@ function bindApp() {
     shopButton.addEventListener("click", () => {
       window.open(SHOP_URL, "_blank", "noopener,noreferrer");
     });
+  });
+
+  document.querySelectorAll("[data-reload-shop]").forEach((shopButton) => {
+    shopButton.addEventListener("click", loadEcwidStore);
   });
 }
 
