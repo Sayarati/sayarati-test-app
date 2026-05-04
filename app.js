@@ -146,6 +146,7 @@ const copy = {
     createdNotification: "Created successfully.",
     redirectingShop: "Opening Sayarati.online...",
     shopInAppNote: "For this test version, the app navigation stays available here. Open the shop when needed; the real mobile app will keep this screen inside a WebView.",
+    addCarPhoto: "Add car photo",
   },
   ar: {
     appName: "سيارتي",
@@ -222,6 +223,7 @@ const copy = {
     createdNotification: "تم الإنشاء بنجاح.",
     redirectingShop: "جارٍ فتح Sayarati.online...",
     shopInAppNote: "في نسخة التجربة تبقى أزرار التطبيق متاحة هنا. افتح المتجر عند الحاجة؛ في تطبيق الهاتف الحقيقي ستكون الصفحة داخل WebView.",
+    addCarPhoto: "إضافة صورة السيارة",
   },
 };
 
@@ -462,7 +464,7 @@ function carsView() {
         </div>
       </div>
       ${state.carFormOpen ? `
-        <div class="panel">
+        <div class="panel" id="car-form-panel">
           <h2>${t("addCar")}</h2>
           <form class="form" id="car-form">
             ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), "Toyota", t("chooseBrand"))}
@@ -508,7 +510,7 @@ function bookletView() {
 
 function serviceFormView(car) {
   return `
-    <div class="panel">
+    <div class="panel" id="service-form-panel">
       <div class="row section-head">
         <div>
           <h2>${t("addRecord")}</h2>
@@ -635,7 +637,7 @@ function carPhoto(car) {
   if (car.photo?.dataUrl) {
     return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
   }
-  return `<div class="car-photo placeholder-car">▰</div>`;
+  return `<div class="car-photo placeholder-car"><span>⌁</span><small>${t("addCarPhoto")}</small></div>`;
 }
 
 function carCard(car) {
@@ -643,7 +645,10 @@ function carCard(car) {
   return `
     <article class="car-card ${selectedCar()?.id === car.id ? "selected" : ""}" data-select-car="${car.id}">
       <div class="car-card-head">
-        ${carPhoto(car)}
+        <label class="photo-upload-trigger" title="${t("addCarPhoto")}">
+          ${carPhoto(car)}
+          <input type="file" accept="image/*" data-update-car-photo="${car.id}" />
+        </label>
         <div>
       <div class="row">
         <strong>${carLabel(car)}</strong>
@@ -769,7 +774,10 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-toggle-car-form]").forEach((button) => {
-    button.addEventListener("click", () => setState({ carFormOpen: !state.carFormOpen, view: "cars" }));
+    button.addEventListener("click", () => {
+      setState({ carFormOpen: !state.carFormOpen, view: "cars" });
+      if (!state.carFormOpen) scrollAfterRender("car-form-panel");
+    });
   });
 
   document.querySelectorAll("[data-open-history]").forEach((button) => {
@@ -792,6 +800,20 @@ function bindApp() {
         view: "booklet",
         serviceMode: "add",
         selectedRecordId: null,
+      });
+      scrollAfterRender("service-form-panel");
+    });
+  });
+
+  document.querySelectorAll("[data-update-car-photo]").forEach((input) => {
+    input.addEventListener("click", (event) => event.stopPropagation());
+    input.addEventListener("change", async (event) => {
+      event.stopPropagation();
+      const photos = await readImageFiles(input);
+      if (!photos[0]) return;
+      setState({
+        cars: state.cars.map((car) => car.id === input.dataset.updateCarPhoto ? { ...car, photo: photos[0] } : car),
+        notice: t("carSaved"),
       });
     });
   });
@@ -875,6 +897,7 @@ function bindApp() {
         carFormOpen: false,
         notice: t("carSaved"),
       });
+      scrollAfterRender("app");
     });
   }
 
@@ -905,6 +928,7 @@ function bindApp() {
         selectedRecordId: record.id,
         notice: t("recordSaved"),
       });
+      scrollAfterRender("app");
     });
   }
 
@@ -927,6 +951,13 @@ function bindApp() {
       window.open(SHOP_URL, "_blank", "noopener,noreferrer");
     });
   });
+}
+
+function scrollAfterRender(id) {
+  setTimeout(() => {
+    const target = id === "app" ? document.querySelector(".main") : document.getElementById(id);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 60);
 }
 
 function addSampleData() {
