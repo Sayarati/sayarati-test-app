@@ -281,6 +281,10 @@ h1 {
   overflow: hidden;
 }
 
+.main > section + section {
+  margin-top: 16px;
+}
+
 .stat {
   min-height: 132px;
   padding: 18px;
@@ -1021,7 +1025,7 @@ button:disabled {
     bottom: 10px;
     z-index: 10;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     background: #101820;
     border-radius: 8px;

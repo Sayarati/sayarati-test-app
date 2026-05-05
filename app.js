@@ -1,4 +1,4 @@
-const SHOP_URL = "https://sayarati.online/";
+﻿const SHOP_URL = "https://sayarati.online/";
 const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BDSbUBb-200x200.png";
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
@@ -200,110 +200,110 @@ const copy = {
     filterAll: "All",
   },
   ar: {
-    appName: "سيارتي",
-    subtitle: "دفتر صيانة رقمي للسيارة",
-    loginTitle: "أهلاً بك في تطبيق التجربة",
-    loginText: "استخدم أي اسم وبريد إلكتروني للدخول إلى العرض التجريبي.",
-    name: "الاسم",
-    email: "البريد الإلكتروني",
-    enter: "دخول التطبيق",
-    overview: "لوحة التحكم",
-    cars: "سياراتي",
-    booklet: "دفتر الصيانة",
-    shop: "المتجر",
-    profile: "الملف الشخصي",
-    addCar: "إضافة سيارة",
-    carDetails: "تفاصيل السيارة",
-    brand: "الشركة",
-    model: "الموديل",
-    year: "السنة",
-    plate: "رقم اللوحة",
-    mileage: "عداد الكيلومترات (كم)",
-    vin: "رقم الشاسيه",
-    notes: "ملاحظات",
-    saveCar: "حفظ السيارة",
-    addRecord: "إضافة سجل صيانة",
-    serviceType: "نوع الصيانة",
-    date: "التاريخ",
-    parts: "القطع المستبدلة",
-    cost: "الكلفة",
-    nextDue: "موعد الصيانة القادمة",
-    invoice: "اسم صورة الفاتورة",
-    saveRecord: "حفظ السجل",
-    records: "السجلات",
-    noCars: "لا توجد سيارات بعد. أضف أول سيارة.",
-    noRecords: "لا توجد سجلات صيانة بعد.",
-    selectedCar: "السيارة المختارة",
-    openExternal: "فتح في المتصفح",
-    shopHint: "في نسخة التجربة افتح المتجر من الزر أدناه. في تطبيق الهاتف الحقيقي ستعمل هذه الصفحة من خلال WebView ليبقى العميل داخل التطبيق.",
-    profileTitle: "ملف العميل",
-    reset: "مسح بيانات التجربة",
-    totalCars: "السيارات",
-    totalRecords: "سجلات الصيانة",
-    nextService: "الصيانة القادمة",
-    totalExpenses: "إجمالي المصاريف",
-    expensesByCar: "المصاريف حسب السيارة",
-    expenseFilter: "فلتر المصاريف",
-    thisYear: "هذه السنة",
-    thisMonth: "هذا الشهر",
-    lastYear: "السنة الماضية",
-    lastMonth: "الشهر الماضي",
-    chooseYear: "اختر السنة",
-    dashboardTitle: "مرآبك في لمحة",
-    dashboardText: "تابع السيارات وسجل الصيانة والفواتير ومواعيد الصيانة القادمة من تطبيق واحد.",
-    sample: "إضافة بيانات تجريبية",
-    carSaved: "تم إنشاء سيارتك بنجاح.",
-    carRequired: "يرجى اختيار شركة السيارة والموديل.",
-    recordSaved: "تم حفظ سجل الصيانة.",
-    delete: "حذف",
-    deleteCarConfirm: "هل تريد حذف هذه السيارة وكل سجلات الصيانة الخاصة بها؟",
-    deleteRecordConfirm: "هل تريد حذف سجل الصيانة هذا؟",
-    carDeleted: "تم حذف السيارة.",
-    recordDeleted: "تم حذف سجل الصيانة.",
-    partPhotos: "صور القطع المستبدلة",
-    carPhoto: "صورة السيارة",
-    otherServiceDetails: "إذا اخترت أخرى، اكتب تفاصيل الخدمة",
-    selectedServices: "الخدمات المختارة",
-    chooseBrand: "اختر الشركة",
-    chooseModel: "اختر الموديل",
-    chooseService: "اختر الخدمة",
-    chooseCar: "اختر سيارة",
-    carGarage: "سياراتك",
-    selectedCarHelp: "اختر سيارة أولاً، ثم شاهد سجل الصيانة أو أضف خدمة جديدة.",
-    viewHistory: "عرض السجل",
-    addServiceHistory: "إضافة خدمة",
-    servicesFor: "الخدمات الخاصة بـ",
-    latestRecords: "آخر سجلات الصيانة",
-    addNewCar: "إضافة سيارة جديدة",
-    editCar: "تعديل السيارة",
-    updateCar: "تحديث السيارة",
-    carUpdated: "تم تحديث السيارة.",
-    close: "إغلاق",
-    serviceSummary: "ملخص الصيانة",
-    serviceDetails: "تفاصيل الصيانة",
-    addAnotherService: "إضافة خدمة أخرى",
-    createdNotification: "تم الإنشاء بنجاح.",
-    redirectingShop: "جارٍ فتح Sayarati.online...",
-    shopInAppNote: "تصفح منتجات سيارتي داخل التطبيق مع بقاء أزرار التنقل متاحة.",
-    shopLoading: "جارٍ تحميل متجر سيارتي...",
-    shopHome: "الرئيسية",
-    shopBack: "رجوع",
-    searchProducts: "البحث عن منتجات",
-    allCategories: "كل الفئات",
-    chooseCategoryFirst: "اختر فئة لعرض المنتجات.",
-    backToCategories: "العودة إلى الفئات",
-    loadMore: "تحميل المزيد",
-    productDetails: "تفاصيل المنتج",
-    addToCart: "إضافة إلى السلة",
-    checkout: "الدفع",
-    addedToCart: "تمت الإضافة إلى السلة.",
-    inStock: "متوفر",
-    outOfStock: "غير متوفر",
-    shopUpdated: "تم تحديث المتجر.",
-    shopError: "تعذر تحميل منتجات المتجر. جرّب التحديث.",
-    noProducts: "لا توجد منتجات في هذه الفئة.",
-    refreshShop: "تحديث المتجر",
-    addCarPhoto: "إضافة صورة السيارة",
+    appName: "Ø³ÙŠØ§Ø±ØªÙŠ",
+    subtitle: "Ø¯ÙØªØ± ØµÙŠØ§Ù†Ø© Ø±Ù‚Ù…ÙŠ Ù„Ù„Ø³ÙŠØ§Ø±Ø©",
+    loginTitle: "Ø£Ù‡Ù„Ø§Ù‹ Ø¨Ùƒ ÙÙŠ ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„ØªØ¬Ø±Ø¨Ø©",
+    loginText: "Ø§Ø³ØªØ®Ø¯Ù… Ø£ÙŠ Ø§Ø³Ù… ÙˆØ¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ù„Ù„Ø¯Ø®ÙˆÙ„ Ø¥Ù„Ù‰ Ø§Ù„Ø¹Ø±Ø¶ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ.",
+    name: "Ø§Ù„Ø§Ø³Ù…",
+    email: "Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
+    enter: "Ø¯Ø®ÙˆÙ„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚",
+    overview: "Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…",
+    cars: "Ø³ÙŠØ§Ø±Ø§ØªÙŠ",
+    booklet: "Ø¯ÙØªØ± Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    shop: "Ø§Ù„Ù…ØªØ¬Ø±",
+    profile: "Ø§Ù„Ù…Ù„Ù Ø§Ù„Ø´Ø®ØµÙŠ",
+    addCar: "Ø¥Ø¶Ø§ÙØ© Ø³ÙŠØ§Ø±Ø©",
+    carDetails: "ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    brand: "Ø§Ù„Ø´Ø±ÙƒØ©",
+    model: "Ø§Ù„Ù…ÙˆØ¯ÙŠÙ„",
+    year: "Ø§Ù„Ø³Ù†Ø©",
+    plate: "Ø±Ù‚Ù… Ø§Ù„Ù„ÙˆØ­Ø©",
+    mileage: "Ø¹Ø¯Ø§Ø¯ Ø§Ù„ÙƒÙŠÙ„ÙˆÙ…ØªØ±Ø§Øª (ÙƒÙ…)",
+    vin: "Ø±Ù‚Ù… Ø§Ù„Ø´Ø§Ø³ÙŠÙ‡",
+    notes: "Ù…Ù„Ø§Ø­Ø¸Ø§Øª",
+    saveCar: "Ø­ÙØ¸ Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    addRecord: "Ø¥Ø¶Ø§ÙØ© Ø³Ø¬Ù„ ØµÙŠØ§Ù†Ø©",
+    serviceType: "Ù†ÙˆØ¹ Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    date: "Ø§Ù„ØªØ§Ø±ÙŠØ®",
+    parts: "Ø§Ù„Ù‚Ø·Ø¹ Ø§Ù„Ù…Ø³ØªØ¨Ø¯Ù„Ø©",
+    cost: "Ø§Ù„ÙƒÙ„ÙØ©",
+    nextDue: "Ù…ÙˆØ¹Ø¯ Ø§Ù„ØµÙŠØ§Ù†Ø© Ø§Ù„Ù‚Ø§Ø¯Ù…Ø©",
+    invoice: "Ø§Ø³Ù… ØµÙˆØ±Ø© Ø§Ù„ÙØ§ØªÙˆØ±Ø©",
+    saveRecord: "Ø­ÙØ¸ Ø§Ù„Ø³Ø¬Ù„",
+    records: "Ø§Ù„Ø³Ø¬Ù„Ø§Øª",
+    noCars: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø³ÙŠØ§Ø±Ø§Øª Ø¨Ø¹Ø¯. Ø£Ø¶Ù Ø£ÙˆÙ„ Ø³ÙŠØ§Ø±Ø©.",
+    noRecords: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø³Ø¬Ù„Ø§Øª ØµÙŠØ§Ù†Ø© Ø¨Ø¹Ø¯.",
+    selectedCar: "Ø§Ù„Ø³ÙŠØ§Ø±Ø© Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©",
+    openExternal: "ÙØªØ­ ÙÙŠ Ø§Ù„Ù…ØªØµÙØ­",
+    shopHint: "ÙÙŠ Ù†Ø³Ø®Ø© Ø§Ù„ØªØ¬Ø±Ø¨Ø© Ø§ÙØªØ­ Ø§Ù„Ù…ØªØ¬Ø± Ù…Ù† Ø§Ù„Ø²Ø± Ø£Ø¯Ù†Ø§Ù‡. ÙÙŠ ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„Ù‡Ø§ØªÙ Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠ Ø³ØªØ¹Ù…Ù„ Ù‡Ø°Ù‡ Ø§Ù„ØµÙØ­Ø© Ù…Ù† Ø®Ù„Ø§Ù„ WebView Ù„ÙŠØ¨Ù‚Ù‰ Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø¯Ø§Ø®Ù„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚.",
+    profileTitle: "Ù…Ù„Ù Ø§Ù„Ø¹Ù…ÙŠÙ„",
+    reset: "Ù…Ø³Ø­ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØªØ¬Ø±Ø¨Ø©",
+    totalCars: "Ø§Ù„Ø³ÙŠØ§Ø±Ø§Øª",
+    totalRecords: "Ø³Ø¬Ù„Ø§Øª Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    nextService: "Ø§Ù„ØµÙŠØ§Ù†Ø© Ø§Ù„Ù‚Ø§Ø¯Ù…Ø©",
+    totalExpenses: "Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ§Ø±ÙŠÙ",
+    expensesByCar: "Ø§Ù„Ù…ØµØ§Ø±ÙŠÙ Ø­Ø³Ø¨ Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    expenseFilter: "ÙÙ„ØªØ± Ø§Ù„Ù…ØµØ§Ø±ÙŠÙ",
+    thisYear: "Ù‡Ø°Ù‡ Ø§Ù„Ø³Ù†Ø©",
+    thisMonth: "Ù‡Ø°Ø§ Ø§Ù„Ø´Ù‡Ø±",
+    lastYear: "Ø§Ù„Ø³Ù†Ø© Ø§Ù„Ù…Ø§Ø¶ÙŠØ©",
+    lastMonth: "Ø§Ù„Ø´Ù‡Ø± Ø§Ù„Ù…Ø§Ø¶ÙŠ",
+    chooseYear: "Ø§Ø®ØªØ± Ø§Ù„Ø³Ù†Ø©",
+    dashboardTitle: "Ù…Ø±Ø¢Ø¨Ùƒ ÙÙŠ Ù„Ù…Ø­Ø©",
+    dashboardText: "ØªØ§Ø¨Ø¹ Ø§Ù„Ø³ÙŠØ§Ø±Ø§Øª ÙˆØ³Ø¬Ù„ Ø§Ù„ØµÙŠØ§Ù†Ø© ÙˆØ§Ù„ÙÙˆØ§ØªÙŠØ± ÙˆÙ…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„ØµÙŠØ§Ù†Ø© Ø§Ù„Ù‚Ø§Ø¯Ù…Ø© Ù…Ù† ØªØ·Ø¨ÙŠÙ‚ ÙˆØ§Ø­Ø¯.",
+    sample: "Ø¥Ø¶Ø§ÙØ© Ø¨ÙŠØ§Ù†Ø§Øª ØªØ¬Ø±ÙŠØ¨ÙŠØ©",
+    carSaved: "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø³ÙŠØ§Ø±ØªÙƒ Ø¨Ù†Ø¬Ø§Ø­.",
+    carRequired: "ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± Ø´Ø±ÙƒØ© Ø§Ù„Ø³ÙŠØ§Ø±Ø© ÙˆØ§Ù„Ù…ÙˆØ¯ÙŠÙ„.",
+    recordSaved: "ØªÙ… Ø­ÙØ¸ Ø³Ø¬Ù„ Ø§Ù„ØµÙŠØ§Ù†Ø©.",
+    delete: "Ø­Ø°Ù",
+    deleteCarConfirm: "Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ù‡Ø°Ù‡ Ø§Ù„Ø³ÙŠØ§Ø±Ø© ÙˆÙƒÙ„ Ø³Ø¬Ù„Ø§Øª Ø§Ù„ØµÙŠØ§Ù†Ø© Ø§Ù„Ø®Ø§ØµØ© Ø¨Ù‡Ø§ØŸ",
+    deleteRecordConfirm: "Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø³Ø¬Ù„ Ø§Ù„ØµÙŠØ§Ù†Ø© Ù‡Ø°Ø§ØŸ",
+    carDeleted: "ØªÙ… Ø­Ø°Ù Ø§Ù„Ø³ÙŠØ§Ø±Ø©.",
+    recordDeleted: "ØªÙ… Ø­Ø°Ù Ø³Ø¬Ù„ Ø§Ù„ØµÙŠØ§Ù†Ø©.",
+    partPhotos: "ØµÙˆØ± Ø§Ù„Ù‚Ø·Ø¹ Ø§Ù„Ù…Ø³ØªØ¨Ø¯Ù„Ø©",
+    carPhoto: "ØµÙˆØ±Ø© Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    otherServiceDetails: "Ø¥Ø°Ø§ Ø§Ø®ØªØ±Øª Ø£Ø®Ø±Ù‰ØŒ Ø§ÙƒØªØ¨ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø®Ø¯Ù…Ø©",
+    selectedServices: "Ø§Ù„Ø®Ø¯Ù…Ø§Øª Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©",
+    chooseBrand: "Ø§Ø®ØªØ± Ø§Ù„Ø´Ø±ÙƒØ©",
+    chooseModel: "Ø§Ø®ØªØ± Ø§Ù„Ù…ÙˆØ¯ÙŠÙ„",
+    chooseService: "Ø§Ø®ØªØ± Ø§Ù„Ø®Ø¯Ù…Ø©",
+    chooseCar: "Ø§Ø®ØªØ± Ø³ÙŠØ§Ø±Ø©",
+    carGarage: "Ø³ÙŠØ§Ø±Ø§ØªÙƒ",
+    selectedCarHelp: "Ø§Ø®ØªØ± Ø³ÙŠØ§Ø±Ø© Ø£ÙˆÙ„Ø§Ù‹ØŒ Ø«Ù… Ø´Ø§Ù‡Ø¯ Ø³Ø¬Ù„ Ø§Ù„ØµÙŠØ§Ù†Ø© Ø£Ùˆ Ø£Ø¶Ù Ø®Ø¯Ù…Ø© Ø¬Ø¯ÙŠØ¯Ø©.",
+    viewHistory: "Ø¹Ø±Ø¶ Ø§Ù„Ø³Ø¬Ù„",
+    addServiceHistory: "Ø¥Ø¶Ø§ÙØ© Ø®Ø¯Ù…Ø©",
+    servicesFor: "Ø§Ù„Ø®Ø¯Ù…Ø§Øª Ø§Ù„Ø®Ø§ØµØ© Ø¨Ù€",
+    latestRecords: "Ø¢Ø®Ø± Ø³Ø¬Ù„Ø§Øª Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    addNewCar: "Ø¥Ø¶Ø§ÙØ© Ø³ÙŠØ§Ø±Ø© Ø¬Ø¯ÙŠØ¯Ø©",
+    editCar: "ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    updateCar: "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
+    carUpdated: "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø³ÙŠØ§Ø±Ø©.",
+    close: "Ø¥ØºÙ„Ø§Ù‚",
+    serviceSummary: "Ù…Ù„Ø®Øµ Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    serviceDetails: "ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØµÙŠØ§Ù†Ø©",
+    addAnotherService: "Ø¥Ø¶Ø§ÙØ© Ø®Ø¯Ù…Ø© Ø£Ø®Ø±Ù‰",
+    createdNotification: "ØªÙ… Ø§Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø¨Ù†Ø¬Ø§Ø­.",
+    redirectingShop: "Ø¬Ø§Ø±Ù ÙØªØ­ Sayarati.online...",
+    shopInAppNote: "ØªØµÙØ­ Ù…Ù†ØªØ¬Ø§Øª Ø³ÙŠØ§Ø±ØªÙŠ Ø¯Ø§Ø®Ù„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ Ù…Ø¹ Ø¨Ù‚Ø§Ø¡ Ø£Ø²Ø±Ø§Ø± Ø§Ù„ØªÙ†Ù‚Ù„ Ù…ØªØ§Ø­Ø©.",
+    shopLoading: "Ø¬Ø§Ø±Ù ØªØ­Ù…ÙŠÙ„ Ù…ØªØ¬Ø± Ø³ÙŠØ§Ø±ØªÙŠ...",
+    shopHome: "Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©",
+    shopBack: "Ø±Ø¬ÙˆØ¹",
+    searchProducts: "Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ù…Ù†ØªØ¬Ø§Øª",
+    allCategories: "ÙƒÙ„ Ø§Ù„ÙØ¦Ø§Øª",
+    chooseCategoryFirst: "Ø§Ø®ØªØ± ÙØ¦Ø© Ù„Ø¹Ø±Ø¶ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª.",
+    backToCategories: "Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ Ø§Ù„ÙØ¦Ø§Øª",
+    loadMore: "ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø²ÙŠØ¯",
+    productDetails: "ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬",
+    addToCart: "Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ø³Ù„Ø©",
+    checkout: "Ø§Ù„Ø¯ÙØ¹",
+    addedToCart: "ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ø³Ù„Ø©.",
+    inStock: "Ù…ØªÙˆÙØ±",
+    outOfStock: "ØºÙŠØ± Ù…ØªÙˆÙØ±",
+    shopUpdated: "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…ØªØ¬Ø±.",
+    shopError: "ØªØ¹Ø°Ø± ØªØ­Ù…ÙŠÙ„ Ù…Ù†ØªØ¬Ø§Øª Ø§Ù„Ù…ØªØ¬Ø±. Ø¬Ø±Ù‘Ø¨ Ø§Ù„ØªØ­Ø¯ÙŠØ«.",
+    noProducts: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†ØªØ¬Ø§Øª ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„ÙØ¦Ø©.",
+    refreshShop: "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…ØªØ¬Ø±",
+    addCarPhoto: "Ø¥Ø¶Ø§ÙØ© ØµÙˆØ±Ø© Ø§Ù„Ø³ÙŠØ§Ø±Ø©",
   },
 };
 
@@ -313,7 +313,7 @@ let shopState = loadShopCache();
 function defaultState() {
   return {
     lang: "en",
-    view: "overview",
+    view: "cars",
     user: null,
     selectedCarId: null,
     cars: [],
@@ -336,7 +336,8 @@ function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      return { ...defaults, ...JSON.parse(saved) };
+      const parsed = { ...defaults, ...JSON.parse(saved) };
+      return { ...parsed, view: parsed.view === "overview" ? "cars" : parsed.view };
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -441,7 +442,7 @@ function switchLanguage(lang) {
 }
 
 function setView(view) {
-  setState({ view });
+  setState({ view: view === "overview" ? "cars" : view });
 }
 
 function selectedCar() {
@@ -550,10 +551,9 @@ function render() {
           </div>
         </div>
         <nav class="nav">
-          ${navButton("overview", "⌂", t("overview"))}
-          ${navButton("cars", "▣", t("cars"))}
-          ${navButton("booklet", "✎", t("booklet"))}
-          ${navButton("shop", "◱", t("shop"))}
+          ${navButton("cars", "â–£", t("cars"))}
+          ${navButton("booklet", "âœŽ", t("booklet"))}
+          ${navButton("shop", "â—±", t("shop"))}
         </nav>
       </aside>
       <main class="main">
@@ -614,7 +614,7 @@ function header() {
 }
 
 function pageTitle() {
-  if (state.view === "cars") return t("myCars");
+  if (state.view === "cars" || state.view === "overview") return t("myCars");
   if (state.view === "booklet") return t("myServiceHistory");
   if (state.view === "shop") return t("shop");
   if (state.view === "profile") return t("profileTitle");
@@ -627,11 +627,11 @@ function userInitials() {
 }
 
 function currentView() {
-  if (state.view === "cars") return carsView();
+  if (state.view === "cars" || state.view === "overview") return carsView();
   if (state.view === "booklet") return bookletView();
   if (state.view === "shop") return shopView();
   if (state.view === "profile") return profileView();
-  return overviewView();
+  return carsView();
 }
 
 function overviewView() {
@@ -723,6 +723,46 @@ function carsView() {
           </form>
         </div>
       ` : ""}
+    </section>
+    ${dashboardSummaryView()}
+  `;
+}
+
+function dashboardSummaryView() {
+  return `
+    <section class="grid dashboard-grid">
+      <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
+      <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
+      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
+      <div class="panel stat"><span>${t("totalExpenses")}</span><strong style="font-size: 24px;">${formatMoney(totalExpenses())}</strong></div>
+    </section>
+    <section class="panel">
+      <div class="row section-head">
+        <div>
+          <h2>${t("expensesByCar")}</h2>
+          <p class="muted">${t("expenseFilter")}</p>
+        </div>
+        <div class="expense-filter">
+          <select data-expense-filter>
+            <option value="thisYear" ${state.expenseFilter === "thisYear" ? "selected" : ""}>${t("thisYear")}</option>
+            <option value="thisMonth" ${state.expenseFilter === "thisMonth" ? "selected" : ""}>${t("thisMonth")}</option>
+            <option value="lastYear" ${state.expenseFilter === "lastYear" ? "selected" : ""}>${t("lastYear")}</option>
+            <option value="lastMonth" ${state.expenseFilter === "lastMonth" ? "selected" : ""}>${t("lastMonth")}</option>
+            <option value="year" ${state.expenseFilter === "year" ? "selected" : ""}>${t("chooseYear")}</option>
+          </select>
+          <select data-expense-year ${state.expenseFilter === "year" ? "" : "disabled"}>
+            ${availableYears().map((year) => `<option value="${year}" ${String(state.expenseYear) === String(year) ? "selected" : ""}>${year}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="expense-list">
+        ${state.cars.length ? state.cars.map((car) => `
+          <div>
+            <span>${carLabel(car)}</span>
+            <strong>${formatMoney(totalExpenses(car.id))}</strong>
+          </div>
+        `).join("") : `<p class="muted">${t("noCars")}</p>`}
+      </div>
     </section>
   `;
 }
@@ -985,7 +1025,7 @@ function productDetailView(product) {
   const productDescription = translatedText(product, "description");
   return `
     <div class="product-detail" id="shop-detail">
-      <button class="ghost back-to-products" data-close-product>← ${t("shopBack")}</button>
+      <button class="ghost back-to-products" data-close-product>â† ${t("shopBack")}</button>
       <div class="product-detail-grid">
         <div class="product-images">
           ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}
@@ -1439,7 +1479,7 @@ function carPhoto(car) {
   if (car.photo?.dataUrl) {
     return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
   }
-  return `<div class="car-photo placeholder-car"><span>⌁</span><small>${t("addCarPhoto")}</small></div>`;
+  return `<div class="car-photo placeholder-car"><span>âŒ</span><small>${t("addCarPhoto")}</small></div>`;
 }
 
 function dashboardCarCard(car) {
@@ -1734,7 +1774,7 @@ function bindApp() {
         cars: remainingCars,
         records: state.records.filter((record) => record.carId !== carId),
         selectedCarId: remainingCars[0]?.id || null,
-        view: "overview",
+        view: "cars",
         serviceMode: "summary",
         selectedRecordId: null,
       });
@@ -1793,7 +1833,7 @@ function bindApp() {
         setState({
           cars: [car, ...state.cars],
           selectedCarId: car.id,
-          view: "overview",
+          view: "cars",
           carFormOpen: false,
           editingCarId: null,
         });
