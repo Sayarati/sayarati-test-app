@@ -1117,8 +1117,7 @@ function serviceFormView(car) {
         <form class="form" id="record-form">
           ${field("date", t("date"), "date", editingRecord?.date || new Date().toISOString().slice(0, 10))}
           ${field("mileage", t("mileage"), "number", editingRecord?.mileage || car.mileage || "")}
-          ${serviceCheckboxes(selectedServices)}
-          ${serviceSpecificFields(editingRecord)}
+          ${serviceCheckboxes(selectedServices, editingRecord)}
           ${field("otherServiceDetails", t("otherServiceDetails"), "text", editingRecord?.otherServiceDetails || "")}
           ${field("parts", t("parts"), "text", editingRecord?.parts || "Oil filter, engine oil")}
           ${field("cost", t("cost"), "number", editingRecord?.cost || "")}
@@ -1720,7 +1719,7 @@ function selectField(name, label, options, value, placeholder) {
   `;
 }
 
-function serviceCheckboxes(selectedServices = []) {
+function serviceCheckboxes(selectedServices = [], record = {}) {
   return `
     <div class="field">
       <label>${t("serviceType")}</label>
@@ -1730,24 +1729,29 @@ function serviceCheckboxes(selectedServices = []) {
             <input type="checkbox" name="serviceTypes" value="${service}" ${selectedServices.includes(service) ? "checked" : ""} />
             <span>${service}</span>
           </label>
+          ${service === "Oil change" ? oilServiceFields(record, selectedServices.includes("Oil change")) : ""}
+          ${service === "Brake pads" ? brakePadServiceFields(record, selectedServices.includes("Brake pads")) : ""}
         `).join("")}
       </div>
     </div>
   `;
 }
 
-function serviceSpecificFields(record = {}) {
-  const oilVisible = record?.serviceTypes?.includes("Oil change") || record?.serviceType === "Oil change";
-  const brakeVisible = record?.serviceTypes?.includes("Brake pads") || record?.serviceType === "Brake pads";
+function oilServiceFields(record = {}, isVisible = false) {
   return `
-    <div class="service-extra ${oilVisible ? "" : "is-hidden"}" data-service-extra="oil">
+    <div class="service-extra service-extra-inline ${isVisible ? "" : "is-hidden"}" data-service-extra="oil">
       <h3>${t("oilDetails")}</h3>
       <div class="service-extra-grid">
         ${selectField("oilViscosity", t("oilViscosity"), oilViscosities, record?.oilViscosity || "5W-30", t("chooseOilType"))}
         ${field("oilLiters", t("oilLiters"), "number", record?.oilLiters || "")}
       </div>
     </div>
-    <div class="service-extra ${brakeVisible ? "" : "is-hidden"}" data-service-extra="brakePads">
+  `;
+}
+
+function brakePadServiceFields(record = {}, isVisible = false) {
+  return `
+    <div class="service-extra service-extra-inline ${isVisible ? "" : "is-hidden"}" data-service-extra="brakePads">
       <h3>${t("brakePadDetails")}</h3>
       ${selectField("brakePadPosition", t("brakePadPosition"), brakePadPositions, record?.brakePadPosition || "", t("chooseBrakePosition"))}
     </div>

@@ -543,6 +543,12 @@ h1 {
   display: none;
 }
 
+.service-extra-inline {
+  grid-column: 1 / -1;
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
 .service-extra h3 {
   margin: 0;
   font-size: 16px;
