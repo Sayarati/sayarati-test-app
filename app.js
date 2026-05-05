@@ -203,6 +203,8 @@ const copy = {
     tourSkip: "Skip",
     tourDone: "Done",
     tourCount: "Step",
+    tourWelcomeTitle: "Welcome to your digital service booklet",
+    tourWelcomeText: "Let me give you a quick tour so you know how to use the app.",
     tour1Title: "Your garage",
     tour1Text: "This is where your saved cars appear with their photos and key details.",
     tour2Title: "Add a car",
@@ -460,6 +462,8 @@ copy.ar = {
   tourSkip: "تخطي",
   tourDone: "تم",
   tourCount: "خطوة",
+  tourWelcomeTitle: "أهلا بك في دفتر الصيانة الرقمي",
+  tourWelcomeText: "دعني أعطيك جولة سريعة لتعرف كيف تستخدم التطبيق.",
   tour1Title: "مرآب سياراتك",
   tour1Text: "هنا تظهر سياراتك المحفوظة مع الصور والتفاصيل الأساسية.",
   tour2Title: "إضافة سيارة",
@@ -824,16 +828,17 @@ function tourSteps() {
   const carActionTarget = state.cars.length ? "view-history" : "add-car";
   const serviceActionTarget = state.cars.length ? "add-service" : "add-car";
   return [
+    { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center" },
     { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
     { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
     { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
     { target: serviceActionTarget, title: t("tour4Title"), text: t("tour4Text") },
     { target: "dashboard-totals", title: t("tour5Title"), text: t("tour5Text") },
-    { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text") },
-    { target: "service-tab", title: t("tour7Title"), text: t("tour7Text") },
-    { target: "shop-tab", title: t("tour8Title"), text: t("tour8Text") },
-    { target: "language", title: t("tour9Title"), text: t("tour9Text") },
-    { target: "profile", title: t("tour10Title"), text: t("tour10Text") },
+    { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text"), placement: "top" },
+    { target: "service-tab", title: t("tour7Title"), text: t("tour7Text"), placement: "top" },
+    { target: "shop-tab", title: t("tour8Title"), text: t("tour8Text"), placement: "top" },
+    { target: "language", title: t("tour9Title"), text: t("tour9Text"), placement: "bottom" },
+    { target: "profile", title: t("tour10Title"), text: t("tour10Text"), placement: "bottom" },
   ];
 }
 
@@ -845,7 +850,7 @@ function tourOverlay() {
   return `
     <div class="tour-overlay">
       <button class="tour-dim" data-tour-next aria-label="${t("tourNext")}"></button>
-      <div class="tour-card" role="dialog" aria-live="polite">
+      <div class="tour-card ${tourCardClass(step)}" role="dialog" aria-live="polite">
         <span class="pill gold">${t("tourCount")} ${stepIndex + 1} / ${steps.length}</span>
         <h2>${step.title}</h2>
         <p class="muted">${step.text}</p>
@@ -859,10 +864,17 @@ function tourOverlay() {
   `;
 }
 
+function tourCardClass(step) {
+  if (step.placement === "center") return "tour-card-center";
+  if (step.placement === "top") return "tour-card-top";
+  return "tour-card-bottom";
+}
+
 function syncTourHighlight() {
   document.querySelectorAll(".tour-highlight").forEach((item) => item.classList.remove("tour-highlight"));
   if (!state.tourActive) return;
   const step = tourSteps()[Math.min(state.tourStep || 0, tourSteps().length - 1)];
+  if (!step.target) return;
   const target = document.querySelector(`[data-tour="${step.target}"]`);
   if (!target) return;
   target.classList.add("tour-highlight");

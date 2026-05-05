@@ -287,7 +287,6 @@ h1 {
 .tour-card {
   position: fixed;
   left: 50%;
-  bottom: 24px;
   transform: translateX(-50%);
   width: min(420px, calc(100vw - 28px));
   border: 2px solid var(--accent);
@@ -296,6 +295,19 @@ h1 {
   padding: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   pointer-events: auto;
+}
+
+.tour-card-bottom {
+  bottom: 24px;
+}
+
+.tour-card-top {
+  top: 18px;
+}
+
+.tour-card-center {
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .tour-card h2 {
@@ -312,10 +324,16 @@ h1 {
 
 .tour-highlight {
   position: relative;
-  z-index: 90;
+  z-index: 100;
   outline: 4px solid var(--accent);
   outline-offset: 4px;
   box-shadow: 0 0 0 8px rgba(255, 210, 31, 0.28);
+}
+
+.nav .tour-highlight,
+.top-controls .tour-highlight,
+.profile-chip.tour-highlight {
+  z-index: 110;
 }
 
 .grid {
@@ -1246,7 +1264,11 @@ button:disabled {
     min-height: 460px;
   }
 
-  .tour-card {
+  .tour-card-bottom {
     bottom: 96px;
+  }
+
+  .tour-card-top {
+    top: 14px;
   }
 }
