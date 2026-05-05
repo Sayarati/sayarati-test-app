@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v6";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v8";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -88,6 +88,9 @@ const copy = {
     booklet: "Service Booklet",
     shop: "Shop",
     profile: "Profile",
+    myDashboard: "My dashboard",
+    myCars: "My cars",
+    myServiceHistory: "My service history",
     addCar: "Add Car",
     carDetails: "Car Details",
     brand: "Brand",
@@ -180,6 +183,20 @@ const copy = {
     noProducts: "No products found in this category.",
     refreshShop: "Refresh shop",
     addCarPhoto: "Add car photo",
+    serviceFilter: "Service filter",
+    allServiceRecords: "All services",
+    beforeThisYear: "Year before",
+    specificDate: "Certain date",
+    specificMileage: "Mileage from",
+    sortProducts: "Sort products",
+    defaultSort: "Default order",
+    priceLowHigh: "Price low to high",
+    priceHighLow: "Price high to low",
+    nameAZ: "Name A-Z",
+    stockFilter: "Availability",
+    allProducts: "All products",
+    inStockOnly: "In stock only",
+    outOfStockOnly: "Out of stock only",
   },
   ar: {
     appName: "سيارتي",
@@ -292,15 +309,7 @@ const copy = {
 let state = loadState();
 let shopState = loadShopCache();
 
-function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }
+function defaultState() {
   return {
     lang: "en",
     view: "overview",
@@ -312,10 +321,26 @@ function loadState() {
     carFormOpen: false,
     serviceMode: "summary",
     selectedRecordId: null,
+    serviceFilter: "all",
+    serviceFilterDate: "",
+    serviceFilterMileage: "",
     expenseFilter: "thisYear",
     expenseYear: String(new Date().getFullYear()),
     editingCarId: null,
   };
+}
+
+function loadState() {
+  const defaults = defaultState();
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      return { ...defaults, ...JSON.parse(saved) };
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+  return defaults;
 }
 
 function saveState() {
@@ -332,11 +357,11 @@ function loadShopCache() {
     categoryId: "",
     parentCategoryId: 0,
     categoryTrail: [],
+    sortBy: "default",
+    stockFilter: "all",
     loading: false,
     error: "",
     selectedProduct: null,
-    parentCategoryId: 0,
-    categoryTrail: [],
     cartCount: 0,
     lastLoaded: "",
   };
@@ -356,6 +381,11 @@ function saveShopCache() {
     offset: shopState.offset,
     keyword: shopState.keyword,
     categoryId: shopState.categoryId,
+    parentCategoryId: shopState.parentCategoryId,
+    categoryTrail: shopState.categoryTrail,
+    sortBy: shopState.sortBy,
+    stockFilter: shopState.stockFilter,
+    cartCount: shopState.cartCount,
     lastLoaded: shopState.lastLoaded,
   }));
 }
@@ -415,6 +445,22 @@ function carRecords(carId) {
   return state.records
     .filter((record) => record.carId === carId)
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
+function filteredCarRecords(carId) {
+  return carRecords(carId).filter(matchesServiceFilter);
+}
+
+function matchesServiceFilter(record) {
+  const filter = state.serviceFilter || "all";
+  if (filter === "all") return true;
+  const now = new Date();
+  const recordDate = record.date ? new Date(`${record.date}T00:00:00`) : null;
+  if (filter === "thisYear") return recordDate && recordDate.getFullYear() === now.getFullYear();
+  if (filter === "lastYear") return recordDate && recordDate.getFullYear() === now.getFullYear() - 1;
+  if (filter === "date") return !!state.serviceFilterDate && record.date === state.serviceFilterDate;
+  if (filter === "mileage") return Number(record.mileage || 0) >= Number(state.serviceFilterMileage || 0);
+  return true;
 }
 
 function nextServiceDate(carId) {
@@ -551,26 +597,26 @@ function header() {
   return `
     <div class="topbar">
       <div>
-        <div class="eyebrow">${t("appName")}</div>
         <h1>${pageTitle()}</h1>
-        <p class="muted">${pageText()}</p>
       </div>
-      <button class="ghost" data-view="profile">${t("profile")}</button>
+      <button class="profile-chip" data-view="profile" title="${t("profile")}">
+        ${userInitials()}
+      </button>
     </div>
   `;
 }
 
 function pageTitle() {
-  if (state.view === "cars") return t("cars");
-  if (state.view === "booklet") return t("booklet");
+  if (state.view === "cars") return t("myCars");
+  if (state.view === "booklet") return t("myServiceHistory");
   if (state.view === "shop") return t("shop");
   if (state.view === "profile") return t("profileTitle");
-  return t("dashboardTitle");
+  return t("myDashboard");
 }
 
-function pageText() {
-  if (state.view === "shop") return t("shopHint");
-  return t("dashboardText");
+function userInitials() {
+  const name = String(state.user?.name || t("appName") || "S").trim();
+  return escapeHtml(name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "S");
 }
 
 function currentView() {
@@ -587,7 +633,6 @@ function overviewView() {
       <div class="row section-head">
         <div>
           <h2>${t("carGarage")}</h2>
-          <p class="muted">${t("dashboardText")}</p>
         </div>
         <div class="actions">
           <button class="ghost" data-sample>${t("sample")}</button>
@@ -648,7 +693,6 @@ function carsView() {
         <div class="row section-head">
           <div>
             <h2>${t("carGarage")}</h2>
-            <p class="muted">${t("selectedCarHelp")}</p>
           </div>
           <button class="primary" data-toggle-car-form>${state.carFormOpen ? t("close") : t("addNewCar")}</button>
         </div>
@@ -688,10 +732,11 @@ function bookletView() {
             ${state.cars.length ? state.cars.map((item) => `<option value="${item.id}" ${item.id === car?.id ? "selected" : ""}>${carLabel(item)}</option>`).join("") : `<option value="">${t("noCars")}</option>`}
           </select>
         </div>
+        ${car ? serviceHistoryFilters() : ""}
         <div class="row section-head">
           <div>
             <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
-            <p class="muted">${car ? `${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${carRecords(car.id).length}` : t("noCars")}</p>
+            <p class="muted">${car ? `${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${filteredCarRecords(car.id).length}` : t("noCars")}</p>
           </div>
           <div class="actions">
             ${car ? `<button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>` : `<button class="primary" data-view="cars">${t("addCar")}</button>`}
@@ -704,6 +749,25 @@ function bookletView() {
       ${state.serviceMode === "detail" && record ? serviceDetailView(record) : ""}
       ${state.serviceMode === "add" ? serviceFormView(car) : ""}
     </section>
+  `;
+}
+
+function serviceHistoryFilters() {
+  return `
+    <div class="service-filters">
+      <div class="field">
+        <label for="serviceFilter">${t("serviceFilter")}</label>
+        <select id="serviceFilter" data-service-filter>
+          <option value="all" ${state.serviceFilter === "all" ? "selected" : ""}>${t("allServiceRecords")}</option>
+          <option value="thisYear" ${state.serviceFilter === "thisYear" ? "selected" : ""}>${t("thisYear")}</option>
+          <option value="lastYear" ${state.serviceFilter === "lastYear" ? "selected" : ""}>${t("beforeThisYear")}</option>
+          <option value="date" ${state.serviceFilter === "date" ? "selected" : ""}>${t("specificDate")}</option>
+          <option value="mileage" ${state.serviceFilter === "mileage" ? "selected" : ""}>${t("specificMileage")}</option>
+        </select>
+      </div>
+      ${state.serviceFilter === "date" ? field("serviceFilterDate", t("specificDate"), "date", state.serviceFilterDate || "") : ""}
+      ${state.serviceFilter === "mileage" ? field("serviceFilterMileage", t("specificMileage"), "number", state.serviceFilterMileage || "") : ""}
+    </div>
   `;
 }
 
@@ -758,6 +822,19 @@ function shopView() {
             <option value="">${shopState.categoryTrail.length ? t("backToCategories") : t("allCategories")}</option>
             ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(translatedText(category, "name"))}</option>`).join("")}
           </select>
+          ${shopState.categoryId ? `
+            <select data-shop-stock>
+              <option value="all" ${shopState.stockFilter === "all" ? "selected" : ""}>${t("allProducts")}</option>
+              <option value="in" ${shopState.stockFilter === "in" ? "selected" : ""}>${t("inStockOnly")}</option>
+              <option value="out" ${shopState.stockFilter === "out" ? "selected" : ""}>${t("outOfStockOnly")}</option>
+            </select>
+            <select data-shop-sort>
+              <option value="default" ${shopState.sortBy === "default" ? "selected" : ""}>${t("defaultSort")}</option>
+              <option value="priceAsc" ${shopState.sortBy === "priceAsc" ? "selected" : ""}>${t("priceLowHigh")}</option>
+              <option value="priceDesc" ${shopState.sortBy === "priceDesc" ? "selected" : ""}>${t("priceHighLow")}</option>
+              <option value="nameAsc" ${shopState.sortBy === "nameAsc" ? "selected" : ""}>${t("nameAZ")}</option>
+            </select>
+          ` : ""}
         </div>
         ${shopState.categoryTrail.length ? `<button class="ghost category-back" data-category-back>${t("backToCategories")}</button>` : ""}
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
@@ -798,17 +875,28 @@ function categoryImage(category) {
 
 function productGridView() {
   if (shopState.loading && !shopState.products.length) return `<p class="muted">${t("shopLoading")}</p>`;
+  const products = displayedShopProducts();
   return `
-    ${shopState.products.length ? `
+    ${products.length ? `
       <div class="product-grid">
-        ${shopState.products.map(productCard).join("")}
+        ${products.map(productCard).join("")}
       </div>
     ` : `<p class="muted">${shopState.loading ? t("shopLoading") : t("noProducts")}</p>`}
     <div class="shop-footer-actions">
-      <span class="muted">${shopState.products.length} / ${shopState.total || shopState.products.length}</span>
+      <span class="muted">${products.length} / ${shopState.total || shopState.products.length}</span>
       ${shopState.products.length < shopState.total ? `<button class="primary" data-load-more-products ${shopState.loading ? "disabled" : ""}>${shopState.loading ? t("shopLoading") : t("loadMore")}</button>` : ""}
     </div>
   `;
+}
+
+function displayedShopProducts() {
+  let products = [...shopState.products];
+  if (shopState.stockFilter === "in") products = products.filter((product) => product.inStock !== false);
+  if (shopState.stockFilter === "out") products = products.filter((product) => product.inStock === false);
+  if (shopState.sortBy === "priceAsc") products.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+  if (shopState.sortBy === "priceDesc") products.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+  if (shopState.sortBy === "nameAsc") products.sort((a, b) => translatedText(a, "name").localeCompare(translatedText(b, "name")));
+  return products;
 }
 
 function productCard(product) {
@@ -912,20 +1000,20 @@ async function loadShopCategories(parentCategoryId = 0) {
       }).catch(() => null),
     ]);
 
-    const orderedIds = sortData?.categoryIds || sortData?.ids || [];
+    const rawOrder = Array.isArray(sortData) ? sortData : sortData?.categoryIds || sortData?.ids || sortData?.categories || [];
+    const orderedIds = rawOrder.map((item) => typeof item === "object" ? item.id || item.categoryId : item).filter(Boolean);
     const orderMap = new Map(orderedIds.map((id, index) => [String(id), index]));
     const categories = (data.items || [])
       .filter((category) => category.enabled !== false)
-      .filter((category) => Number(category.productCount || 0) > 0 || Number(category.id) > 0)
       .filter((category) => Number(category.parentId || 0) === Number(parentCategoryId || 0))
       .sort((a, b) => {
         const aOrder = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : Number(a.orderBy ?? 999999);
         const bOrder = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : Number(b.orderBy ?? 999999);
         return aOrder - bOrder;
       });
-    updateShopState({ categories, parentCategoryId, error: "" });
+    updateShopState({ categories, parentCategoryId, loading: false, error: "" });
   } catch {
-    updateShopState({ error: t("shopError") });
+    updateShopState({ loading: false, error: t("shopError") });
   }
 }
 
@@ -973,21 +1061,22 @@ async function openShopCategory(categoryId) {
       limit: 100,
       responseFields: "items(id,name,nameTranslated,enabled,productCount,parentId,thumbnailUrl,imageUrl,originalImageUrl,hdThumbnailUrl,thumbnail(url),originalImage(url),hdThumbnail(url),orderBy),total",
     });
-    const subcategories = (subData.items || []).filter((item) => item.enabled !== false && Number(item.productCount || 0) > 0);
+    const subcategories = (subData.items || []).filter((item) => item.enabled !== false);
     if (subcategories.length) {
       shopState = {
         ...shopState,
-        categories: subcategories,
+        categories: [],
         parentCategoryId: categoryId,
-        categoryTrail: [...shopState.categoryTrail, { id: categoryId, name: category?.name || "" }],
+        categoryTrail: [...shopState.categoryTrail, { id: categoryId, name: translatedText(category, "name") || "" }],
         categoryId: "",
         products: [],
         total: 0,
         selectedProduct: null,
-        loading: false,
+        loading: true,
       };
       saveShopCache();
       render();
+      await loadShopCategories(categoryId);
       return;
     }
 
@@ -1053,7 +1142,7 @@ function openCheckout() {
 }
 
 function resetShopHome() {
-  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], selectedProduct: null, products: [], total: 0, categories: [] };
+  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", selectedProduct: null, products: [], total: 0, categories: [] };
   saveShopCache();
   render();
   loadShopCategories(0);
@@ -1193,7 +1282,7 @@ function carCard(car) {
 }
 
 function renderRecordSummaries(carId) {
-  const records = carRecords(carId);
+  const records = filteredCarRecords(carId);
   if (!records.length) return `<p class="muted">${t("noRecords")}</p>`;
   return records.map((record) => `
     <article class="record summary-record" data-view-record="${record.id}">
@@ -1235,7 +1324,7 @@ function serviceDetailView(record) {
 
 function selectedRecord(carId) {
   if (!carId) return null;
-  const records = carRecords(carId);
+  const records = filteredCarRecords(carId);
   return records.find((record) => record.id === state.selectedRecordId) || records[0] || null;
 }
 
@@ -1371,6 +1460,37 @@ function bindApp() {
       });
     });
   });
+
+  document.querySelectorAll("[data-service-filter]").forEach((select) => {
+    select.addEventListener("change", () => setState({
+      serviceFilter: select.value,
+      serviceMode: "summary",
+      selectedRecordId: null,
+    }));
+  });
+
+  const serviceFilterDate = document.querySelector("#serviceFilterDate");
+  if (serviceFilterDate) {
+    serviceFilterDate.addEventListener("change", () => setState({
+      serviceFilter: "date",
+      serviceFilterDate: serviceFilterDate.value,
+      serviceMode: "summary",
+      selectedRecordId: null,
+    }));
+  }
+
+  const serviceFilterMileage = document.querySelector("#serviceFilterMileage");
+  if (serviceFilterMileage) {
+    serviceFilterMileage.addEventListener("input", () => {
+      clearTimeout(window.sayaratiServiceFilterTimer);
+      window.sayaratiServiceFilterTimer = setTimeout(() => setState({
+        serviceFilter: "mileage",
+        serviceFilterMileage: serviceFilterMileage.value,
+        serviceMode: "summary",
+        selectedRecordId: null,
+      }), 250);
+    });
+  }
 
   document.querySelectorAll("[data-service-summary]").forEach((button) => {
     button.addEventListener("click", () => setState({ serviceMode: "summary", selectedRecordId: null }));
@@ -1565,6 +1685,14 @@ function bindApp() {
     select.addEventListener("change", () => {
       openShopCategory(select.value);
     });
+  });
+
+  document.querySelectorAll("[data-shop-stock]").forEach((select) => {
+    select.addEventListener("change", () => updateShopState({ stockFilter: select.value }));
+  });
+
+  document.querySelectorAll("[data-shop-sort]").forEach((select) => {
+    select.addEventListener("change", () => updateShopState({ sortBy: select.value }));
   });
 
   document.querySelectorAll("[data-category-tile]").forEach((button) => {

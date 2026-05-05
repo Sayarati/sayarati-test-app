@@ -157,9 +157,13 @@ button {
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 18px;
-  margin-bottom: 22px;
+  margin-bottom: 12px;
+}
+
+.topbar > div {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -178,7 +182,21 @@ p {
 
 h1 {
   font-size: 32px;
-  margin-bottom: 7px;
+  margin-bottom: 0;
+}
+
+.profile-chip {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: #0b0f12;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  padding: 0;
 }
 
 .muted {
@@ -225,6 +243,7 @@ h1 {
 .panel {
   padding: 18px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .stat {
@@ -538,6 +557,14 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+.service-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(180px, 260px);
+  gap: 10px;
+  align-items: end;
+  margin: 0 0 16px;
+}
+
 .expense-list {
   display: grid;
   gap: 10px;
@@ -653,9 +680,13 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
 .category-tile {
+  width: 100%;
+  min-width: 0;
   min-height: 146px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -692,6 +723,7 @@ button:disabled {
 
 .product-card {
   min-width: 0;
+  width: 100%;
   min-height: 250px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -946,7 +978,11 @@ button:disabled {
 
   .topbar,
   .shop-tools {
-    display: grid;
+    display: flex;
+  }
+
+  .topbar {
+    margin-bottom: 8px;
   }
 
   .shop-tools .actions {
@@ -981,9 +1017,13 @@ button:disabled {
     width: 100%;
   }
 
+  .service-filters {
+    grid-template-columns: 1fr;
+  }
+
   .category-grid,
   .product-grid {
-    grid-template-columns: calc(50% - 4px) calc(50% - 4px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     width: 100%;
     max-width: 100%;
