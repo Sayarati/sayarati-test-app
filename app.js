@@ -538,8 +538,7 @@ function render() {
       <aside class="sidebar">
         <div class="sidebar-top">
           <div class="brand-wordmark">
-            <img src="assets/sayarati-logo-full.png?v=1" alt="SAYARATI.online" />
-            <span class="brand-online">.online</span>
+            <img src="assets/sayarati-logo-with-online.png?v=1" alt="SAYARATI.online" />
           </div>
           <div class="top-controls">
             <div class="language">

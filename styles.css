@@ -93,31 +93,20 @@ button {
 }
 
 .brand-wordmark {
-  width: min(62%, 260px);
+  width: min(64%, 280px);
   min-height: 48px;
-  display: flex;
+  display: grid;
   align-items: center;
   min-width: 0;
-  gap: 3px;
 }
 
 .brand-wordmark img {
-  width: min(100%, 210px);
-  height: 42px;
+  width: 100%;
+  height: 46px;
   object-fit: contain;
   object-position: left center;
   display: block;
   min-width: 0;
-  flex: 1 1 auto;
-}
-
-.brand-online {
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-  line-height: 1;
-  flex: 0 0 auto;
-  transform: translateY(4px);
 }
 
 .brand strong {
@@ -1039,15 +1028,11 @@ button:disabled {
 
   .brand-wordmark {
     width: 58%;
-    max-width: 340px;
+    max-width: 330px;
   }
 
   .brand-wordmark img {
-    height: 42px;
-  }
-
-  .brand-online {
-    font-size: 12px;
+    height: 44px;
   }
 
   .nav {
