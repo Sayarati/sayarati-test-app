@@ -535,11 +535,18 @@ function render() {
   app.innerHTML = `
     <div class="shell">
       <aside class="sidebar">
-        <div class="brand">
-          <div class="logo-box"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
-          <div>
-            <strong>${t("appName")}</strong>
-            <span>${t("subtitle")}</span>
+        <div class="sidebar-top">
+          <div class="brand brand-logo-only">
+            <div class="logo-box"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
+          </div>
+          <div class="top-controls">
+            <div class="language">
+              <button class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
+              <button class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
+            </div>
+            <button class="profile-chip" data-view="profile" title="${t("profile")}">
+              ${userInitials()}
+            </button>
           </div>
         </div>
         <nav class="nav">
@@ -548,10 +555,6 @@ function render() {
           ${navButton("booklet", "✎", t("booklet"))}
           ${navButton("shop", "◱", t("shop"))}
         </nav>
-        <div class="language">
-          <button class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
-          <button class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
-        </div>
       </aside>
       <main class="main">
         ${header()}
@@ -606,9 +609,6 @@ function header() {
       <div>
         <h1>${pageTitle()}</h1>
       </div>
-      <button class="profile-chip" data-view="profile" title="${t("profile")}">
-        ${userInitials()}
-      </button>
     </div>
   `;
 }
