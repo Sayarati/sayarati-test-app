@@ -74,6 +74,9 @@ const serviceTypes = [
   "Other",
 ];
 
+const oilViscosities = ["0W-20", "0W-30", "5W-20", "5W-30", "5W-40", "10W-30", "10W-40", "15W-40", "20W-50", "Other"];
+const brakePadPositions = ["Front", "Rear", "Front and rear"];
+
 const copy = {
   en: {
     appName: "Sayarati",
@@ -109,6 +112,13 @@ const copy = {
     nextDue: "Next Service Date",
     invoice: "Invoice Photo Name",
     saveRecord: "Save Record",
+    oilDetails: "Oil details",
+    oilViscosity: "Oil type / viscosity",
+    chooseOilType: "Choose oil type",
+    oilLiters: "Oil quantity (liters)",
+    brakePadDetails: "Brake pad details",
+    brakePadPosition: "Brake pads position",
+    chooseBrakePosition: "Choose position",
     records: "Records",
     noCars: "No cars yet. Add your first customer car.",
     noRecords: "No service records yet.",
@@ -369,6 +379,13 @@ copy.ar = {
   nextDue: "موعد الصيانة القادمة",
   invoice: "اسم صورة الفاتورة",
   saveRecord: "حفظ السجل",
+  oilDetails: "تفاصيل الزيت",
+  oilViscosity: "نوع الزيت / اللزوجة",
+  chooseOilType: "اختر نوع الزيت",
+  oilLiters: "كمية الزيت (ليتر)",
+  brakePadDetails: "تفاصيل فحمات الفرامل",
+  brakePadPosition: "مكان فحمات الفرامل",
+  chooseBrakePosition: "اختر المكان",
   records: "السجلات",
   noCars: "لا توجد سيارات بعد. أضف أول سيارة.",
   noRecords: "لا توجد سجلات صيانة بعد.",
@@ -1093,6 +1110,7 @@ function serviceFormView(car) {
           ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
           ${field("mileage", t("mileage"), "number", car.mileage || "")}
           ${serviceCheckboxes()}
+          ${serviceSpecificFields()}
           ${field("otherServiceDetails", t("otherServiceDetails"), "text", "")}
           ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
           ${field("cost", t("cost"), "number", "")}
@@ -1709,6 +1727,22 @@ function serviceCheckboxes() {
   `;
 }
 
+function serviceSpecificFields() {
+  return `
+    <div class="service-extra" data-service-extra="oil">
+      <h3>${t("oilDetails")}</h3>
+      <div class="service-extra-grid">
+        ${selectField("oilViscosity", t("oilViscosity"), oilViscosities, "5W-30", t("chooseOilType"))}
+        ${field("oilLiters", t("oilLiters"), "number", "")}
+      </div>
+    </div>
+    <div class="service-extra is-hidden" data-service-extra="brakePads">
+      <h3>${t("brakePadDetails")}</h3>
+      ${selectField("brakePadPosition", t("brakePadPosition"), brakePadPositions, "", t("chooseBrakePosition"))}
+    </div>
+  `;
+}
+
 function fileField(name, label) {
   return `
     <div class="field">
@@ -1822,6 +1856,8 @@ function serviceDetailView(record) {
       </div>
       <div class="detail-grid">
         <div><span>${t("selectedServices")}</span><strong>${formatServices(record)}</strong></div>
+        ${record.oilViscosity || record.oilLiters ? `<div><span>${t("oilDetails")}</span><strong>${formatOilDetails(record)}</strong></div>` : ""}
+        ${record.brakePadPosition ? `<div><span>${t("brakePadDetails")}</span><strong>${record.brakePadPosition}</strong></div>` : ""}
         <div><span>${t("parts")}</span><strong>${record.parts || "-"}</strong></div>
         <div><span>${t("cost")}</span><strong>${record.cost || "-"}</strong></div>
         <div><span>${t("nextDue")}</span><strong>${record.nextDue || "-"}</strong></div>
@@ -1846,6 +1882,13 @@ function formatServices(record) {
     return service;
   });
   return namedServices.length ? namedServices.join(", ") : "-";
+}
+
+function formatOilDetails(record) {
+  const details = [];
+  if (record.oilViscosity) details.push(record.oilViscosity);
+  if (record.oilLiters) details.push(`${record.oilLiters} L`);
+  return details.length ? details.join(" / ") : "-";
 }
 
 function renderPhotos(photos = []) {
@@ -2122,6 +2165,16 @@ function bindApp() {
 
   const recordForm = document.querySelector("#record-form");
   if (recordForm) {
+    const updateServiceExtras = () => {
+      const selected = checkedValues(recordForm, "serviceTypes");
+      recordForm.querySelector('[data-service-extra="oil"]')?.classList.toggle("is-hidden", !selected.includes("Oil change"));
+      recordForm.querySelector('[data-service-extra="brakePads"]')?.classList.toggle("is-hidden", !selected.includes("Brake pads"));
+    };
+    recordForm.querySelectorAll('input[name="serviceTypes"]').forEach((input) => {
+      input.addEventListener("change", updateServiceExtras);
+    });
+    updateServiceExtras();
+
     recordForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const car = selectedCar();
@@ -2133,6 +2186,13 @@ function bindApp() {
       const partPhotos = await readImageFiles(recordForm.querySelector("#partPhotos"));
       delete data.partPhotos;
       delete data.serviceTypes;
+      if (!services.includes("Oil change")) {
+        delete data.oilViscosity;
+        delete data.oilLiters;
+      }
+      if (!services.includes("Brake pads")) {
+        delete data.brakePadPosition;
+      }
       const record = {
         id: uid("record"),
         carId: car.id,
