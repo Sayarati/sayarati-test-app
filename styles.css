@@ -661,6 +661,35 @@ button:disabled {
   flex: 1 1 190px;
 }
 
+.facet-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.facet-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.facet-filters span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.facet-filters select {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px;
+}
+
 .category-back {
   width: fit-content;
 }
@@ -1018,6 +1047,10 @@ button:disabled {
   }
 
   .service-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .facet-filters {
     grid-template-columns: 1fr;
   }
 

@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v8";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v9";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -197,6 +197,7 @@ const copy = {
     allProducts: "All products",
     inStockOnly: "In stock only",
     outOfStockOnly: "Out of stock only",
+    filterAll: "All",
   },
   ar: {
     appName: "سيارتي",
@@ -359,6 +360,9 @@ function loadShopCache() {
     categoryTrail: [],
     sortBy: "default",
     stockFilter: "all",
+    facets: {},
+    appliedFacets: {},
+    filterFields: [],
     loading: false,
     error: "",
     selectedProduct: null,
@@ -385,6 +389,9 @@ function saveShopCache() {
     categoryTrail: shopState.categoryTrail,
     sortBy: shopState.sortBy,
     stockFilter: shopState.stockFilter,
+    facets: shopState.facets,
+    appliedFacets: shopState.appliedFacets,
+    filterFields: shopState.filterFields,
     cartCount: shopState.cartCount,
     lastLoaded: shopState.lastLoaded,
   }));
@@ -836,9 +843,10 @@ function shopView() {
             </select>
           ` : ""}
         </div>
+        ${(shopState.categoryId || shopState.keyword) ? shopFacetControls() : ""}
         ${shopState.categoryTrail.length ? `<button class="ghost category-back" data-category-back>${t("backToCategories")}</button>` : ""}
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
-        ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : shopState.categoryId ? productGridView() : categoryLandingView(activeCategory)}
+        ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : (shopState.categoryId || shopState.keyword) ? productGridView() : categoryLandingView(activeCategory)}
       </div>
     </section>
   `;
@@ -889,14 +897,66 @@ function productGridView() {
   `;
 }
 
+function shopFacetControls() {
+  const facets = Object.entries(shopState.facets || {})
+    .filter(([key, facet]) => (key.startsWith("attribute_") || key.startsWith("option_")) && Array.isArray(facet.values) && facet.values.length > 1)
+    .slice(0, 8);
+  if (!facets.length) return "";
+  return `
+    <div class="facet-filters">
+      ${facets.map(([key, facet]) => `
+        <label>
+          <span>${escapeHtml(facet.title || cleanFilterName(key))}</span>
+          <select data-shop-facet="${escapeAttr(key)}">
+            <option value="">${t("filterAll")}</option>
+            ${facet.values.map((value) => {
+              const label = value.title || value.name || value.id || "";
+              return `<option value="${escapeAttr(label)}" ${shopState.appliedFacets?.[key] === label ? "selected" : ""}>${escapeHtml(label)}${value.productCount ? ` (${value.productCount})` : ""}</option>`;
+            }).join("")}
+          </select>
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+
+function cleanFilterName(key) {
+  return key.replace(/^attribute_/, "").replace(/^option_/, "").replace(/_/g, " ");
+}
+
 function displayedShopProducts() {
   let products = [...shopState.products];
   if (shopState.stockFilter === "in") products = products.filter((product) => product.inStock !== false);
   if (shopState.stockFilter === "out") products = products.filter((product) => product.inStock === false);
+  products = products.filter(productMatchesAppliedFacets);
   if (shopState.sortBy === "priceAsc") products.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
   if (shopState.sortBy === "priceDesc") products.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
   if (shopState.sortBy === "nameAsc") products.sort((a, b) => translatedText(a, "name").localeCompare(translatedText(b, "name")));
   return products;
+}
+
+function productMatchesAppliedFacets(product) {
+  return Object.entries(shopState.appliedFacets || {}).every(([key, selected]) => {
+    if (!selected) return true;
+    if (key.startsWith("attribute_")) {
+      const name = key.replace(/^attribute_/, "");
+      return (product.attributes || []).some((attribute) => attribute.name === name && translatedValue(attribute) === selected);
+    }
+    if (key.startsWith("option_")) {
+      const name = key.replace(/^option_/, "");
+      return (product.options || []).some((option) => option.name === name && (option.choices || []).some((choice) => (translatedText(choice, "text") || choice.text) === selected));
+    }
+    return true;
+  });
+}
+
+function translatedValue(item) {
+  const lang = state.lang || "en";
+  const translated = item?.valueTranslated;
+  if (translated && typeof translated === "object") {
+    return translated[lang] || translated[lang.split("-")[0]] || translated.en || item?.value || "";
+  }
+  return item?.value || "";
 }
 
 function productCard(product) {
@@ -967,7 +1027,10 @@ async function ensureShopLoaded() {
   if (state.view !== "shop" || shopState.loading) return;
   loadEcwidCartScript();
   if (!shopState.categories.length) await loadShopCategories(shopState.parentCategoryId || 0);
-  if (shopState.categoryId && !shopState.products.length && !shopState.error) await loadShopProducts({ reset: true });
+  if ((shopState.categoryId || shopState.keyword) && !shopState.products.length && !shopState.error) {
+    await loadShopProducts({ reset: true });
+    loadShopFacets();
+  }
 }
 
 async function ecwidFetch(path, params = {}) {
@@ -982,6 +1045,26 @@ async function ecwidFetch(path, params = {}) {
       Authorization: `Bearer ${ECWID_PUBLIC_TOKEN}`,
       "Accept-Language": lang,
     },
+  });
+  if (!response.ok) throw new Error(`Ecwid API error ${response.status}`);
+  return response.json();
+}
+
+async function ecwidPost(path, params = {}, body = {}) {
+  const url = new URL(`https://app.ecwid.com/api/v3/${ECWID_STORE_ID}${path}`);
+  const lang = state.lang || "en";
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) url.searchParams.set(key, value);
+  });
+  url.searchParams.set("lang", lang);
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${ECWID_PUBLIC_TOKEN}`,
+      "Accept-Language": lang,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`Ecwid API error ${response.status}`);
   return response.json();
@@ -1022,13 +1105,12 @@ async function loadShopProducts({ reset = false } = {}) {
   const offset = reset ? 0 : shopState.products.length;
   updateShopState({ loading: true, error: "" });
   try {
+    const params = shopProductParams({ offset });
     const data = await ecwidFetch("/products", {
+      ...params,
       offset,
       limit: SHOP_PAGE_SIZE,
-      keyword: shopState.keyword ? `${shopState.keyword}*` : "",
-      category: shopState.categoryId || undefined,
-      enabled: true,
-      responseFields: "total,count,items(id,sku,name,nameTranslated,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url)",
+      responseFields: "total,count,items(id,sku,name,nameTranslated,thumbnailUrl,imageUrl,price,priceInProductList,defaultDisplayedPrice,defaultDisplayedPriceFormatted,inStock,url,attributes(name,nameTranslated,value,valueTranslated),options(name,nameTranslated,choices(text,textTranslated)))",
     });
     updateShopState({
       products: reset ? (data.items || []) : [...shopState.products, ...(data.items || [])],
@@ -1044,9 +1126,132 @@ async function loadShopProducts({ reset = false } = {}) {
   }
 }
 
+function shopProductParams({ offset = 0 } = {}) {
+  const params = {
+    offset,
+    limit: SHOP_PAGE_SIZE,
+    keyword: shopState.keyword ? `${shopState.keyword}*` : "",
+    category: shopState.categoryId || undefined,
+    includeProductsFromSubcategories: true,
+    enabled: true,
+  };
+  if (shopState.stockFilter === "in") params.inStock = true;
+  if (shopState.stockFilter === "out") params.inStock = false;
+  if (shopState.sortBy === "priceAsc") params.sortBy = "PRICE_ASC";
+  if (shopState.sortBy === "priceDesc") params.sortBy = "PRICE_DESC";
+  if (shopState.sortBy === "nameAsc") params.sortBy = "NAME_ASC";
+  Object.entries(shopState.appliedFacets || {}).forEach(([key, value]) => {
+    if (value) params[key] = value;
+  });
+  return params;
+}
+
+async function loadShopFilterFields() {
+  if (shopState.filterFields?.length) return shopState.filterFields;
+  try {
+    const classes = await ecwidFetch("/classes");
+    const attributes = new Set();
+    (classes || []).forEach((productClass) => {
+      (productClass.attributes || []).forEach((attribute) => {
+        if (attribute.name) attributes.add(`attribute_${attribute.name}`);
+      });
+    });
+    const fields = ["price", "inventory", "onsale", "categories", ...Array.from(attributes)];
+    shopState = { ...shopState, filterFields: fields };
+    saveShopCache();
+    return fields;
+  } catch {
+    const fields = inferFilterFieldsFromProducts(shopState.products);
+    if (fields.length) {
+      shopState = { ...shopState, filterFields: fields };
+      saveShopCache();
+    }
+    return fields;
+  }
+}
+
+function inferFilterFieldsFromProducts(products = []) {
+  const fields = new Set(["price", "inventory", "onsale", "categories"]);
+  products.forEach((product) => {
+    (product.attributes || []).forEach((attribute) => {
+      if (attribute.name) fields.add(`attribute_${attribute.name}`);
+    });
+    (product.options || []).forEach((option) => {
+      if (option.name) fields.add(`option_${option.name}`);
+    });
+  });
+  return Array.from(fields);
+}
+
+function filterFieldParam(field) {
+  return String(field).replace(/\\/g, "\\\\").replace(/,/g, "\\,");
+}
+
+async function loadShopFacets() {
+  if (!shopState.categoryId && !shopState.keyword) return;
+  try {
+    const fields = await loadShopFilterFields();
+    if (!fields.length) return;
+    const filterFields = fields.map(filterFieldParam).join(",");
+    const params = {
+      ...shopProductParams({ offset: 0 }),
+      filterFields,
+      filterFacetLimit: 200,
+      lang: state.lang || "en",
+    };
+    if (params.inStock === true) {
+      delete params.inStock;
+      params.inventory = "instock";
+    }
+    if (params.inStock === false) {
+      delete params.inStock;
+      params.inventory = "outofstock";
+    }
+    delete params.offset;
+    delete params.limit;
+    const data = await ecwidPost("/products/filters", { filterFields }, { params });
+    shopState = { ...shopState, facets: data.filters || {} };
+    saveShopCache();
+    render();
+  } catch {
+    shopState = { ...shopState, facets: facetsFromProducts(shopState.products) };
+    saveShopCache();
+    render();
+  }
+}
+
+function facetsFromProducts(products = []) {
+  const facets = {};
+  products.forEach((product) => {
+    (product.attributes || []).forEach((attribute) => {
+      const key = `attribute_${attribute.name}`;
+      const label = translatedText(attribute, "name") || attribute.name;
+      const value = translatedValue(attribute);
+      if (!key || !value) return;
+      if (!facets[key]) facets[key] = { title: label, values: [] };
+      addFacetValue(facets[key], value);
+    });
+    (product.options || []).forEach((option) => {
+      const key = `option_${option.name}`;
+      const label = translatedText(option, "name") || option.name;
+      if (!facets[key]) facets[key] = { title: label, values: [] };
+      (option.choices || []).forEach((choice) => addFacetValue(facets[key], translatedText(choice, "text") || choice.text));
+    });
+  });
+  return facets;
+}
+
+function addFacetValue(facet, title) {
+  const value = String(title || "").trim();
+  if (!value) return;
+  const existing = facet.values.find((item) => item.title === value);
+  if (existing) existing.productCount = (existing.productCount || 0) + 1;
+  else facet.values.push({ title: value, productCount: 1 });
+}
+
 async function openShopCategory(categoryId) {
   if (!categoryId) {
-    shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, error: "", loading: false };
+    shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false };
     saveShopCache();
     render();
     await loadShopCategories(0);
@@ -1080,17 +1285,18 @@ async function openShopCategory(categoryId) {
       return;
     }
 
-    shopState = { ...shopState, categoryId, products: [], total: 0, selectedProduct: null, loading: false };
+    shopState = { ...shopState, categoryId, products: [], total: 0, selectedProduct: null, loading: false, appliedFacets: {}, facets: {} };
     saveShopCache();
     render();
     await loadShopProducts({ reset: true });
+    loadShopFacets();
   } catch {
     updateShopState({ loading: false, error: t("shopError") });
   }
 }
 
 async function backShopCategory() {
-  shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, error: "", loading: false };
+  shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false };
   saveShopCache();
   render();
   await loadShopCategories(0);
@@ -1142,7 +1348,7 @@ function openCheckout() {
 }
 
 function resetShopHome() {
-  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", selectedProduct: null, products: [], total: 0, categories: [] };
+  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", appliedFacets: {}, facets: {}, selectedProduct: null, products: [], total: 0, categories: [] };
   saveShopCache();
   render();
   loadShopCategories(0);
@@ -1656,6 +1862,8 @@ function bindApp() {
         categoryId: "",
         parentCategoryId: 0,
         categoryTrail: [],
+        appliedFacets: {},
+        facets: {},
         selectedProduct: null,
         error: "",
       };
@@ -1674,9 +1882,13 @@ function bindApp() {
     input.addEventListener("input", () => {
       clearTimeout(window.sayaratiShopSearchTimer);
       window.sayaratiShopSearchTimer = setTimeout(() => {
-        shopState = { ...shopState, keyword: input.value, products: [], total: 0, selectedProduct: null };
+        shopState = { ...shopState, keyword: input.value, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {} };
         saveShopCache();
-        loadShopProducts({ reset: true });
+        if (shopState.keyword || shopState.categoryId) {
+          loadShopProducts({ reset: true }).then(() => loadShopFacets());
+        } else {
+          render();
+        }
       }, 420);
     });
   });
@@ -1688,11 +1900,30 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-shop-stock]").forEach((select) => {
-    select.addEventListener("change", () => updateShopState({ stockFilter: select.value }));
+    select.addEventListener("change", () => {
+      shopState = { ...shopState, stockFilter: select.value, products: [], total: 0, selectedProduct: null };
+      saveShopCache();
+      loadShopProducts({ reset: true }).then(() => loadShopFacets());
+    });
   });
 
   document.querySelectorAll("[data-shop-sort]").forEach((select) => {
-    select.addEventListener("change", () => updateShopState({ sortBy: select.value }));
+    select.addEventListener("change", () => {
+      shopState = { ...shopState, sortBy: select.value, products: [], total: 0, selectedProduct: null };
+      saveShopCache();
+      loadShopProducts({ reset: true });
+    });
+  });
+
+  document.querySelectorAll("[data-shop-facet]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const appliedFacets = { ...(shopState.appliedFacets || {}) };
+      if (select.value) appliedFacets[select.dataset.shopFacet] = select.value;
+      else delete appliedFacets[select.dataset.shopFacet];
+      shopState = { ...shopState, appliedFacets, products: [], total: 0, selectedProduct: null };
+      saveShopCache();
+      loadShopProducts({ reset: true }).then(() => loadShopFacets());
+    });
   });
 
   document.querySelectorAll("[data-category-tile]").forEach((button) => {
