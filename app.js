@@ -826,13 +826,11 @@ function currentView() {
 
 function tourSteps() {
   const carActionTarget = state.cars.length ? "view-history" : "add-car";
-  const serviceActionTarget = state.cars.length ? "add-service" : "add-car";
   return [
     { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center" },
     { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
     { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
     { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
-    { target: serviceActionTarget, title: t("tour4Title"), text: t("tour4Text") },
     { target: "dashboard-totals", title: t("tour5Title"), text: t("tour5Text") },
     { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text"), placement: "top" },
     { target: "service-tab", title: t("tour7Title"), text: t("tour7Text"), placement: "top" },
@@ -1786,7 +1784,6 @@ function carCard(car) {
       </div>
       <div class="actions">
         <button class="ghost" data-open-history="${car.id}" data-tour="view-history">${t("viewHistory")}</button>
-        <button class="primary" data-add-service="${car.id}" data-tour="add-service">${t("addServiceHistory")}</button>
         <button class="ghost" data-edit-car="${car.id}">${t("editCar")}</button>
         <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
