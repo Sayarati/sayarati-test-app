@@ -144,6 +144,9 @@ const copy = {
     carSaved: "Your car was successfully created.",
     carRequired: "Please choose the car brand and model.",
     recordSaved: "Service record saved.",
+    recordUpdated: "Service record updated.",
+    editRecord: "Edit service",
+    updateRecord: "Update record",
     delete: "Delete",
     deleteCarConfirm: "Delete this vehicle and all its service records?",
     deleteRecordConfirm: "Delete this service record?",
@@ -410,6 +413,9 @@ copy.ar = {
   carSaved: "تم إنشاء السيارة بنجاح.",
   carRequired: "يرجى اختيار شركة السيارة والموديل.",
   recordSaved: "تم حفظ سجل الصيانة.",
+  recordUpdated: "تم تحديث سجل الصيانة.",
+  editRecord: "تعديل الخدمة",
+  updateRecord: "تحديث السجل",
   delete: "حذف",
   deleteCarConfirm: "هل تريد حذف هذه السيارة وكل سجلات الصيانة الخاصة بها؟",
   deleteRecordConfirm: "هل تريد حذف سجل الصيانة هذا؟",
@@ -1071,7 +1077,7 @@ function bookletView() {
         </div>
       </div>
       ${state.serviceMode === "detail" && record ? serviceDetailView(record) : ""}
-      ${state.serviceMode === "add" ? serviceFormView(car) : ""}
+      ${(state.serviceMode === "add" || state.serviceMode === "edit") ? serviceFormView(car) : ""}
     </section>
   `;
 }
@@ -1096,29 +1102,32 @@ function serviceHistoryFilters() {
 }
 
 function serviceFormView(car) {
+  const editingRecord = state.serviceMode === "edit" ? selectedRecord(car?.id) : null;
+  const selectedServices = editingRecord?.serviceTypes?.length ? editingRecord.serviceTypes : [editingRecord?.serviceType].filter(Boolean);
   return `
     <div class="panel" id="service-form-panel">
       <div class="row section-head">
         <div>
-          <h2>${t("addRecord")}</h2>
+          <h2>${editingRecord ? t("editRecord") : t("addRecord")}</h2>
           ${car ? `<p><span class="pill green">${carLabel(car)}</span></p>` : ""}
         </div>
         <button class="ghost" data-service-summary>${t("close")}</button>
       </div>
       ${car ? `
         <form class="form" id="record-form">
-          ${field("date", t("date"), "date", new Date().toISOString().slice(0, 10))}
-          ${field("mileage", t("mileage"), "number", car.mileage || "")}
-          ${serviceCheckboxes()}
-          ${serviceSpecificFields()}
-          ${field("otherServiceDetails", t("otherServiceDetails"), "text", "")}
-          ${field("parts", t("parts"), "text", "Oil filter, engine oil")}
-          ${field("cost", t("cost"), "number", "")}
-          ${field("nextDue", t("nextDue"), "date", "")}
-          ${field("invoice", t("invoice"), "text", "")}
+          ${field("date", t("date"), "date", editingRecord?.date || new Date().toISOString().slice(0, 10))}
+          ${field("mileage", t("mileage"), "number", editingRecord?.mileage || car.mileage || "")}
+          ${serviceCheckboxes(selectedServices)}
+          ${serviceSpecificFields(editingRecord)}
+          ${field("otherServiceDetails", t("otherServiceDetails"), "text", editingRecord?.otherServiceDetails || "")}
+          ${field("parts", t("parts"), "text", editingRecord?.parts || "Oil filter, engine oil")}
+          ${field("cost", t("cost"), "number", editingRecord?.cost || "")}
+          ${field("nextDue", t("nextDue"), "date", editingRecord?.nextDue || "")}
+          ${field("invoice", t("invoice"), "text", editingRecord?.invoice || "")}
           ${fileField("partPhotos", t("partPhotos"))}
-          ${textarea("notes", t("notes"), "")}
-          <button class="primary" type="submit" data-submit-record>${t("saveRecord")}</button>
+          ${editingRecord?.partPhotos?.length ? renderPhotos(editingRecord.partPhotos) : ""}
+          ${textarea("notes", t("notes"), editingRecord?.notes || "")}
+          <button class="primary" type="submit" data-submit-record>${editingRecord ? t("updateRecord") : t("saveRecord")}</button>
         </form>
       ` : `<p class="muted">${t("noCars")}</p>`}
     </div>
@@ -1711,14 +1720,14 @@ function selectField(name, label, options, value, placeholder) {
   `;
 }
 
-function serviceCheckboxes() {
+function serviceCheckboxes(selectedServices = []) {
   return `
     <div class="field">
       <label>${t("serviceType")}</label>
       <div class="checkbox-grid">
         ${serviceTypes.map((service) => `
           <label class="check-option">
-            <input type="checkbox" name="serviceTypes" value="${service}" ${service === "Oil change" ? "checked" : ""} />
+            <input type="checkbox" name="serviceTypes" value="${service}" ${selectedServices.includes(service) ? "checked" : ""} />
             <span>${service}</span>
           </label>
         `).join("")}
@@ -1727,18 +1736,20 @@ function serviceCheckboxes() {
   `;
 }
 
-function serviceSpecificFields() {
+function serviceSpecificFields(record = {}) {
+  const oilVisible = record?.serviceTypes?.includes("Oil change") || record?.serviceType === "Oil change";
+  const brakeVisible = record?.serviceTypes?.includes("Brake pads") || record?.serviceType === "Brake pads";
   return `
-    <div class="service-extra" data-service-extra="oil">
+    <div class="service-extra ${oilVisible ? "" : "is-hidden"}" data-service-extra="oil">
       <h3>${t("oilDetails")}</h3>
       <div class="service-extra-grid">
-        ${selectField("oilViscosity", t("oilViscosity"), oilViscosities, "5W-30", t("chooseOilType"))}
-        ${field("oilLiters", t("oilLiters"), "number", "")}
+        ${selectField("oilViscosity", t("oilViscosity"), oilViscosities, record?.oilViscosity || "5W-30", t("chooseOilType"))}
+        ${field("oilLiters", t("oilLiters"), "number", record?.oilLiters || "")}
       </div>
     </div>
-    <div class="service-extra is-hidden" data-service-extra="brakePads">
+    <div class="service-extra ${brakeVisible ? "" : "is-hidden"}" data-service-extra="brakePads">
       <h3>${t("brakePadDetails")}</h3>
-      ${selectField("brakePadPosition", t("brakePadPosition"), brakePadPositions, "", t("chooseBrakePosition"))}
+      ${selectField("brakePadPosition", t("brakePadPosition"), brakePadPositions, record?.brakePadPosition || "", t("chooseBrakePosition"))}
     </div>
   `;
 }
@@ -1850,6 +1861,7 @@ function serviceDetailView(record) {
           <p class="muted">${record.date || "-"} | ${t("mileage")}: ${record.mileage || "-"} km</p>
         </div>
         <div class="actions">
+          <button class="ghost" data-edit-record="${record.id}">${t("editRecord")}</button>
           <button class="ghost" data-service-summary>${t("close")}</button>
           <button class="danger" data-delete-record="${record.id}">${t("delete")}</button>
         </div>
@@ -2023,6 +2035,13 @@ function bindApp() {
     });
   });
 
+  document.querySelectorAll("[data-edit-record]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setState({ selectedRecordId: button.dataset.editRecord, serviceMode: "edit" });
+      scrollAfterRender("service-form-panel");
+    });
+  });
+
   document.querySelectorAll("[data-booklet-car]").forEach((select) => {
     select.addEventListener("change", () => {
       setState({
@@ -2193,20 +2212,24 @@ function bindApp() {
       if (!services.includes("Brake pads")) {
         delete data.brakePadPosition;
       }
+      const existingRecord = state.serviceMode === "edit" ? selectedRecord(car.id) : null;
       const record = {
-        id: uid("record"),
+        ...(existingRecord || {}),
+        id: existingRecord?.id || uid("record"),
         carId: car.id,
         ...data,
         serviceType: services[0] || "",
         serviceTypes: services,
-        partPhotos,
+        partPhotos: partPhotos.length ? partPhotos : existingRecord?.partPhotos || [],
       };
       setState({
-        records: [record, ...state.records],
-        serviceMode: "summary",
+        records: existingRecord
+          ? state.records.map((item) => item.id === existingRecord.id ? record : item)
+          : [record, ...state.records],
+        serviceMode: "detail",
         selectedRecordId: record.id,
       });
-      notify(t("recordSaved"));
+      notify(existingRecord ? t("recordUpdated") : t("recordSaved"));
       scrollAfterRender("app");
     });
   }
