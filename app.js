@@ -551,9 +551,9 @@ function render() {
           </div>
         </div>
         <nav class="nav">
-          ${navButton("cars", "â–£", t("cars"))}
-          ${navButton("booklet", "âœŽ", t("booklet"))}
-          ${navButton("shop", "â—±", t("shop"))}
+          ${navButton("cars", "cars", t("cars"))}
+          ${navButton("booklet", "booklet", t("booklet"))}
+          ${navButton("shop", "shop", t("shop"))}
         </nav>
       </aside>
       <main class="main">
@@ -597,10 +597,19 @@ function loginView() {
 function navButton(view, icon, label) {
   return `
     <button class="${state.view === view ? "active" : ""}" data-view="${view}">
-      <span class="nav-icon">${icon}</span>
+      <span class="nav-icon">${navIcon(icon)}</span>
       <span>${label}</span>
     </button>
   `;
+}
+
+function navIcon(icon) {
+  const icons = {
+    cars: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11l1.4-3.7A2 2 0 0 1 8.3 6h7.4a2 2 0 0 1 1.9 1.3L19 11m-15 0h16v6H4v-6Zm2 6v1.5M18 17v1.5M7 14h.1M17 14h.1" /></svg>`,
+    booklet: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9a3 3 0 0 1 3 3v13H8a2 2 0 0 1-2-2V4Zm0 14a2 2 0 0 1 2-2h10M9 8h5M9 11h6" /></svg>`,
+    shop: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h14l-1 10H6L5 10Zm2.5 0V7a4.5 4.5 0 0 1 9 0v3M8 14h8" /></svg>`,
+  };
+  return icons[icon] || "";
 }
 
 function header() {
@@ -1025,7 +1034,7 @@ function productDetailView(product) {
   const productDescription = translatedText(product, "description");
   return `
     <div class="product-detail" id="shop-detail">
-      <button class="ghost back-to-products" data-close-product>â† ${t("shopBack")}</button>
+      <button class="ghost back-to-products" data-close-product>&larr; ${t("shopBack")}</button>
       <div class="product-detail-grid">
         <div class="product-images">
           ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}
@@ -1479,7 +1488,7 @@ function carPhoto(car) {
   if (car.photo?.dataUrl) {
     return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
   }
-  return `<div class="car-photo placeholder-car"><span>âŒ</span><small>${t("addCarPhoto")}</small></div>`;
+  return `<div class="car-photo placeholder-car"><span>${navIcon("cars")}</span><small>${t("addCarPhoto")}</small></div>`;
 }
 
 function dashboardCarCard(car) {
