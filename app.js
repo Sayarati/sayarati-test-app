@@ -198,6 +198,31 @@ const copy = {
     inStockOnly: "In stock only",
     outOfStockOnly: "Out of stock only",
     filterAll: "All",
+    tourNext: "Next",
+    tourBack: "Back",
+    tourSkip: "Skip",
+    tourDone: "Done",
+    tourCount: "Step",
+    tour1Title: "Your garage",
+    tour1Text: "This is where your saved cars appear with their photos and key details.",
+    tour2Title: "Add a car",
+    tour2Text: "Tap here to create a new vehicle profile with brand, model, mileage, plate, and photo.",
+    tour3Title: "Open history",
+    tour3Text: "Use View history to see all service records for a specific car.",
+    tour4Title: "Add service",
+    tour4Text: "Add oil changes, filters, repairs, costs, mileage, dates, and photos of changed parts.",
+    tour5Title: "Dashboard totals",
+    tour5Text: "These cards summarize your cars, service records, next service date, and total expenses.",
+    tour6Title: "Expense filter",
+    tour6Text: "Filter expenses by this month, this year, last year, or a selected year.",
+    tour7Title: "Service History tab",
+    tour7Text: "This tab lets you select a car and view or filter its full maintenance history.",
+    tour8Title: "Shop tab",
+    tour8Text: "Browse Sayarati products, categories, search, filters, product details, and checkout.",
+    tour9Title: "Language",
+    tour9Text: "Switch between English and Arabic from here.",
+    tour10Title: "Profile",
+    tour10Text: "Open your profile from the initial circle. You can reset demo data there.",
   },
   ar: {
     appName: "Ø³ÙŠØ§Ø±ØªÙŠ",
@@ -430,6 +455,31 @@ copy.ar = {
   inStockOnly: "المتوفر فقط",
   outOfStockOnly: "غير المتوفر فقط",
   filterAll: "الكل",
+  tourNext: "التالي",
+  tourBack: "رجوع",
+  tourSkip: "تخطي",
+  tourDone: "تم",
+  tourCount: "خطوة",
+  tour1Title: "مرآب سياراتك",
+  tour1Text: "هنا تظهر سياراتك المحفوظة مع الصور والتفاصيل الأساسية.",
+  tour2Title: "إضافة سيارة",
+  tour2Text: "اضغط هنا لإنشاء ملف سيارة جديد مع الشركة والموديل والعداد واللوحة والصورة.",
+  tour3Title: "عرض السجل",
+  tour3Text: "استخدم عرض السجل لمشاهدة كل سجلات الصيانة الخاصة بسيارة معينة.",
+  tour4Title: "إضافة خدمة",
+  tour4Text: "أضف تغيير الزيت والفلاتر والتصليحات والتكلفة والعداد والتاريخ وصور القطع.",
+  tour5Title: "ملخص لوحة التحكم",
+  tour5Text: "هذه البطاقات تلخص عدد السيارات والسجلات وموعد الصيانة القادم وإجمالي المصاريف.",
+  tour6Title: "فلتر المصاريف",
+  tour6Text: "يمكنك فلترة المصاريف حسب هذا الشهر أو هذه السنة أو السنة الماضية أو سنة محددة.",
+  tour7Title: "سجل الصيانة",
+  tour7Text: "من هذا التبويب تختار السيارة وتشاهد أو تفلتر سجل الصيانة الكامل.",
+  tour8Title: "المتجر",
+  tour8Text: "تصفح منتجات سيارتي والفئات والبحث والفلاتر وتفاصيل المنتج والدفع.",
+  tour9Title: "اللغة",
+  tour9Text: "بدل بين الإنجليزية والعربية من هنا.",
+  tour10Title: "الملف الشخصي",
+  tour10Text: "افتح ملفك من دائرة الحرف. يمكنك مسح بيانات التجربة من هناك.",
 };
 
 let state = loadState();
@@ -453,6 +503,9 @@ function defaultState() {
     expenseFilter: "thisYear",
     expenseYear: String(new Date().getFullYear()),
     editingCarId: null,
+    tourActive: false,
+    tourStep: 0,
+    tourSeen: false,
   };
 }
 
@@ -545,6 +598,7 @@ function setState(update) {
   state = { ...state, ...update };
   saveState();
   render();
+  syncTourHighlight();
 }
 
 function notify(message) {
@@ -666,30 +720,32 @@ function render() {
             <img src="assets/sayarati-logo-with-online.png?v=1" alt="SAYARATI.online" />
           </div>
           <div class="top-controls">
-            <div class="language">
+            <div class="language" data-tour="language">
               <button class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
               <button class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
             </div>
-            <button class="profile-chip" data-view="profile" title="${t("profile")}">
+            <button class="profile-chip" data-view="profile" data-tour="profile" title="${t("profile")}">
               ${userInitials()}
             </button>
           </div>
         </div>
         <nav class="nav">
           ${navButton("cars", "cars", t("cars"))}
-          ${navButton("booklet", "booklet", t("booklet"))}
-          ${navButton("shop", "shop", t("shop"))}
+          ${navButton("booklet", "booklet", t("booklet"), "service-tab")}
+          ${navButton("shop", "shop", t("shop"), "shop-tab")}
         </nav>
       </aside>
       <main class="main">
         ${header()}
         ${state.notice ? `<div class="notice">${state.notice}</div>` : ""}
         ${currentView()}
+        ${tourOverlay()}
       </main>
     </div>
   `;
 
   bindApp();
+  syncTourHighlight();
 }
 
 function loginView() {
@@ -715,9 +771,9 @@ function loginView() {
   `;
 }
 
-function navButton(view, icon, label) {
+function navButton(view, icon, label, tourId = "") {
   return `
-    <button class="${state.view === view ? "active" : ""}" data-view="${view}">
+    <button class="${state.view === view ? "active" : ""}" data-view="${view}" ${tourId ? `data-tour="${tourId}"` : ""}>
       <span class="nav-icon">${navIcon(icon)}</span>
       <span>${label}</span>
     </button>
@@ -762,6 +818,72 @@ function currentView() {
   if (state.view === "shop") return shopView();
   if (state.view === "profile") return profileView();
   return carsView();
+}
+
+function tourSteps() {
+  const carActionTarget = state.cars.length ? "view-history" : "add-car";
+  const serviceActionTarget = state.cars.length ? "add-service" : "add-car";
+  return [
+    { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
+    { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
+    { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
+    { target: serviceActionTarget, title: t("tour4Title"), text: t("tour4Text") },
+    { target: "dashboard-totals", title: t("tour5Title"), text: t("tour5Text") },
+    { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text") },
+    { target: "service-tab", title: t("tour7Title"), text: t("tour7Text") },
+    { target: "shop-tab", title: t("tour8Title"), text: t("tour8Text") },
+    { target: "language", title: t("tour9Title"), text: t("tour9Text") },
+    { target: "profile", title: t("tour10Title"), text: t("tour10Text") },
+  ];
+}
+
+function tourOverlay() {
+  if (!state.tourActive) return "";
+  const steps = tourSteps();
+  const stepIndex = Math.min(state.tourStep || 0, steps.length - 1);
+  const step = steps[stepIndex];
+  return `
+    <div class="tour-overlay">
+      <button class="tour-dim" data-tour-next aria-label="${t("tourNext")}"></button>
+      <div class="tour-card" role="dialog" aria-live="polite">
+        <span class="pill gold">${t("tourCount")} ${stepIndex + 1} / ${steps.length}</span>
+        <h2>${step.title}</h2>
+        <p class="muted">${step.text}</p>
+        <div class="tour-actions">
+          <button class="ghost" data-tour-skip>${t("tourSkip")}</button>
+          ${stepIndex > 0 ? `<button class="ghost" data-tour-back>${t("tourBack")}</button>` : ""}
+          <button class="primary" data-tour-next>${stepIndex === steps.length - 1 ? t("tourDone") : t("tourNext")}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function syncTourHighlight() {
+  document.querySelectorAll(".tour-highlight").forEach((item) => item.classList.remove("tour-highlight"));
+  if (!state.tourActive) return;
+  const step = tourSteps()[Math.min(state.tourStep || 0, tourSteps().length - 1)];
+  const target = document.querySelector(`[data-tour="${step.target}"]`);
+  if (!target) return;
+  target.classList.add("tour-highlight");
+  setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }), 80);
+}
+
+function nextTourStep() {
+  const lastStep = tourSteps().length - 1;
+  if ((state.tourStep || 0) >= lastStep) {
+    setState({ tourActive: false, tourSeen: true, tourStep: 0 });
+    return;
+  }
+  setState({ tourStep: (state.tourStep || 0) + 1 });
+}
+
+function previousTourStep() {
+  setState({ tourStep: Math.max(0, (state.tourStep || 0) - 1) });
+}
+
+function skipTour() {
+  setState({ tourActive: false, tourSeen: true, tourStep: 0 });
 }
 
 function overviewView() {
@@ -826,10 +948,10 @@ function carsView() {
   const formModel = formCar.model || modelsForBrand(formBrand)[0] || "";
   return `
     <section class="grid">
-      <div class="panel">
+      <div class="panel" data-tour="garage-list">
         <div class="row section-head">
           <div></div>
-          <button class="primary" data-toggle-car-form>${state.carFormOpen ? t("close") : t("addNewCar")}</button>
+          <button class="primary" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : t("addNewCar")}</button>
         </div>
         <div class="list">
           ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
@@ -858,7 +980,7 @@ function carsView() {
 
 function dashboardSummaryView() {
   return `
-    <section class="grid dashboard-grid">
+    <section class="grid dashboard-grid" data-tour="dashboard-totals">
       <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
       <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
       <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
@@ -870,7 +992,7 @@ function dashboardSummaryView() {
           <h2>${t("expensesByCar")}</h2>
           <p class="muted">${t("expenseFilter")}</p>
         </div>
-        <div class="expense-filter">
+        <div class="expense-filter" data-tour="expense-filter">
           <select data-expense-filter>
             <option value="thisYear" ${state.expenseFilter === "thisYear" ? "selected" : ""}>${t("thisYear")}</option>
             <option value="thisMonth" ${state.expenseFilter === "thisMonth" ? "selected" : ""}>${t("thisMonth")}</option>
@@ -1651,8 +1773,8 @@ function carCard(car) {
         </div>
       </div>
       <div class="actions">
-        <button class="ghost" data-open-history="${car.id}">${t("viewHistory")}</button>
-        <button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>
+        <button class="ghost" data-open-history="${car.id}" data-tour="view-history">${t("viewHistory")}</button>
+        <button class="primary" data-add-service="${car.id}" data-tour="add-service">${t("addServiceHistory")}</button>
         <button class="ghost" data-edit-car="${car.id}">${t("editCar")}</button>
         <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
@@ -1757,13 +1879,31 @@ function bindLogin() {
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = formData(event.currentTarget);
-    setState({ user: { name: data.name || "Customer", email: data.email || "customer@example.com" } });
+    const shouldStartTour = !state.tourSeen;
+    setState({
+      user: { name: data.name || "Customer", email: data.email || "customer@example.com" },
+      view: "cars",
+      tourActive: shouldStartTour,
+      tourStep: 0,
+    });
   });
 }
 
 function bindApp() {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
+  });
+
+  document.querySelectorAll("[data-tour-next]").forEach((button) => {
+    button.addEventListener("click", nextTourStep);
+  });
+
+  document.querySelectorAll("[data-tour-back]").forEach((button) => {
+    button.addEventListener("click", previousTourStep);
+  });
+
+  document.querySelectorAll("[data-tour-skip]").forEach((button) => {
+    button.addEventListener("click", skipTour);
   });
 
   document.querySelectorAll("[data-toggle-car-form]").forEach((button) => {
@@ -2008,6 +2148,7 @@ function bindApp() {
       localStorage.removeItem(STORAGE_KEY);
       state = loadState();
       render();
+      syncTourHighlight();
     });
   }
 

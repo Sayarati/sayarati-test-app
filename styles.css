@@ -269,6 +269,55 @@ h1 {
   box-shadow: 0 20px 55px rgba(11, 15, 18, 0.24);
 }
 
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.tour-dim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(11, 15, 18, 0.58);
+  pointer-events: auto;
+}
+
+.tour-card {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(420px, calc(100vw - 28px));
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.tour-card h2 {
+  margin: 12px 0 8px;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.tour-highlight {
+  position: relative;
+  z-index: 90;
+  outline: 4px solid var(--accent);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(255, 210, 31, 0.28);
+}
+
 .grid {
   display: grid;
   gap: 16px;
@@ -1195,5 +1244,9 @@ button:disabled {
 
   .shop-launcher {
     min-height: 460px;
+  }
+
+  .tour-card {
+    bottom: 96px;
   }
 }
