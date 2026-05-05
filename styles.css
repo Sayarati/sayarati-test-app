@@ -144,7 +144,9 @@ button {
 
 .nav-icon {
   width: 25px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
 }
 
 .nav-icon svg,
