@@ -85,7 +85,7 @@ const copy = {
     enter: "Enter App",
     overview: "Dashboard",
     cars: "My Cars",
-    booklet: "Service Booklet",
+    booklet: "Service History",
     shop: "Shop",
     profile: "Profile",
     myDashboard: "My dashboard",
@@ -538,7 +538,8 @@ function render() {
       <aside class="sidebar">
         <div class="sidebar-top">
           <div class="brand-wordmark">
-            <img src="assets/sayarati-logo-yellow.png?v=1" alt="SAYARATI.online" />
+            <img src="assets/sayarati-logo-full.png?v=1" alt="SAYARATI.online" />
+            <span class="brand-online">.online</span>
           </div>
           <div class="top-controls">
             <div class="language">
