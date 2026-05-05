@@ -3,7 +3,7 @@ const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BD
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
-const SHOP_CACHE_KEY = "sayarati-shop-cache-v9";
+const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
 const SHOP_PAGE_SIZE = 24;
 
 const carCatalog = [
@@ -536,8 +536,8 @@ function render() {
     <div class="shell">
       <aside class="sidebar">
         <div class="sidebar-top">
-          <div class="brand brand-logo-only">
-            <div class="logo-box"><img src="${LOGO_URL}" alt="SAYARATI.online" /></div>
+          <div class="brand-wordmark" aria-label="SAYARATI.online">
+            <span>SAYARATI</span><small>.online</small>
           </div>
           <div class="top-controls">
             <div class="language">
@@ -900,6 +900,7 @@ function productGridView() {
 function shopFacetControls() {
   const facets = Object.entries(shopState.facets || {})
     .filter(([key, facet]) => (key.startsWith("attribute_") || key.startsWith("option_")) && Array.isArray(facet.values) && facet.values.length > 1)
+    .filter(([key, facet]) => !isHiddenShopFacet(key, facet))
     .slice(0, 8);
   if (!facets.length) return "";
   return `
@@ -918,6 +919,11 @@ function shopFacetControls() {
       `).join("")}
     </div>
   `;
+}
+
+function isHiddenShopFacet(key, facet) {
+  const label = `${key} ${facet?.title || ""}`.toLowerCase();
+  return label.includes("upc");
 }
 
 function cleanFilterName(key) {
