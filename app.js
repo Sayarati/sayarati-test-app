@@ -536,8 +536,8 @@ function render() {
     <div class="shell">
       <aside class="sidebar">
         <div class="sidebar-top">
-          <div class="brand-wordmark" aria-label="SAYARATI.online">
-            <span>SAYARATI</span><small>.online</small>
+          <div class="brand-wordmark">
+            <img src="assets/sayarati-logo-yellow.png?v=1" alt="SAYARATI.online" />
           </div>
           <div class="top-controls">
             <div class="language">
