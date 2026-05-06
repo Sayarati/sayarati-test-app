@@ -82,9 +82,11 @@ const copy = {
     appName: "Sayarati",
     subtitle: "Digital car service booklet",
     loginTitle: "Welcome to your Digital service booklet by Sayarati.online",
-    loginText: "Enter your name and email to start.",
+    loginText: "Enter your name and mobile number to start.",
     name: "Name",
-    email: "Email",
+    phone: "Mobile number",
+    phoneHelp: "Use digits only. Example: 96170123456",
+    phoneInvalid: "Please enter a valid mobile number using 8 to 15 digits.",
     enter: "Enter App",
     overview: "Dashboard",
     cars: "My Cars",
@@ -352,9 +354,11 @@ copy.ar = {
   appName: "سيارتي",
   subtitle: "دفتر صيانة رقمي للسيارة",
   loginTitle: "أهلا بك في دفتر الصيانة الرقمي من Sayarati.online",
-  loginText: "أدخل اسمك وبريدك الإلكتروني للبدء.",
+  loginText: "أدخل اسمك ورقم هاتفك للبدء.",
   name: "الاسم",
-  email: "البريد الإلكتروني",
+  phone: "رقم الهاتف",
+  phoneHelp: "استخدم الأرقام فقط. مثال: 96170123456",
+  phoneInvalid: "يرجى إدخال رقم هاتف صحيح من 8 إلى 15 رقما.",
   enter: "دخول التطبيق",
   overview: "لوحة التحكم",
   cars: "سياراتي",
@@ -778,7 +782,7 @@ function render() {
 function loginView() {
   return `
     <section class="login-wrap">
-      <form class="login-card" id="login-form">
+      <form class="login-card" id="login-form" novalidate>
         <div class="login-logo">
           <img src="assets/sayarati-logo-with-online.png?v=1" alt="SAYARATI.online" />
         </div>
@@ -786,7 +790,8 @@ function loginView() {
         <p class="muted">${t("loginText")}</p>
         <div class="form">
           ${field("name", t("name"), "text", "Cedric")}
-          ${field("email", t("email"), "email", "customer@example.com")}
+          ${phoneField()}
+          <p class="form-error" data-login-error hidden></p>
           <button class="primary" type="submit">${t("enter")}</button>
           <div class="language">
             <button type="button" class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
@@ -1687,10 +1692,11 @@ function resetShopHome() {
 }
 
 function profileView() {
+  const contact = state.user.phone || state.user.email || "";
   return `
     <section class="panel">
       <h2>${state.user.name}</h2>
-      <p class="muted">${state.user.email}</p>
+      <p class="muted">${contact}</p>
       <div class="actions">
         <button class="ghost" data-reset>${t("reset")}</button>
       </div>
@@ -1703,6 +1709,16 @@ function field(name, label, type, value) {
     <div class="field">
       <label for="${name}">${label}</label>
       <input id="${name}" name="${name}" type="${type}" value="${value || ""}" />
+    </div>
+  `;
+}
+
+function phoneField(value = "") {
+  return `
+    <div class="field">
+      <label for="phone">${t("phone")}</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" />
+      <small>${t("phoneHelp")}</small>
     </div>
   `;
 }
@@ -1944,17 +1960,41 @@ function bindLogin() {
     button.addEventListener("click", () => switchLanguage(button.dataset.lang));
   });
 
+  const phoneInput = document.querySelector("#phone");
+  phoneInput?.addEventListener("input", () => {
+    phoneInput.value = sanitizePhone(phoneInput.value);
+  });
+
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = formData(event.currentTarget);
+    const phone = sanitizePhone(data.phone || "");
+    if (!isValidPhone(phone)) {
+      const error = event.currentTarget.querySelector("[data-login-error]");
+      if (error) {
+        error.textContent = t("phoneInvalid");
+        error.hidden = false;
+      }
+      phoneInput?.focus();
+      return;
+    }
+
     const shouldStartTour = !state.tourSeen;
     setState({
-      user: { name: data.name || "Customer", email: data.email || "customer@example.com" },
+      user: { name: data.name || "Customer", phone },
       view: "cars",
       tourActive: shouldStartTour,
       tourStep: 0,
     });
   });
+}
+
+function sanitizePhone(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 15);
+}
+
+function isValidPhone(value) {
+  return /^\d{8,15}$/.test(value);
 }
 
 function bindApp() {
