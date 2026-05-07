@@ -5,6 +5,8 @@ const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const STORAGE_KEY = "sayarati-test-app";
 const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
 const SHOP_PAGE_SIZE = 24;
+const IMAGE_MAX_EDGE = 900;
+const IMAGE_QUALITY = 0.64;
 
 const carCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -1947,12 +1949,49 @@ function checkedValues(form, name) {
 
 function readImageFiles(input) {
   const files = Array.from(input?.files || []);
-  return Promise.all(files.map((file) => new Promise((resolve) => {
+  return Promise.all(files.map(compressImageFile)).then((photos) => photos.filter((photo) => photo.dataUrl));
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve) => {
+    if (!file?.type?.startsWith("image/")) {
+      resolve({ name: file?.name || "photo", dataUrl: "" });
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => resolve({ name: file.name, dataUrl: reader.result });
     reader.onerror = () => resolve({ name: file.name, dataUrl: "" });
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => resolve({ name: file.name, dataUrl: "" });
+      image.onload = () => {
+        const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d", { alpha: false });
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+
+        resolve({
+          name: jpgName(file.name),
+          dataUrl: canvas.toDataURL("image/jpeg", IMAGE_QUALITY),
+          width,
+          height,
+          originalSize: file.size,
+        });
+      };
+      image.src = reader.result;
+    };
     reader.readAsDataURL(file);
-  }))).then((photos) => photos.filter((photo) => photo.dataUrl));
+  });
+}
+
+function jpgName(name = "photo") {
+  return `${name.replace(/\.[^.]+$/, "") || "photo"}.jpg`;
 }
 
 function bindLogin() {
