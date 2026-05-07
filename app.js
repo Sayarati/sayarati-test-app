@@ -517,6 +517,8 @@ copy.ar = {
 
 let state = loadState();
 let shopState = loadShopCache();
+let adminMessages = [];
+let adminMessagesLoaded = false;
 
 function defaultState() {
   return {
@@ -653,6 +655,37 @@ function switchLanguage(lang) {
   }
 }
 
+function loadAdminMessagesOnce() {
+  if (!state.user || adminMessagesLoaded) return;
+  adminMessagesLoaded = true;
+  fetch("/.netlify/functions/admin-messages")
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data.messages)) {
+        adminMessages = data.messages;
+        render();
+      }
+    })
+    .catch(() => {
+      adminMessages = [];
+    });
+}
+
+function dismissedAdminMessages() {
+  try {
+    return JSON.parse(localStorage.getItem("sayarati-dismissed-admin-messages") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function dismissAdminMessage(id) {
+  const dismissed = dismissedAdminMessages();
+  if (!dismissed.includes(id)) dismissed.push(id);
+  localStorage.setItem("sayarati-dismissed-admin-messages", JSON.stringify(dismissed.slice(-50)));
+  render();
+}
+
 function setView(view) {
   setState({ view: view === "overview" ? "cars" : view });
 }
@@ -771,6 +804,7 @@ function render() {
       <main class="main">
         ${header()}
         ${state.notice ? `<div class="notice">${state.notice}</div>` : ""}
+        ${adminMessageBanner()}
         ${currentView()}
         ${tourOverlay()}
       </main>
@@ -778,6 +812,7 @@ function render() {
   `;
 
   bindApp();
+  loadAdminMessagesOnce();
   syncTourHighlight();
 }
 
@@ -852,6 +887,24 @@ function currentView() {
   if (state.view === "shop") return shopView();
   if (state.view === "profile") return profileView();
   return carsView();
+}
+
+function adminMessageBanner() {
+  const dismissed = dismissedAdminMessages();
+  const message = adminMessages.find((item) => !dismissed.includes(item.id));
+  if (!message) return "";
+  return `
+    <section class="app-message">
+      <div>
+        <strong>${escapeHtml(message.title)}</strong>
+        <p>${escapeHtml(message.body)}</p>
+      </div>
+      <div class="app-message-actions">
+        ${message.cta_url ? `<a href="${escapeAttr(message.cta_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(message.cta_label || "Open")}</a>` : ""}
+        <button data-dismiss-admin-message="${escapeAttr(message.id)}" aria-label="Close">×</button>
+      </div>
+    </section>
+  `;
 }
 
 function tourSteps() {
@@ -2039,6 +2092,10 @@ function isValidPhone(value) {
 function bindApp() {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
+  });
+
+  document.querySelectorAll("[data-dismiss-admin-message]").forEach((button) => {
+    button.addEventListener("click", () => dismissAdminMessage(button.dataset.dismissAdminMessage));
   });
 
   document.querySelectorAll("[data-tour-next]").forEach((button) => {
