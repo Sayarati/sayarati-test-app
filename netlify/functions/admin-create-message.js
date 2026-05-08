@@ -1,10 +1,10 @@
 const {
-  adminPhones,
   bearerToken,
+  dbOne,
+  isAdminPhone,
   methodOptions,
   readJson,
   response,
-  supabaseAdmin,
   verifySession,
 } = require("./_shared");
 
@@ -17,15 +17,7 @@ exports.handler = async (event) => {
   if (!session?.phone) return response(401, { error: "Please sign in again" });
 
   try {
-    const supabase = supabaseAdmin();
-    const allowedByEnv = adminPhones().includes(session.phone);
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("phone")
-      .eq("phone", session.phone)
-      .maybeSingle();
-
-    if (!allowedByEnv && !adminUser) return response(403, { error: "Admin access only" });
+    if (!(await isAdminPhone(session.phone))) return response(403, { error: "Admin access only" });
 
     const body = readJson(event);
     const title = String(body.title || "").trim().slice(0, 90);
@@ -36,20 +28,12 @@ exports.handler = async (event) => {
 
     if (!title || !message) return response(400, { error: "Title and message are required" });
 
-    const { data, error } = await supabase
-      .from("admin_messages")
-      .insert({
-        title,
-        body: message,
-        cta_label: ctaLabel || null,
-        cta_url: ctaUrl || null,
-        ends_at: endsAt,
-        created_by_phone: session.phone,
-      })
-      .select("*")
-      .single();
+    const data = await dbOne(`
+      insert into admin_messages (title, body, cta_label, cta_url, ends_at, created_by_phone)
+      values ($1, $2, $3, $4, $5, $6)
+      returning *
+    `, [title, message, ctaLabel || null, ctaUrl || null, endsAt, session.phone]);
 
-    if (error) throw error;
     return response(200, { ok: true, message: data });
   } catch (error) {
     return response(500, { error: error.message || "Could not create message" });

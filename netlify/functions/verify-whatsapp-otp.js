@@ -1,11 +1,12 @@
 const {
+  dbOne,
+  dbQuery,
   hashValue,
   methodOptions,
   readJson,
   response,
   sanitizePhone,
   signSession,
-  supabaseAdmin,
   validPhone,
 } = require("./_shared");
 
@@ -22,35 +23,27 @@ exports.handler = async (event) => {
   }
 
   try {
-    const supabase = supabaseAdmin();
-    const { data: otp, error: otpError } = await supabase
-      .from("otp_codes")
-      .select("*")
-      .eq("phone", cleanPhone)
-      .single();
+    const otp = await dbOne("select * from otp_codes where phone = $1", [cleanPhone]);
 
-    if (otpError || !otp) return response(400, { error: "Code not found or expired" });
+    if (!otp) return response(400, { error: "Code not found or expired" });
     if (new Date(otp.expires_at).getTime() < Date.now()) return response(400, { error: "Code expired" });
     if (otp.attempts >= 5) return response(429, { error: "Too many attempts" });
 
     const expected = hashValue(`${cleanPhone}:${cleanCode}`);
     if (expected !== otp.code_hash) {
-      await supabase.from("otp_codes").update({ attempts: otp.attempts + 1 }).eq("phone", cleanPhone);
+      await dbQuery("update otp_codes set attempts = attempts + 1 where phone = $1", [cleanPhone]);
       return response(400, { error: "Incorrect code" });
     }
 
-    const { data: customer, error: customerError } = await supabase
-      .from("customers")
-      .upsert({
-        phone: cleanPhone,
-        name: name || null,
-        last_login_at: new Date().toISOString(),
-      }, { onConflict: "phone" })
-      .select("id, phone, name")
-      .single();
+    const customer = await dbOne(`
+      insert into customers (phone, name, last_login_at)
+      values ($1, $2, now())
+      on conflict (phone)
+      do update set name = coalesce(excluded.name, customers.name), last_login_at = now()
+      returning id, phone, name
+    `, [cleanPhone, name || null]);
 
-    if (customerError) throw customerError;
-    await supabase.from("otp_codes").delete().eq("phone", cleanPhone);
+    await dbQuery("delete from otp_codes where phone = $1", [cleanPhone]);
 
     const token = signSession({
       sub: customer.id,

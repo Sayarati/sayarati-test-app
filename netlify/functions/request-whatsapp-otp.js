@@ -1,4 +1,5 @@
 const {
+  dbQuery,
   env,
   hashValue,
   makeOtp,
@@ -6,7 +7,6 @@ const {
   readJson,
   response,
   sanitizePhone,
-  supabaseAdmin,
   validPhone,
 } = require("./_shared");
 
@@ -20,17 +20,15 @@ exports.handler = async (event) => {
   if (!validPhone(cleanPhone)) return response(400, { error: "Invalid phone number" });
 
   try {
-    const supabase = supabaseAdmin();
     const code = makeOtp();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    const { error: saveError } = await supabase.from("otp_codes").upsert({
-      phone: cleanPhone,
-      code_hash: hashValue(`${cleanPhone}:${code}`),
-      expires_at: expiresAt,
-      attempts: 0,
-    });
-    if (saveError) throw saveError;
+    await dbQuery(`
+      insert into otp_codes (phone, code_hash, expires_at, attempts)
+      values ($1, $2, $3, 0)
+      on conflict (phone)
+      do update set code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0, created_at = now()
+    `, [cleanPhone, hashValue(`${cleanPhone}:${code}`), expiresAt]);
 
     if (env("WATI_SKIP_SEND") !== "true") {
       await sendWatiOtp(cleanPhone, code);

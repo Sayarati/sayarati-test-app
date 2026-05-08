@@ -60,6 +60,10 @@ create table if not exists public.admin_users (
   created_at timestamptz not null default now()
 );
 
+insert into public.admin_users (phone, name)
+values ('96176888157', 'Sayarati Admin')
+on conflict (phone) do nothing;
+
 create table if not exists public.admin_messages (
   id uuid primary key default gen_random_uuid(),
   title text not null,

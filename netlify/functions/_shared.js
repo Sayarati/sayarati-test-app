@@ -1,5 +1,6 @@
 const crypto = require("crypto");
-const { createClient } = require("@supabase/supabase-js");
+
+let cachedDb;
 
 const jsonHeaders = {
   "content-type": "application/json",
@@ -36,22 +37,8 @@ function env(name) {
   return process.env[name] || "";
 }
 
-function requireEnv(names) {
-  const missing = names.filter((name) => !env(name));
-  if (missing.length) {
-    throw new Error(`Missing server setting: ${missing.join(", ")}`);
-  }
-}
-
-function supabaseAdmin() {
-  requireEnv(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
-  return createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
-    auth: { persistSession: false },
-  });
-}
-
 function secret() {
-  return env("SESSION_SECRET") || env("SUPABASE_SERVICE_ROLE_KEY") || "local-dev-secret";
+  return env("SESSION_SECRET") || env("NETLIFY_DATABASE_URL") || "local-dev-secret";
 }
 
 function hashValue(value) {
@@ -87,11 +74,44 @@ function adminPhones() {
   return env("ADMIN_PHONE_NUMBERS").split(",").map(sanitizePhone).filter(Boolean);
 }
 
+async function database() {
+  if (!cachedDb) {
+    const { getDatabase } = await import("@netlify/database");
+    cachedDb = getDatabase();
+  }
+  return cachedDb;
+}
+
+async function dbQuery(text, params = []) {
+  const db = await database();
+  return db.pool.query(text, params);
+}
+
+async function dbRows(text, params = []) {
+  const result = await dbQuery(text, params);
+  return result.rows || [];
+}
+
+async function dbOne(text, params = []) {
+  const rows = await dbRows(text, params);
+  return rows[0] || null;
+}
+
+async function isAdminPhone(phone) {
+  if (adminPhones().includes(phone)) return true;
+  const admin = await dbOne("select phone from admin_users where phone = $1", [phone]);
+  return Boolean(admin);
+}
+
 module.exports = {
   adminPhones,
   bearerToken,
+  dbOne,
+  dbQuery,
+  dbRows,
   env,
   hashValue,
+  isAdminPhone,
   jsonHeaders,
   makeOtp,
   methodOptions,
@@ -99,7 +119,6 @@ module.exports = {
   response,
   sanitizePhone,
   signSession,
-  supabaseAdmin,
   validPhone,
   verifySession,
 };

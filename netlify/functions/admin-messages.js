@@ -1,4 +1,4 @@
-const { methodOptions, response, supabaseAdmin } = require("./_shared");
+const { dbRows, methodOptions, response } = require("./_shared");
 
 exports.handler = async (event) => {
   const options = methodOptions(event);
@@ -7,18 +7,17 @@ exports.handler = async (event) => {
 
   try {
     const now = new Date().toISOString();
-    const supabase = supabaseAdmin();
-    const { data, error } = await supabase
-      .from("admin_messages")
-      .select("id, title, body, cta_label, cta_url, starts_at, ends_at")
-      .eq("is_active", true)
-      .lte("starts_at", now)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
-      .order("created_at", { ascending: false })
-      .limit(3);
+    const messages = await dbRows(`
+      select id, title, body, cta_label, cta_url, starts_at, ends_at
+      from admin_messages
+      where is_active = true
+        and starts_at <= $1
+        and (ends_at is null or ends_at >= $1)
+      order by created_at desc
+      limit 3
+    `, [now]);
 
-    if (error) throw error;
-    return response(200, { ok: true, messages: data || [] });
+    return response(200, { ok: true, messages });
   } catch (error) {
     return response(200, { ok: false, messages: [] });
   }

@@ -1,9 +1,9 @@
 const {
-  adminPhones,
   bearerToken,
+  dbRows,
+  isAdminPhone,
   methodOptions,
   response,
-  supabaseAdmin,
   verifySession,
 } = require("./_shared");
 
@@ -16,34 +16,21 @@ exports.handler = async (event) => {
   if (!session?.phone) return response(401, { error: "Please sign in again" });
 
   try {
-    const supabase = supabaseAdmin();
-    const allowedByEnv = adminPhones().includes(session.phone);
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("phone")
-      .eq("phone", session.phone)
-      .maybeSingle();
+    if (!(await isAdminPhone(session.phone))) return response(403, { error: "Admin access only" });
 
-    if (!allowedByEnv && !adminUser) return response(403, { error: "Admin access only" });
-
-    const [{ data: customers, error: customersError }, { data: cars, error: carsError }, { data: records, error: recordsError }, { data: messages, error: messagesError }] = await Promise.all([
-      supabase.from("customers").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("cars").select("*").order("created_at", { ascending: false }).limit(1000),
-      supabase.from("service_records").select("*").order("created_at", { ascending: false }).limit(2000),
-      supabase.from("admin_messages").select("*").order("created_at", { ascending: false }).limit(20),
+    const [customers, cars, records, messages] = await Promise.all([
+      dbRows("select * from customers order by created_at desc limit 500"),
+      dbRows("select * from cars order by created_at desc limit 1000"),
+      dbRows("select * from service_records order by created_at desc limit 2000"),
+      dbRows("select * from admin_messages order by created_at desc limit 20"),
     ]);
-
-    if (customersError) throw customersError;
-    if (carsError) throw carsError;
-    if (recordsError) throw recordsError;
-    if (messagesError) throw messagesError;
 
     return response(200, {
       ok: true,
-      customers: customers || [],
-      cars: cars || [],
-      records: records || [],
-      messages: messages || [],
+      customers,
+      cars,
+      records,
+      messages,
     });
   } catch (error) {
     return response(500, { error: error.message || "Could not load admin data" });
