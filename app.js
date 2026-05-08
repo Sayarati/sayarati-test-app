@@ -2,6 +2,7 @@
 const LOGO_URL = "https://dhgf5mcbrms62.cloudfront.net/43948359/header-L9QsQT/BDSbUBb-200x200.png";
 const ECWID_STORE_ID = "43948359";
 const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
+const WHATSAPP_HOTLINE_NUMBER = "96171925299";
 const STORAGE_KEY = "sayarati-test-app";
 const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
 const SHOP_PAGE_SIZE = 24;
@@ -215,6 +216,11 @@ const copy = {
     inStockOnly: "In stock only",
     outOfStockOnly: "Out of stock only",
     filterAll: "All",
+    whatsapp: "WhatsApp",
+    share: "Share",
+    shareProduct: "Share product",
+    shareCategory: "Share category",
+    linkCopied: "Link copied.",
     tourNext: "Next",
     tourBack: "Back",
     tourSkip: "Skip",
@@ -486,6 +492,11 @@ copy.ar = {
   inStockOnly: "المتوفر فقط",
   outOfStockOnly: "غير المتوفر فقط",
   filterAll: "الكل",
+  whatsapp: "واتساب",
+  share: "مشاركة",
+  shareProduct: "مشاركة المنتج",
+  shareCategory: "مشاركة الفئة",
+  linkCopied: "تم نسخ الرابط.",
   tourNext: "التالي",
   tourBack: "رجوع",
   tourSkip: "تخطي",
@@ -519,6 +530,8 @@ let state = loadState();
 let shopState = loadShopCache();
 let adminMessages = [];
 let adminMessagesLoaded = false;
+const initialShopLink = readInitialShopLink();
+let initialShopLinkApplied = false;
 
 function defaultState() {
   return {
@@ -690,6 +703,68 @@ function setView(view) {
   setState({ view: view === "overview" ? "cars" : view });
 }
 
+function openWhatsAppHotline() {
+  window.open(`https://wa.me/${WHATSAPP_HOTLINE_NUMBER}`, "_blank", "noopener,noreferrer");
+}
+
+function readInitialShopLink() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    shop: params.get("shop"),
+    categoryId: params.get("category"),
+    productId: params.get("product"),
+  };
+}
+
+function appShareUrl(params = {}) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, value);
+  });
+  return url.toString();
+}
+
+async function shareShopItem(kind, id) {
+  const product = shopState.selectedProduct?.id && String(shopState.selectedProduct.id) === String(id)
+    ? shopState.selectedProduct
+    : shopState.products.find((item) => String(item.id) === String(id));
+  const category = shopState.categories.find((item) => String(item.id) === String(id));
+  const title = kind === "product" ? translatedText(product, "name") : translatedText(category, "name");
+  const url = kind === "product"
+    ? appShareUrl({ shop: "1", product: id })
+    : appShareUrl({ shop: "1", category: id });
+  const text = `${title || "Sayarati"} - Sayarati.online`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: title || "Sayarati", text, url });
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(url);
+    notify(t("linkCopied"));
+  } catch {
+    window.prompt(t("share"), url);
+  }
+}
+
+async function applyInitialShopLink() {
+  if (initialShopLinkApplied || !state.user) return;
+  if (!initialShopLink.shop && !initialShopLink.categoryId && !initialShopLink.productId) return;
+  initialShopLinkApplied = true;
+  state = { ...state, view: "shop" };
+  saveState();
+  render();
+  if (!shopState.categories.length) await loadShopCategories(0);
+  if (initialShopLink.categoryId) await openShopCategory(initialShopLink.categoryId);
+  if (initialShopLink.productId) await openProductDetails(initialShopLink.productId);
+}
+
 function selectedCar() {
   return state.cars.find((car) => car.id === state.selectedCarId) || state.cars[0];
 }
@@ -799,6 +874,7 @@ function render() {
           ${navButton("cars", "cars", t("cars"))}
           ${navButton("booklet", "booklet", t("booklet"), "service-tab")}
           ${navButton("shop", "shop", t("shop"), "shop-tab")}
+          ${whatsappNavButton()}
         </nav>
       </aside>
       <main class="main">
@@ -813,6 +889,7 @@ function render() {
 
   bindApp();
   loadAdminMessagesOnce();
+  applyInitialShopLink();
   syncTourHighlight();
 }
 
@@ -849,11 +926,21 @@ function navButton(view, icon, label, tourId = "") {
   `;
 }
 
+function whatsappNavButton() {
+  return `
+    <button type="button" class="whatsapp-tab" data-whatsapp-hotline>
+      <span class="nav-icon">${navIcon("whatsapp")}</span>
+      <span>${t("whatsapp")}</span>
+    </button>
+  `;
+}
+
 function navIcon(icon) {
   const icons = {
     cars: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11l1.4-3.7A2 2 0 0 1 8.3 6h7.4a2 2 0 0 1 1.9 1.3L19 11m-15 0h16v6H4v-6Zm2 6v1.5M18 17v1.5M7 14h.1M17 14h.1" /></svg>`,
     booklet: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9a3 3 0 0 1 3 3v13H8a2 2 0 0 1-2-2V4Zm0 14a2 2 0 0 1 2-2h10M9 8h5M9 11h6" /></svg>`,
     shop: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h14l-1 10H6L5 10Zm2.5 0V7a4.5 4.5 0 0 1 9 0v3M8 14h8" /></svg>`,
+    whatsapp: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.8 18.2 4 22l4.1-1.6A8.8 8.8 0 1 0 2.9 12a8.7 8.7 0 0 0 2.9 6.2Z" /><path d="M8.2 8.5c.2-.5.4-.5.7-.5h.6c.2 0 .5.1.6.5l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.2.2-.2.4 0 .7.4.8 1.2 1.8 2.3 2.4.3.2.5.2.7 0l.7-.8c.2-.2.4-.3.7-.2l1.8.8c.4.2.5.4.5.7 0 .6-.4 1.5-1 1.8-.6.3-2.8.4-5.2-1.6-2.2-1.8-3.6-4.2-3.7-5.3 0-.6.3-1.2.5-1.5Z" /></svg>`,
   };
   return icons[icon] || "";
 }
@@ -1245,11 +1332,15 @@ function categoryLandingView() {
       <p class="muted">${t("chooseCategoryFirst")}</p>
       <div class="category-grid">
         ${shopState.categories.map((category) => `
-          <button class="category-tile" data-category-tile="${category.id}">
+          <article class="category-tile">
             ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(translatedText(category, "name"))}" />` : `<span>${escapeHtml(translatedText(category, "name")).slice(0, 1)}</span>`}
             <strong>${escapeHtml(translatedText(category, "name"))}</strong>
             ${Number(category.productCount || 0) ? `<small>${category.productCount}</small>` : ""}
-          </button>
+            <div class="tile-actions">
+              <button class="tile-open" data-category-tile="${category.id}">${t("shop")}</button>
+              <button class="tile-share" data-share-category="${category.id}">${t("share")}</button>
+            </div>
+          </article>
         `).join("")}
       </div>
     </div>
@@ -1360,6 +1451,7 @@ function productCard(product) {
         <strong>${escapeHtml(productName)}</strong>
         <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
         <small class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</small>
+        <button class="tile-share" data-share-product="${product.id}">${t("share")}</button>
       </div>
     </article>
   `;
@@ -1384,6 +1476,7 @@ function productDetailView(product) {
           <div class="actions">
             <button class="primary" data-add-product="${product.id}" ${product.inStock === false ? "disabled" : ""}>${t("addToCart")}</button>
             <button class="ghost" data-shop-checkout>${t("checkout")}</button>
+            <button class="ghost" data-share-product="${product.id}">${t("shareProduct")}</button>
           </div>
         </div>
       </div>
@@ -2094,6 +2187,10 @@ function bindApp() {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
 
+  document.querySelectorAll("[data-whatsapp-hotline]").forEach((button) => {
+    button.addEventListener("click", openWhatsAppHotline);
+  });
+
   document.querySelectorAll("[data-dismiss-admin-message]").forEach((button) => {
     button.addEventListener("click", () => dismissAdminMessage(button.dataset.dismissAdminMessage));
   });
@@ -2479,6 +2576,13 @@ function bindApp() {
     });
   });
 
+  document.querySelectorAll("[data-share-category]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      shareShopItem("category", button.dataset.shareCategory);
+    });
+  });
+
   document.querySelectorAll("[data-category-back]").forEach((button) => {
     button.addEventListener("click", backShopCategory);
   });
@@ -2489,6 +2593,13 @@ function bindApp() {
 
   document.querySelectorAll("[data-product-id]").forEach((card) => {
     card.addEventListener("click", () => openProductDetails(card.dataset.productId));
+  });
+
+  document.querySelectorAll("[data-share-product]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      shareShopItem("product", button.dataset.shareProduct);
+    });
   });
 
   document.querySelectorAll("[data-close-product]").forEach((button) => {
