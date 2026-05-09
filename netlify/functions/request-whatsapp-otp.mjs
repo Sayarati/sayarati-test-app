@@ -1,4 +1,4 @@
-const {
+import {
   dbQuery,
   env,
   hashValue,
@@ -8,14 +8,14 @@ const {
   response,
   sanitizePhone,
   validPhone,
-} = require("./_shared");
+} from "./shared.mjs";
 
-exports.handler = async (event) => {
-  const options = methodOptions(event);
+export default async function handler(request) {
+  const options = methodOptions(request);
   if (options) return options;
-  if (event.httpMethod !== "POST") return response(405, { error: "Method not allowed" });
+  if (request.method !== "POST") return response(405, { error: "Method not allowed" });
 
-  const { phone } = readJson(event);
+  const { phone } = await readJson(request);
   const cleanPhone = sanitizePhone(phone);
   if (!validPhone(cleanPhone)) return response(400, { error: "Invalid phone number" });
 
@@ -38,7 +38,7 @@ exports.handler = async (event) => {
   } catch (error) {
     return response(500, { error: error.message || "Could not send verification code" });
   }
-};
+}
 
 async function sendWatiOtp(phone, code) {
   const endpoint = env("WATI_API_ENDPOINT").replace(/\/$/, "");

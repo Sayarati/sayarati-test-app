@@ -1,4 +1,4 @@
-const {
+import {
   dbOne,
   dbQuery,
   hashValue,
@@ -8,14 +8,14 @@ const {
   sanitizePhone,
   signSession,
   validPhone,
-} = require("./_shared");
+} from "./shared.mjs";
 
-exports.handler = async (event) => {
-  const options = methodOptions(event);
+export default async function handler(request) {
+  const options = methodOptions(request);
   if (options) return options;
-  if (event.httpMethod !== "POST") return response(405, { error: "Method not allowed" });
+  if (request.method !== "POST") return response(405, { error: "Method not allowed" });
 
-  const { phone, code, name } = readJson(event);
+  const { phone, code, name } = await readJson(request);
   const cleanPhone = sanitizePhone(phone);
   const cleanCode = String(code || "").replace(/\D/g, "").slice(0, 6);
   if (!validPhone(cleanPhone) || cleanCode.length !== 6) {
@@ -55,4 +55,4 @@ exports.handler = async (event) => {
   } catch (error) {
     return response(500, { error: error.message || "Could not verify code" });
   }
-};
+}

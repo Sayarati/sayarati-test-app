@@ -1,18 +1,18 @@
-const {
+import {
   bearerToken,
   dbRows,
   isAdminPhone,
   methodOptions,
   response,
   verifySession,
-} = require("./_shared");
+} from "./shared.mjs";
 
-exports.handler = async (event) => {
-  const options = methodOptions(event);
+export default async function handler(request) {
+  const options = methodOptions(request);
   if (options) return options;
-  if (event.httpMethod !== "GET") return response(405, { error: "Method not allowed" });
+  if (request.method !== "GET") return response(405, { error: "Method not allowed" });
 
-  const session = verifySession(bearerToken(event));
+  const session = verifySession(bearerToken(request));
   if (!session?.phone) return response(401, { error: "Please sign in again" });
 
   try {
@@ -25,14 +25,8 @@ exports.handler = async (event) => {
       dbRows("select * from admin_messages order by created_at desc limit 20"),
     ]);
 
-    return response(200, {
-      ok: true,
-      customers,
-      cars,
-      records,
-      messages,
-    });
+    return response(200, { ok: true, customers, cars, records, messages });
   } catch (error) {
     return response(500, { error: error.message || "Could not load admin data" });
   }
-};
+}

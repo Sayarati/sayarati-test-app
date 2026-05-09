@@ -1,9 +1,9 @@
-const { dbRows, methodOptions, response } = require("./_shared");
+import { dbRows, methodOptions, response } from "./shared.mjs";
 
-exports.handler = async (event) => {
-  const options = methodOptions(event);
+export default async function handler(request) {
+  const options = methodOptions(request);
   if (options) return options;
-  if (event.httpMethod !== "GET") return response(405, { error: "Method not allowed" });
+  if (request.method !== "GET") return response(405, { error: "Method not allowed" });
 
   try {
     const now = new Date().toISOString();
@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     `, [now]);
 
     return response(200, { ok: true, messages });
-  } catch (error) {
+  } catch {
     return response(200, { ok: false, messages: [] });
   }
-};
+}

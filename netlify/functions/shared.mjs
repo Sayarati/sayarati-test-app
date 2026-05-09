@@ -1,40 +1,38 @@
-const crypto = require("crypto");
-const { getDatabase } = require("@netlify/database");
+import crypto from "crypto";
+import { getDatabase } from "@netlify/database";
 
-let cachedDb;
-
-const jsonHeaders = {
-  "content-type": "application/json",
+export const jsonHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "content-type, authorization",
   "access-control-allow-methods": "GET, POST, OPTIONS",
 };
 
-function response(statusCode, body) {
-  return { statusCode, headers: jsonHeaders, body: JSON.stringify(body) };
+export function response(status, body) {
+  return Response.json(body, { status, headers: jsonHeaders });
 }
 
-function methodOptions(event) {
-  return event.httpMethod === "OPTIONS" ? response(200, { ok: true }) : null;
+export function methodOptions(request) {
+  return request.method === "OPTIONS" ? response(200, { ok: true }) : null;
 }
 
-function readJson(event) {
+export async function readJson(request) {
   try {
-    return JSON.parse(event.body || "{}");
+    return await request.json();
   } catch {
     return {};
   }
 }
 
-function sanitizePhone(value) {
+export function sanitizePhone(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 15);
 }
 
-function validPhone(phone) {
+export function validPhone(phone) {
   return /^\d{8,15}$/.test(phone);
 }
 
-function env(name) {
+export function env(name) {
+  if (globalThis.Netlify?.env?.get) return globalThis.Netlify.env.get(name) || "";
   return process.env[name] || "";
 }
 
@@ -42,21 +40,21 @@ function secret() {
   return env("SESSION_SECRET") || env("NETLIFY_DATABASE_URL") || "local-dev-secret";
 }
 
-function hashValue(value) {
+export function hashValue(value) {
   return crypto.createHmac("sha256", secret()).update(value).digest("hex");
 }
 
-function makeOtp() {
+export function makeOtp() {
   return String(crypto.randomInt(100000, 1000000));
 }
 
-function signSession(payload) {
+export function signSession(payload) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const signature = crypto.createHmac("sha256", secret()).update(body).digest("base64url");
   return `${body}.${signature}`;
 }
 
-function verifySession(token) {
+export function verifySession(token) {
   if (!token || !token.includes(".")) return null;
   const [body, signature] = token.split(".");
   const expected = crypto.createHmac("sha256", secret()).update(body).digest("base64url");
@@ -66,59 +64,34 @@ function verifySession(token) {
   return payload;
 }
 
-function bearerToken(event) {
-  const header = event.headers.authorization || event.headers.Authorization || "";
-  return header.replace(/^Bearer\s+/i, "");
+export function bearerToken(request) {
+  return (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
 }
 
-function adminPhones() {
+export function adminPhones() {
   return env("ADMIN_PHONE_NUMBERS").split(",").map(sanitizePhone).filter(Boolean);
 }
 
-async function database() {
-  if (!cachedDb) {
-    cachedDb = getDatabase();
-  }
-  return cachedDb;
+function database() {
+  return getDatabase();
 }
 
-async function dbQuery(text, params = []) {
-  const db = await database();
-  return db.pool.query(text, params);
+export async function dbQuery(text, params = []) {
+  return database().pool.query(text, params);
 }
 
-async function dbRows(text, params = []) {
+export async function dbRows(text, params = []) {
   const result = await dbQuery(text, params);
   return result.rows || [];
 }
 
-async function dbOne(text, params = []) {
+export async function dbOne(text, params = []) {
   const rows = await dbRows(text, params);
   return rows[0] || null;
 }
 
-async function isAdminPhone(phone) {
+export async function isAdminPhone(phone) {
   if (adminPhones().includes(phone)) return true;
   const admin = await dbOne("select phone from admin_users where phone = $1", [phone]);
   return Boolean(admin);
 }
-
-module.exports = {
-  adminPhones,
-  bearerToken,
-  dbOne,
-  dbQuery,
-  dbRows,
-  env,
-  hashValue,
-  isAdminPhone,
-  jsonHeaders,
-  makeOtp,
-  methodOptions,
-  readJson,
-  response,
-  sanitizePhone,
-  signSession,
-  validPhone,
-  verifySession,
-};

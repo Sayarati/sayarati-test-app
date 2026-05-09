@@ -1,4 +1,4 @@
-const {
+import {
   bearerToken,
   dbOne,
   isAdminPhone,
@@ -6,20 +6,20 @@ const {
   readJson,
   response,
   verifySession,
-} = require("./_shared");
+} from "./shared.mjs";
 
-exports.handler = async (event) => {
-  const options = methodOptions(event);
+export default async function handler(request) {
+  const options = methodOptions(request);
   if (options) return options;
-  if (event.httpMethod !== "POST") return response(405, { error: "Method not allowed" });
+  if (request.method !== "POST") return response(405, { error: "Method not allowed" });
 
-  const session = verifySession(bearerToken(event));
+  const session = verifySession(bearerToken(request));
   if (!session?.phone) return response(401, { error: "Please sign in again" });
 
   try {
     if (!(await isAdminPhone(session.phone))) return response(403, { error: "Admin access only" });
 
-    const body = readJson(event);
+    const body = await readJson(request);
     const title = String(body.title || "").trim().slice(0, 90);
     const message = String(body.body || "").trim().slice(0, 500);
     const ctaLabel = String(body.ctaLabel || "").trim().slice(0, 40);
@@ -38,4 +38,4 @@ exports.handler = async (event) => {
   } catch (error) {
     return response(500, { error: error.message || "Could not create message" });
   }
-};
+}
