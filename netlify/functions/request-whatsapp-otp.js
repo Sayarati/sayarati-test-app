@@ -21,7 +21,7 @@ exports.handler = async (event) => {
 
   try {
     const code = makeOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await dbQuery(`
       insert into otp_codes (phone, code_hash, expires_at, attempts)
@@ -65,7 +65,7 @@ async function sendWatiOtp(phone, code) {
   const result = await fetch(`${endpoint}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),

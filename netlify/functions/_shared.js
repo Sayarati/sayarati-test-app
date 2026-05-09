@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { getDatabase } = require("@netlify/database");
 
 let cachedDb;
 
@@ -76,7 +77,6 @@ function adminPhones() {
 
 async function database() {
   if (!cachedDb) {
-    const { getDatabase } = await import("@netlify/database");
     cachedDb = getDatabase();
   }
   return cachedDb;
