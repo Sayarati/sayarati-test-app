@@ -32,8 +32,8 @@ export function validPhone(phone) {
 }
 
 export function env(name) {
-  if (globalThis.Netlify?.env?.get) return globalThis.Netlify.env.get(name) || "";
-  return process.env[name] || "";
+  const fromGlobal = globalThis.Netlify?.env?.get?.(name);
+  return fromGlobal || process.env[name] || "";
 }
 
 function secret() {

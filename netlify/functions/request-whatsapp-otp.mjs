@@ -47,8 +47,12 @@ async function sendWatiOtp(phone, code) {
   const broadcastName = env("WATI_BROADCAST_NAME") || "sayarati_otp";
   const channelNumber = env("WATI_CHANNEL_NUMBER");
 
-  if (!endpoint || !token || !templateName) {
-    throw new Error("Missing WATI settings");
+  const missing = [];
+  if (!endpoint) missing.push("WATI_API_ENDPOINT");
+  if (!token) missing.push("WATI_API_TOKEN");
+  if (!templateName) missing.push("WATI_OTP_TEMPLATE_NAME");
+  if (missing.length) {
+    throw new Error(`Missing WATI settings: ${missing.join(", ")}`);
   }
 
   const payload = {
