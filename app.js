@@ -90,6 +90,12 @@ const copy = {
     phone: "Mobile number",
     phoneHelp: "Use digits only. Example: 96170123456",
     phoneInvalid: "Please enter a valid mobile number using 8 to 15 digits.",
+    verificationCode: "Verification code",
+    sendCode: "Send WhatsApp code",
+    verifyCode: "Verify code",
+    codeSent: "We sent a WhatsApp verification code.",
+    codeInvalid: "Enter the 6 digit WhatsApp code.",
+    loginFailed: "Could not complete WhatsApp login.",
     enter: "Enter App",
     overview: "Dashboard",
     cars: "My Cars",
@@ -367,6 +373,12 @@ copy.ar = {
   phone: "رقم الهاتف",
   phoneHelp: "استخدم الأرقام فقط. مثال: 96170123456",
   phoneInvalid: "يرجى إدخال رقم هاتف صحيح من 8 إلى 15 رقما.",
+  verificationCode: "رمز التحقق",
+  sendCode: "إرسال رمز واتساب",
+  verifyCode: "تأكيد الرمز",
+  codeSent: "تم إرسال رمز التحقق عبر واتساب.",
+  codeInvalid: "أدخل رمز واتساب المكون من 6 أرقام.",
+  loginFailed: "تعذر إكمال تسجيل الدخول عبر واتساب.",
   enter: "دخول التطبيق",
   overview: "لوحة التحكم",
   cars: "سياراتي",
@@ -532,12 +544,17 @@ let adminMessages = [];
 let adminMessagesLoaded = false;
 const initialShopLink = readInitialShopLink();
 let initialShopLinkApplied = false;
+let customerDataLoaded = false;
 
 function defaultState() {
   return {
     lang: "en",
     view: "cars",
     user: null,
+    authToken: "",
+    loginStep: "phone",
+    pendingLoginName: "",
+    pendingLoginPhone: "",
     selectedCarId: null,
     cars: [],
     records: [],
@@ -847,7 +864,7 @@ function render() {
   const app = document.querySelector("#app");
   app.className = state.lang === "ar" ? "rtl" : "";
 
-  if (!state.user) {
+  if (!state.user || !state.authToken) {
     app.innerHTML = loginView();
     bindLogin();
     return;
@@ -888,12 +905,14 @@ function render() {
   `;
 
   bindApp();
+  loadCustomerDataOnce();
   loadAdminMessagesOnce();
   applyInitialShopLink();
   syncTourHighlight();
 }
 
 function loginView() {
+  const isCodeStep = state.loginStep === "code";
   return `
     <section class="login-wrap">
       <form class="login-card" id="login-form" novalidate>
@@ -903,10 +922,11 @@ function loginView() {
         <h1>${t("loginTitle")}</h1>
         <p class="muted">${t("loginText")}</p>
         <div class="form">
-          ${field("name", t("name"), "text", "Cedric")}
-          ${phoneField()}
+          ${field("name", t("name"), "text", state.pendingLoginName || "Cedric")}
+          ${phoneField(state.pendingLoginPhone || "")}
+          ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
           <p class="form-error" data-login-error hidden></p>
-          <button class="primary" type="submit">${t("enter")}</button>
+          <button class="primary" type="submit">${isCodeStep ? t("verifyCode") : t("sendCode")}</button>
           <div class="language">
             <button type="button" class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
             <button type="button" class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
@@ -1853,10 +1873,11 @@ function profileView() {
 }
 
 function field(name, label, type, value) {
+  const inputMode = name === "code" ? ` inputmode="numeric" maxlength="6" autocomplete="one-time-code"` : "";
   return `
     <div class="field">
       <label for="${name}">${label}</label>
-      <input id="${name}" name="${name}" type="${type}" value="${value || ""}" />
+      <input id="${name}" name="${name}" type="${type}" value="${value || ""}"${inputMode} />
     </div>
   `;
 }
@@ -2152,10 +2173,16 @@ function bindLogin() {
 
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    const data = formData(event.currentTarget);
+    handleLoginSubmit(event.currentTarget);
+  });
+}
+
+async function handleLoginSubmit(form) {
+    const data = formData(form);
+    const phoneInput = form.querySelector("#phone");
     const phone = sanitizePhone(data.phone || "");
     if (!isValidPhone(phone)) {
-      const error = event.currentTarget.querySelector("[data-login-error]");
+      const error = form.querySelector("[data-login-error]");
       if (error) {
         error.textContent = t("phoneInvalid");
         error.hidden = false;
@@ -2164,14 +2191,121 @@ function bindLogin() {
       return;
     }
 
-    const shouldStartTour = !state.tourSeen;
-    setState({
-      user: { name: data.name || "Customer", phone },
-      view: "cars",
-      tourActive: shouldStartTour,
-      tourStep: 0,
-    });
-  });
+    const submit = form.querySelector("button[type='submit']");
+    if (submit?.disabled) return;
+    if (submit) submit.disabled = true;
+
+    try {
+      if (state.loginStep === "code") {
+        const code = sanitizePhone(data.code || "").slice(0, 6);
+        if (code.length !== 6) {
+          showLoginError(form, t("codeInvalid"));
+          if (submit) submit.disabled = false;
+          return;
+        }
+        await verifyCustomerCode({ name: data.name || "Customer", phone, code });
+        return;
+      }
+
+      const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone });
+      if (!result.ok) throw new Error(result.error || t("loginFailed"));
+      setState({
+        loginStep: "code",
+        pendingLoginName: data.name || "Customer",
+        pendingLoginPhone: phone,
+        notice: t("codeSent"),
+      });
+    } catch (error) {
+      showLoginError(form, error.message || t("loginFailed"));
+      if (submit) submit.disabled = false;
+    }
+}
+
+function showLoginError(form, message) {
+  const error = form.querySelector("[data-login-error]");
+  if (error) {
+    error.textContent = message;
+    error.hidden = false;
+  }
+}
+
+async function apiPost(url, body, token = state.authToken) {
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  }).then((res) => res.json());
+}
+
+async function verifyCustomerCode({ name, phone, code }) {
+  const result = await apiPost("/.netlify/functions/verify-whatsapp-otp", { name, phone, code }, "");
+  if (!result.ok || !result.token) throw new Error(result.error || t("loginFailed"));
+
+  const shouldStartTour = !state.tourSeen;
+  const localCars = state.cars;
+  const localRecords = state.records;
+  state = {
+    ...state,
+    user: { name: result.customer?.name || name || "Customer", phone },
+    authToken: result.token,
+    loginStep: "phone",
+    pendingLoginName: "",
+    pendingLoginPhone: "",
+    view: "cars",
+    tourActive: shouldStartTour,
+    tourStep: 0,
+  };
+  saveState();
+
+  const remote = await loadCustomerData(result.token);
+  if (remote.ok && (remote.cars?.length || remote.records?.length)) {
+    state = { ...state, cars: remote.cars || [], records: remote.records || [], selectedCarId: remote.cars?.[0]?.id || null };
+    saveState();
+  } else if (localCars.length || localRecords.length) {
+    state = { ...state, cars: localCars, records: localRecords, selectedCarId: localCars[0]?.id || null };
+    saveState();
+    persistCustomerData(localCars, localRecords);
+  }
+
+  render();
+}
+
+async function loadCustomerData(token = state.authToken) {
+  if (!token) return { ok: false };
+  try {
+    return await fetch("/.netlify/functions/customer-data", {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => res.json());
+  } catch {
+    return { ok: false };
+  }
+}
+
+async function loadCustomerDataOnce() {
+  if (!state.authToken || customerDataLoaded) return;
+  customerDataLoaded = true;
+  const remote = await loadCustomerData();
+  if (remote.ok) {
+    state = {
+      ...state,
+      cars: remote.cars || [],
+      records: remote.records || [],
+      selectedCarId: state.selectedCarId || remote.cars?.[0]?.id || null,
+    };
+    saveState();
+    render();
+  }
+}
+
+async function persistCustomerData(cars = state.cars, records = state.records) {
+  if (!state.authToken) return;
+  try {
+    await apiPost("/.netlify/functions/customer-data", { cars, records });
+  } catch {
+    // Keep the local copy; a later edit or login can sync again.
+  }
 }
 
 function sanitizePhone(value) {
@@ -2258,9 +2392,11 @@ function bindApp() {
       event.stopPropagation();
       const photos = await readImageFiles(input);
       if (!photos[0]) return;
+      const updatedCars = state.cars.map((car) => car.id === input.dataset.updateCarPhoto ? { ...car, photo: photos[0] } : car);
       setState({
-        cars: state.cars.map((car) => car.id === input.dataset.updateCarPhoto ? { ...car, photo: photos[0] } : car),
+        cars: updatedCars,
       });
+      persistCustomerData(updatedCars, state.records);
       notify(t("carSaved"));
     });
   });
@@ -2346,14 +2482,16 @@ function bindApp() {
       const carId = button.dataset.deleteCar;
       if (!confirm(t("deleteCarConfirm"))) return;
       const remainingCars = state.cars.filter((car) => car.id !== carId);
+      const remainingRecords = state.records.filter((record) => record.carId !== carId);
       setState({
         cars: remainingCars,
-        records: state.records.filter((record) => record.carId !== carId),
+        records: remainingRecords,
         selectedCarId: remainingCars[0]?.id || null,
         view: "cars",
         serviceMode: "summary",
         selectedRecordId: null,
       });
+      persistCustomerData(remainingCars, remainingRecords);
       notify(t("carDeleted"));
     });
   });
@@ -2363,9 +2501,11 @@ function bindApp() {
       event.stopPropagation();
       const recordId = button.dataset.deleteRecord;
       if (!confirm(t("deleteRecordConfirm"))) return;
+      const remainingRecords = state.records.filter((record) => record.id !== recordId);
       setState({
-        records: state.records.filter((record) => record.id !== recordId),
+        records: remainingRecords,
       });
+      persistCustomerData(state.cars, remainingRecords);
       notify(t("recordDeleted"));
     });
   });
@@ -2395,24 +2535,28 @@ function bindApp() {
       delete data.carPhoto;
       const car = { id: uid("car"), ...data, photo: photos[0] || null };
       if (state.editingCarId) {
+        const updatedCars = state.cars.map((existingCar) => existingCar.id === state.editingCarId
+          ? { ...existingCar, ...data, photo: photos[0] || existingCar.photo || null }
+          : existingCar);
         setState({
-          cars: state.cars.map((existingCar) => existingCar.id === state.editingCarId
-            ? { ...existingCar, ...data, photo: photos[0] || existingCar.photo || null }
-            : existingCar),
+          cars: updatedCars,
           selectedCarId: state.editingCarId,
           view: "cars",
           carFormOpen: false,
           editingCarId: null,
         });
+        persistCustomerData(updatedCars, state.records);
         notify(t("carUpdated"));
       } else {
+        const updatedCars = [car, ...state.cars];
         setState({
-          cars: [car, ...state.cars],
+          cars: updatedCars,
           selectedCarId: car.id,
           view: "cars",
           carFormOpen: false,
           editingCarId: null,
         });
+        persistCustomerData(updatedCars, state.records);
         notify(t("carSaved"));
       }
       scrollAfterRender("app");
@@ -2459,13 +2603,15 @@ function bindApp() {
         serviceTypes: services,
         partPhotos: partPhotos.length ? partPhotos : existingRecord?.partPhotos || [],
       };
+      const updatedRecords = existingRecord
+        ? state.records.map((item) => item.id === existingRecord.id ? record : item)
+        : [record, ...state.records];
       setState({
-        records: existingRecord
-          ? state.records.map((item) => item.id === existingRecord.id ? record : item)
-          : [record, ...state.records],
+        records: updatedRecords,
         serviceMode: "detail",
         selectedRecordId: record.id,
       });
+      persistCustomerData(state.cars, updatedRecords);
       notify(existingRecord ? t("recordUpdated") : t("recordSaved"));
       scrollAfterRender("app");
     });
@@ -2476,6 +2622,7 @@ function bindApp() {
     reset.addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
       state = loadState();
+      customerDataLoaded = false;
       render();
       syncTourHighlight();
     });
