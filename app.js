@@ -79,6 +79,14 @@ const serviceTypes = [
 
 const oilViscosities = ["0W-20", "0W-30", "5W-20", "5W-30", "5W-40", "10W-30", "10W-40", "15W-40", "20W-50", "Other"];
 const brakePadPositions = ["Front", "Rear", "Front and rear"];
+const customerTypes = [
+  { value: "personal", labels: { en: "Personal car owner", ar: "استخدام شخصي لسيارتي" } },
+  { value: "garage", labels: { en: "Garage / workshop owner", ar: "صاحب كراج أو ورشة" } },
+  { value: "company_fleet", labels: { en: "Company fleet owner", ar: "أسطول سيارات شركة" } },
+  { value: "rental_company", labels: { en: "Rental company owner", ar: "شركة تأجير سيارات" } },
+  { value: "car_dealer", labels: { en: "Car dealer / showroom", ar: "معرض أو تاجر سيارات" } },
+  { value: "other", labels: { en: "Other", ar: "غير ذلك" } },
+];
 
 const copy = {
   en: {
@@ -89,6 +97,8 @@ const copy = {
     name: "Name",
     phone: "Mobile number",
     phoneHelp: "Use digits only. Example: 96170123456",
+    customerType: "I am using Sayarati as",
+    chooseCustomerType: "Choose one",
     phoneInvalid: "Please enter a valid mobile number using 8 to 15 digits.",
     verificationCode: "Verification code",
     sendCode: "Send WhatsApp code",
@@ -121,6 +131,15 @@ const copy = {
     parts: "Parts Changed",
     cost: "Cost",
     nextDue: "Next Service Date",
+    nextServiceNote: "Note for next service",
+    nextServiceNotePlaceholder: "Example: Change front brake pads, check AC, replace tires...",
+    serviceReminderTitle: "Upcoming service reminder",
+    serviceReminderText: "This vehicle has a service coming soon.",
+    serviceReminderDueIn: "Due in",
+    serviceReminderDays: "days",
+    serviceReminderToday: "Due today",
+    serviceReminderOverdue: "Overdue",
+    remindLater: "Remind me later",
     invoice: "Invoice Photo Name",
     saveRecord: "Save Record",
     oilDetails: "Oil details",
@@ -372,6 +391,8 @@ copy.ar = {
   name: "الاسم",
   phone: "رقم الهاتف",
   phoneHelp: "استخدم الأرقام فقط. مثال: 96170123456",
+  customerType: "أستخدم Sayarati كـ",
+  chooseCustomerType: "اختر نوع الاستخدام",
   phoneInvalid: "يرجى إدخال رقم هاتف صحيح من 8 إلى 15 رقما.",
   verificationCode: "رمز التحقق",
   sendCode: "إرسال رمز واتساب",
@@ -404,6 +425,15 @@ copy.ar = {
   parts: "القطع المستبدلة",
   cost: "التكلفة",
   nextDue: "موعد الصيانة القادمة",
+  nextServiceNote: "ملاحظة للصيانة القادمة",
+  nextServiceNotePlaceholder: "مثال: تبديل فحمات أمامية، فحص المكيف، تبديل الإطارات...",
+  serviceReminderTitle: "تذكير صيانة قريب",
+  serviceReminderText: "هذه السيارة لديها موعد صيانة قريب.",
+  serviceReminderDueIn: "متبقي",
+  serviceReminderDays: "أيام",
+  serviceReminderToday: "موعدها اليوم",
+  serviceReminderOverdue: "متأخرة",
+  remindLater: "ذكرني لاحقا",
   invoice: "اسم صورة الفاتورة",
   saveRecord: "حفظ السجل",
   oilDetails: "تفاصيل الزيت",
@@ -555,6 +585,7 @@ function defaultState() {
     loginStep: "phone",
     pendingLoginName: "",
     pendingLoginPhone: "",
+    pendingCustomerType: "",
     selectedCarId: null,
     cars: [],
     records: [],
@@ -568,6 +599,7 @@ function defaultState() {
     expenseFilter: "thisYear",
     expenseYear: String(new Date().getFullYear()),
     editingCarId: null,
+    dismissedServiceReminders: {},
     tourActive: false,
     tourStep: 0,
     tourSeen: false,
@@ -674,6 +706,11 @@ function notify(message) {
     saveState();
     render();
   }, 2600);
+}
+
+function customerTypeLabel(value) {
+  const item = customerTypes.find((type) => type.value === value);
+  return item?.labels?.[state.lang] || item?.labels?.en || value || "";
 }
 
 function switchLanguage(lang) {
@@ -898,6 +935,7 @@ function render() {
         ${header()}
         ${state.notice ? `<div class="notice">${state.notice}</div>` : ""}
         ${adminMessageBanner()}
+        ${upcomingServiceReminder()}
         ${currentView()}
         ${tourOverlay()}
       </main>
@@ -923,6 +961,7 @@ function loginView() {
         <p class="muted">${t("loginText")}</p>
         <div class="form">
           ${field("name", t("name"), "text", state.pendingLoginName || "Cedric")}
+          ${customerTypeField(state.pendingCustomerType || "")}
           ${phoneField(state.pendingLoginPhone || "")}
           ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
           <p class="form-error" data-login-error hidden></p>
@@ -1012,6 +1051,53 @@ function adminMessageBanner() {
       </div>
     </section>
   `;
+}
+
+function upcomingServiceReminder() {
+  const reminder = nextDueReminder();
+  if (!reminder) return "";
+  const dueText = reminder.daysUntil < 0
+    ? t("serviceReminderOverdue")
+    : reminder.daysUntil === 0
+      ? t("serviceReminderToday")
+      : `${t("serviceReminderDueIn")} ${reminder.daysUntil} ${t("serviceReminderDays")}`;
+  return `
+    <section class="service-reminder">
+      <div>
+        <strong>${t("serviceReminderTitle")}</strong>
+        <p>${t("serviceReminderText")} ${escapeHtml(carLabel(reminder.car))}</p>
+        <span class="pill gold">${dueText}: ${escapeHtml(reminder.record.nextDue)}</span>
+        ${reminder.record.nextServiceNote ? `<p class="muted">${escapeHtml(reminder.record.nextServiceNote)}</p>` : ""}
+      </div>
+      <button class="ghost" data-dismiss-service-reminder="${escapeAttr(reminder.key)}">${t("remindLater")}</button>
+    </section>
+  `;
+}
+
+function nextDueReminder() {
+  const dismissed = state.dismissedServiceReminders || {};
+  const today = startOfDay(new Date());
+  const reminders = state.records
+    .filter((record) => record.nextDue)
+    .map((record) => {
+      const due = parseDate(record.nextDue);
+      if (!due) return null;
+      const daysUntil = Math.round((due - today) / 86400000);
+      const car = state.cars.find((item) => item.id === record.carId);
+      return { record, car, daysUntil, key: `${record.id}:${record.nextDue}` };
+    })
+    .filter((item) => item && item.car && item.daysUntil <= 5 && item.daysUntil >= -30 && dismissed[item.key] !== today.toISOString().slice(0, 10))
+    .sort((a, b) => a.daysUntil - b.daysUntil);
+  return reminders[0] || null;
+}
+
+function parseDate(value) {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : startOfDay(date);
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function tourSteps() {
@@ -1222,7 +1308,7 @@ function bookletView() {
   const record = selectedRecord(car?.id);
   return `
     <section class="grid">
-      <div class="panel">
+      <div class="panel" id="service-history-panel">
         <div class="field car-picker">
           <label for="bookletCarSelect">${t("chooseCar")}</label>
           <select id="bookletCarSelect" data-booklet-car>
@@ -1289,6 +1375,7 @@ function serviceFormView(car) {
           ${field("parts", t("parts"), "text", editingRecord?.parts || "Oil filter, engine oil")}
           ${field("cost", t("cost"), "number", editingRecord?.cost || "")}
           ${field("nextDue", t("nextDue"), "date", editingRecord?.nextDue || "")}
+          ${textarea("nextServiceNote", t("nextServiceNote"), editingRecord?.nextServiceNote || "", t("nextServiceNotePlaceholder"))}
           ${field("invoice", t("invoice"), "text", editingRecord?.invoice || "")}
           ${fileField("partPhotos", t("partPhotos"))}
           ${editingRecord?.partPhotos?.length ? renderPhotos(editingRecord.partPhotos) : ""}
@@ -1352,14 +1439,11 @@ function categoryLandingView() {
       <p class="muted">${t("chooseCategoryFirst")}</p>
       <div class="category-grid">
         ${shopState.categories.map((category) => `
-          <article class="category-tile">
+    <article class="category-tile" data-category-tile="${category.id}">
+            <button class="card-share" data-share-category="${category.id}" aria-label="${t("shareCategory")}">${shareIcon()}</button>
             ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(translatedText(category, "name"))}" />` : `<span>${escapeHtml(translatedText(category, "name")).slice(0, 1)}</span>`}
             <strong>${escapeHtml(translatedText(category, "name"))}</strong>
             ${Number(category.productCount || 0) ? `<small>${category.productCount}</small>` : ""}
-            <div class="tile-actions">
-              <button class="tile-open" data-category-tile="${category.id}">${t("shop")}</button>
-              <button class="tile-share" data-share-category="${category.id}">${t("share")}</button>
-            </div>
           </article>
         `).join("")}
       </div>
@@ -1466,15 +1550,19 @@ function productCard(product) {
   const productName = translatedText(product, "name");
   return `
     <article class="product-card" data-product-id="${product.id}">
+      <button class="card-share" data-share-product="${product.id}" aria-label="${t("shareProduct")}">${shareIcon()}</button>
       <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" />
       <div>
         <strong>${escapeHtml(productName)}</strong>
         <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
         <small class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</small>
-        <button class="tile-share" data-share-product="${product.id}">${t("share")}</button>
       </div>
     </article>
   `;
+}
+
+function shareIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8M13 7l5 5-5 5M18 12H6" /></svg>`;
 }
 
 function productDetailView(product) {
@@ -1865,6 +1953,7 @@ function profileView() {
     <section class="panel">
       <h2>${state.user.name}</h2>
       <p class="muted">${contact}</p>
+      ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
       <div class="actions">
         <button class="ghost" data-reset>${t("reset")}</button>
       </div>
@@ -1888,6 +1977,18 @@ function phoneField(value = "") {
       <label for="phone">${t("phone")}</label>
       <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" />
       <small>${t("phoneHelp")}</small>
+    </div>
+  `;
+}
+
+function customerTypeField(value = "") {
+  return `
+    <div class="field">
+      <label for="customerType">${t("customerType")}</label>
+      <select id="customerType" name="customerType" required>
+        <option value="">${t("chooseCustomerType")}</option>
+        ${customerTypes.map((type) => `<option value="${type.value}" ${type.value === value ? "selected" : ""}>${type.labels[state.lang] || type.labels.en}</option>`).join("")}
+      </select>
     </div>
   `;
 }
@@ -1952,11 +2053,11 @@ function fileField(name, label) {
   `;
 }
 
-function textarea(name, label, value) {
+function textarea(name, label, value, placeholder = "") {
   return `
     <div class="field">
       <label for="${name}">${label}</label>
-      <textarea id="${name}" name="${name}">${value || ""}</textarea>
+      <textarea id="${name}" name="${name}" ${placeholder ? `placeholder="${escapeAttr(placeholder)}"` : ""}>${value || ""}</textarea>
     </div>
   `;
 }
@@ -2062,6 +2163,7 @@ function serviceDetailView(record) {
         <div><span>${t("parts")}</span><strong>${record.parts || "-"}</strong></div>
         <div><span>${t("cost")}</span><strong>${record.cost || "-"}</strong></div>
         <div><span>${t("nextDue")}</span><strong>${record.nextDue || "-"}</strong></div>
+        <div><span>${t("nextServiceNote")}</span><strong>${record.nextServiceNote || "-"}</strong></div>
         <div><span>${t("invoice")}</span><strong>${record.invoice || "-"}</strong></div>
       </div>
       ${record.notes ? `<p class="muted detail-notes">${record.notes}</p>` : ""}
@@ -2203,7 +2305,7 @@ async function handleLoginSubmit(form) {
           if (submit) submit.disabled = false;
           return;
         }
-        await verifyCustomerCode({ name: data.name || "Customer", phone, code });
+        await verifyCustomerCode({ name: data.name || "Customer", phone, code, customerType: data.customerType || "" });
         return;
       }
 
@@ -2213,6 +2315,7 @@ async function handleLoginSubmit(form) {
         loginStep: "code",
         pendingLoginName: data.name || "Customer",
         pendingLoginPhone: phone,
+        pendingCustomerType: data.customerType || "",
         notice: t("codeSent"),
       });
     } catch (error) {
@@ -2239,8 +2342,8 @@ async function apiPost(url, body, token = state.authToken) {
   }).then((res) => res.json());
 }
 
-async function verifyCustomerCode({ name, phone, code }) {
-  const result = await apiPost("/.netlify/functions/verify-whatsapp-otp", { name, phone, code }, "");
+async function verifyCustomerCode({ name, phone, code, customerType }) {
+  const result = await apiPost("/.netlify/functions/verify-whatsapp-otp", { name, phone, code, customerType }, "");
   if (!result.ok || !result.token) throw new Error(result.error || t("loginFailed"));
 
   const shouldStartTour = !state.tourSeen;
@@ -2248,11 +2351,12 @@ async function verifyCustomerCode({ name, phone, code }) {
   const localRecords = state.records;
   state = {
     ...state,
-    user: { name: result.customer?.name || name || "Customer", phone },
+    user: { name: result.customer?.name || name || "Customer", phone, customerType: result.customer?.customer_type || customerType || "" },
     authToken: result.token,
     loginStep: "phone",
     pendingLoginName: "",
     pendingLoginPhone: "",
+    pendingCustomerType: "",
     view: "cars",
     tourActive: shouldStartTour,
     tourStep: 0,
@@ -2608,12 +2712,12 @@ function bindApp() {
         : [record, ...state.records];
       setState({
         records: updatedRecords,
-        serviceMode: "detail",
-        selectedRecordId: record.id,
+        serviceMode: "summary",
+        selectedRecordId: null,
       });
       persistCustomerData(state.cars, updatedRecords);
       notify(existingRecord ? t("recordUpdated") : t("recordSaved"));
-      scrollAfterRender("app");
+      scrollAfterRender("service-history-panel");
     });
   }
 
@@ -2717,9 +2821,9 @@ function bindApp() {
     });
   });
 
-  document.querySelectorAll("[data-category-tile]").forEach((button) => {
-    button.addEventListener("click", () => {
-      openShopCategory(button.dataset.categoryTile);
+  document.querySelectorAll("[data-category-tile]").forEach((item) => {
+    item.addEventListener("click", () => {
+      openShopCategory(item.dataset.categoryTile);
     });
   });
 
@@ -2755,6 +2859,17 @@ function bindApp() {
 
   document.querySelectorAll("[data-add-product]").forEach((button) => {
     button.addEventListener("click", () => addEcwidProduct(button.dataset.addProduct));
+  });
+
+  document.querySelectorAll("[data-dismiss-service-reminder]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setState({
+        dismissedServiceReminders: {
+          ...(state.dismissedServiceReminders || {}),
+          [button.dataset.dismissServiceReminder]: new Date().toISOString().slice(0, 10),
+        },
+      });
+    });
   });
 }
 

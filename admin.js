@@ -147,6 +147,7 @@ function customerCard(customer) {
         <div>
           <h3>${customer.name || "Customer"}</h3>
           <p class="muted">${customer.phone}</p>
+          ${customer.customer_type ? `<p class="muted">${customerTypeLabel(customer.customer_type)}</p>` : ""}
         </div>
         <span class="pill">${cars.length} cars / ${records.length} records</span>
       </div>
@@ -290,6 +291,7 @@ function filterCustomers(data) {
     const text = [
       customer.name,
       customer.phone,
+      customer.customer_type,
       ...cars.flatMap((car) => [car.brand, car.model, car.year, car.plate, car.vin]),
     ].join(" ").toLowerCase();
     return text.includes(term);
@@ -306,6 +308,18 @@ function recordsFor(customerId) {
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function customerTypeLabel(value) {
+  const labels = {
+    personal: "Personal car owner",
+    garage: "Garage / workshop owner",
+    company_fleet: "Company fleet owner",
+    rental_company: "Rental company owner",
+    car_dealer: "Car dealer / showroom",
+    other: "Other",
+  };
+  return labels[value] || value;
 }
 
 function sanitizePhone(value) {

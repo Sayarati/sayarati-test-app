@@ -56,6 +56,7 @@ async function loadCustomerData(customerId) {
       parts: record.parts || "",
       cost: record.cost || "",
       nextDue: formatDate(record.next_due),
+      nextServiceNote: record.next_service_note || "",
       invoice: record.invoice_path || "",
       partPhotos: record.part_photo_paths || [],
       notes: record.notes || "",
@@ -113,9 +114,9 @@ async function saveCustomerData(request, customerId) {
       insert into service_records (
         customer_id, car_id, client_id, service_date, mileage, service_type, service_types,
         oil_viscosity, oil_liters, brake_pad_position, other_service_details, parts, cost,
-        next_due, invoice_path, part_photo_paths, notes, updated_at
+        next_due, next_service_note, invoice_path, part_photo_paths, notes, updated_at
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17, now())
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, now())
       on conflict (customer_id, client_id)
       do update set
         car_id = excluded.car_id,
@@ -130,6 +131,7 @@ async function saveCustomerData(request, customerId) {
         parts = excluded.parts,
         cost = excluded.cost,
         next_due = excluded.next_due,
+        next_service_note = excluded.next_service_note,
         invoice_path = excluded.invoice_path,
         part_photo_paths = excluded.part_photo_paths,
         notes = excluded.notes,
@@ -149,6 +151,7 @@ async function saveCustomerData(request, customerId) {
       record.parts || null,
       toNumber(record.cost),
       record.nextDue || null,
+      record.nextServiceNote || null,
       record.invoice || null,
       JSON.stringify(record.partPhotos || []),
       record.notes || null,

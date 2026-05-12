@@ -4,6 +4,7 @@ create table if not exists customers (
   id uuid primary key default gen_random_uuid(),
   phone text not null unique,
   name text,
+  customer_type text,
   created_at timestamptz not null default now(),
   last_login_at timestamptz
 );
@@ -36,6 +37,7 @@ create table if not exists service_records (
   parts text,
   cost numeric,
   next_due date,
+  next_service_note text,
   invoice_path text,
   part_photo_paths jsonb not null default '[]'::jsonb,
   notes text,

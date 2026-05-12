@@ -15,7 +15,7 @@ export default async function handler(request) {
   if (options) return options;
   if (request.method !== "POST") return response(405, { error: "Method not allowed" });
 
-  const { phone, code, name } = await readJson(request);
+  const { phone, code, name, customerType } = await readJson(request);
   const cleanPhone = sanitizePhone(phone);
   const cleanCode = String(code || "").replace(/\D/g, "").slice(0, 6);
   if (!validPhone(cleanPhone) || cleanCode.length !== 6) {
@@ -36,19 +36,22 @@ export default async function handler(request) {
     }
 
     const customer = await dbOne(`
-      insert into customers (phone, name, last_login_at)
-      values ($1, $2, now())
+      insert into customers (phone, name, customer_type, last_login_at)
+      values ($1, $2, $3, now())
       on conflict (phone)
-      do update set name = coalesce(excluded.name, customers.name), last_login_at = now()
-      returning id, phone, name
-    `, [cleanPhone, name || null]);
+      do update set
+        name = coalesce(excluded.name, customers.name),
+        customer_type = coalesce(excluded.customer_type, customers.customer_type),
+        last_login_at = now()
+      returning id, phone, name, customer_type
+    `, [cleanPhone, name || null, customerType || null]);
 
     await dbQuery("delete from otp_codes where phone = $1", [cleanPhone]);
 
     const token = signSession({
       sub: customer.id,
       phone: cleanPhone,
-      exp: Date.now() + 1000 * 60 * 60 * 24 * 30,
+      exp: Date.now() + 1000 * 60 * 60 * 24 * 180,
     });
 
     return response(200, { ok: true, token, customer });
