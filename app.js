@@ -8,8 +8,10 @@ const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
 const SHOP_PAGE_SIZE = 24;
 const IMAGE_MAX_EDGE = 900;
 const IMAGE_QUALITY = 0.64;
+const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
+const MAX_CODE_SENDS = 3;
 
-const carCatalog = [
+const baseCarCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
   { brand: "Alfa Romeo", models: ["Giulia", "Giulietta", "Stelvio", "Tonale"] },
   { brand: "Aston Martin", models: ["DB11", "DB12", "DBX", "Vantage"] },
@@ -58,6 +60,107 @@ const carCatalog = [
   { brand: "Other", models: ["Other"] },
 ];
 
+const carCatalog = mergeCarCatalog(baseCarCatalog, [
+  { brand: "Abarth", models: ["124 Spider", "500", "595", "695", "Grande Panda"] },
+  { brand: "Aiways", models: ["U5", "U6"] },
+  { brand: "Aion", models: ["Aion ES", "Aion S", "Aion V", "Aion Y", "Hyper GT", "Hyper HT", "Hyptec HT"] },
+  { brand: "Alpine", models: ["A110", "A290", "A390"] },
+  { brand: "Arcfox", models: ["Alpha S", "Alpha T", "Kaola"] },
+  { brand: "Avatr", models: ["07", "11", "12"] },
+  { brand: "BAIC", models: ["BJ30", "BJ40", "BJ60", "EU5", "U5 Plus", "X35", "X55", "X7"] },
+  { brand: "Baojun", models: ["510", "530", "730", "Cloud", "KiWi EV", "Yep", "Yep Plus", "Yunduo"] },
+  { brand: "Beijing", models: ["BJ30", "BJ40", "BJ60", "EU5", "X3", "X5", "X7"] },
+  { brand: "Bentley", models: ["Bentayga", "Continental GT", "Flying Spur", "Mulsanne"] },
+  { brand: "Bestune", models: ["B70", "B70S", "T55", "T77", "T90"] },
+  { brand: "BMW", models: ["2 Series Gran Coupe", "6 Series", "8 Series", "M2", "M3", "M4", "M5", "M8", "X2", "X4", "XM", "i3", "i4", "i5", "i7", "iX1", "iX2", "iX3"] },
+  { brand: "Brilliance", models: ["H230", "H330", "H530", "V3", "V5", "V6", "V7"] },
+  { brand: "Bugatti", models: ["Bolide", "Chiron", "Divo", "Mistral", "Tourbillon", "Veyron"] },
+  { brand: "Buick", models: ["Enclave", "Encore", "Encore GX", "Envision", "Envista", "GL8", "LaCrosse", "Regal", "Verano"] },
+  { brand: "BYD", models: ["Atto 2", "Atto 3", "Dolphin", "Dolphin Mini", "Destroyer 05", "Dolphin Surf", "e2", "Frigate 07", "Han", "Leopard 5", "M6", "Qin", "Qin Plus", "Seagull", "Seal", "Seal 06", "Seal U", "Sealion 5", "Sealion 6", "Sealion 7", "Song", "Song L", "Song Plus", "Tang", "Yuan Plus", "Yuan Pro"] },
+  { brand: "Cadillac", models: ["Celestiq", "CT4", "CT5", "CT6", "Escalade", "GT4", "Lyriq", "Optiq", "Vistiq", "XT4", "XT5", "XT6"] },
+  { brand: "Changan", models: ["Alsvin", "CS15", "CS35 Plus", "CS55 Plus", "CS75", "CS75 Plus", "CS85 Coupe", "CS95", "Eado", "Hunter", "UNI-K", "UNI-T", "UNI-V"] },
+  { brand: "Changan Nevo", models: ["A05", "A06", "A07", "E07", "Q05"] },
+  { brand: "Chery", models: ["Arrizo 5", "Arrizo 6", "Arrizo 8", "eQ1", "Tiggo 2 Pro", "Tiggo 3", "Tiggo 4", "Tiggo 4 Pro", "Tiggo 5X", "Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Pro", "Tiggo 9"] },
+  { brand: "Chevrolet", models: ["Blazer", "Bolt EUV", "Bolt EV", "Camaro", "Captiva", "Colorado", "Equinox", "Groove", "Onix", "Silverado", "Suburban", "Tahoe", "Tracker", "Traverse", "Trax"] },
+  { brand: "Chrysler", models: ["300", "Pacifica", "Voyager"] },
+  { brand: "Cupra", models: ["Ateca", "Born", "Formentor", "Leon", "Tavascan", "Terramar"] },
+  { brand: "Daihatsu", models: ["Ayla", "Gran Max", "Rocky", "Sirion", "Terios", "Xenia"] },
+  { brand: "Deepal", models: ["G318", "L07", "S05", "S07", "SL03"] },
+  { brand: "Denza", models: ["D9", "N7", "N8", "Z9", "Z9 GT"] },
+  { brand: "Dongfeng", models: ["Aeolus AX7", "Aeolus E70", "Aeolus Shine", "Box", "Fengon 500", "Fengon 580", "Fengon 600", "Forthing T5", "Forthing U-Tour", "M-Hero 917", "Nammi 01", "Rich 6"] },
+  { brand: "DS", models: ["DS 3", "DS 4", "DS 7", "DS 9"] },
+  { brand: "Exeed", models: ["LX", "RX", "TXL", "VX", "Yaoguang"] },
+  { brand: "Fangchengbao", models: ["Bao 3", "Bao 5", "Bao 8", "Tai 3"] },
+  { brand: "FAW", models: ["Bestune B70", "Bestune T77", "Bestune T90", "Oley", "Senia R7", "Vita"] },
+  { brand: "Fisker", models: ["Ocean", "Pear"] },
+  { brand: "Forthing", models: ["Friday", "M5", "S7", "T5", "T5 Evo", "U-Tour"] },
+  { brand: "Foton", models: ["Aumark", "Sauvana", "Tunland", "View"] },
+  { brand: "GAC", models: ["Empow", "Emkoo", "GA4", "GA6", "GA8", "GN6", "GN8", "GS3", "GS4", "GS5", "GS8", "M8", "Trumpchi E9"] },
+  { brand: "Genesis", models: ["G70", "G80", "G90", "GV60", "GV70", "GV80", "GV80 Coupe"] },
+  { brand: "Geely", models: ["Atlas", "Azkarra", "Binrui", "Boyue", "Cityray", "Coolray", "Emgrand", "Geometry A", "Geometry C", "Geometry E", "Monjaro", "Okavango", "Preface", "Starray", "Tugella", "Xingrui"] },
+  { brand: "Great Wall", models: ["C30", "C50", "Cannon", "Haval H6", "King Kong Poer", "Poer", "Wingle 5", "Wingle 7"] },
+  { brand: "Haval", models: ["Big Dog", "Cool Dog", "Dargo", "H2", "H4", "H5", "H6", "H6 GT", "H7", "H9", "Jolion", "M6", "Raptor", "Shenshou"] },
+  { brand: "Hongqi", models: ["E-HS9", "E-QM5", "H5", "H6", "H7", "H9", "HS3", "HS5", "HS7", "L5"] },
+  { brand: "iCar", models: ["03", "V23"] },
+  { brand: "IM Motors", models: ["L6", "L7", "LS6", "LS7"] },
+  { brand: "Ineos", models: ["Fusilier", "Grenadier", "Quartermaster"] },
+  { brand: "Jaecoo", models: ["J5", "J7", "J8"] },
+  { brand: "JAC", models: ["E-JS1", "E-JS4", "J7", "JS2", "JS3", "JS4", "JS6", "S2", "S3", "S4", "T6", "T8", "T9"] },
+  { brand: "Jetour", models: ["Dashing", "Shanhai L6", "Shanhai L7", "T1", "T2", "Traveller", "X70", "X70 Plus", "X70 Pro", "X90", "X95"] },
+  { brand: "Jetta", models: ["VA3", "VS5", "VS7"] },
+  { brand: "Karry", models: ["K60", "Karry Dolphin EV", "Porpoise EV", "Youjin"] },
+  { brand: "Lamborghini", models: ["Aventador", "Huracan", "Revuelto", "Temerario", "Urus"] },
+  { brand: "Leapmotor", models: ["B10", "C01", "C10", "C11", "C16", "T03"] },
+  { brand: "Li Auto", models: ["L6", "L7", "L8", "L9", "Mega"] },
+  { brand: "Lincoln", models: ["Aviator", "Corsair", "MKC", "MKS", "MKT", "MKX", "MKZ", "Nautilus", "Navigator", "Zephyr"] },
+  { brand: "Lotus", models: ["Elise", "Emira", "Emeya", "Eletre", "Evija", "Exige"] },
+  { brand: "Lucid", models: ["Air", "Gravity"] },
+  { brand: "Luxeed", models: ["R7", "S7"] },
+  { brand: "Lynk & Co", models: ["01", "02", "03", "05", "06", "07", "08", "09", "Z10"] },
+  { brand: "Mahindra", models: ["Bolero", "Scorpio", "Thar", "XUV300", "XUV400", "XUV700"] },
+  { brand: "Maxus", models: ["D60", "D90", "Euniq 5", "Euniq 6", "G10", "G50", "G90", "MIFA 9", "T60", "T70", "T90", "V80", "V90"] },
+  { brand: "McLaren", models: ["570S", "600LT", "720S", "750S", "Artura", "Elva", "GT", "Senna", "Solus GT", "W1"] },
+  { brand: "Mercedes-Benz", models: ["AMG GT", "B-Class", "CLE", "EQA", "EQB", "EQC", "EQE", "EQS", "GLS Maybach", "SL", "Sprinter", "Vito"] },
+  { brand: "Nio", models: ["EC6", "EC7", "EL6", "EL7", "EL8", "ES6", "ES7", "ES8", "ET5", "ET5 Touring", "ET7"] },
+  { brand: "Omoda", models: ["C3", "C5", "C7", "E5"] },
+  { brand: "Onvo", models: ["L60"] },
+  { brand: "Ora", models: ["03", "07", "Ballet Cat", "Good Cat", "Lightning Cat"] },
+  { brand: "Polestar", models: ["1", "2", "3", "4", "5", "6"] },
+  { brand: "RAM", models: ["1200", "1500", "2500", "3500", "Dakota", "ProMaster"] },
+  { brand: "Rivian", models: ["R1S", "R1T", "R2", "R3"] },
+  { brand: "Roewe", models: ["D7", "Ei5", "i5", "i6", "RX3", "RX5", "RX8"] },
+  { brand: "Rolls-Royce", models: ["Cullinan", "Dawn", "Ghost", "Phantom", "Spectre", "Wraith"] },
+  { brand: "Seres", models: ["3", "5", "7", "Aito M5", "Aito M7", "Aito M8", "Aito M9"] },
+  { brand: "Skywell", models: ["ET5", "HT-i", "Skyhome"] },
+  { brand: "Smart", models: ["#1", "#3", "#5", "Forfour", "Fortwo"] },
+  { brand: "Soueast", models: ["A5", "DX3", "DX5", "DX7", "S06", "S07", "S09"] },
+  { brand: "SsangYong", models: ["Actyon", "Korando", "Musso", "Rexton", "Tivoli", "Torres"] },
+  { brand: "Tata", models: ["Altroz", "Harrier", "Nexon", "Punch", "Safari", "Tiago", "Tigor"] },
+  { brand: "Tank", models: ["300", "400", "500", "700"] },
+  { brand: "VinFast", models: ["VF 3", "VF 5", "VF 6", "VF 7", "VF 8", "VF 9", "VF e34"] },
+  { brand: "Voyah", models: ["Dreamer", "Free", "Passion", "Zhiyin"] },
+  { brand: "Wey", models: ["Coffee 01", "Coffee 02", "Gaoshan", "Lanshan", "Mocha", "Tank 300"] },
+  { brand: "Wuling", models: ["Air EV", "Almaz", "Bingo", "Cortez", "Hongguang Mini EV", "Jiachen", "Starlight", "Victory", "Xingchi", "Yep"] },
+  { brand: "Xiaomi", models: ["SU7", "SU7 Ultra", "YU7"] },
+  { brand: "XPeng", models: ["G3", "G6", "G9", "M03", "P5", "P7", "P7+", "X9"] },
+  { brand: "Yangwang", models: ["U7", "U8", "U9"] },
+  { brand: "Zeekr", models: ["001", "007", "009", "7X", "X"] },
+]);
+
+function mergeCarCatalog(base, extra) {
+  const map = new Map();
+  [...base, ...extra].forEach((item) => {
+    const key = item.brand;
+    if (!map.has(key)) map.set(key, new Set());
+    item.models.forEach((model) => map.get(key).add(model));
+  });
+  const merged = Array.from(map.entries()).map(([brand, models]) => ({
+    brand,
+    models: Array.from(models).sort((a, b) => a.localeCompare(b)),
+  })).sort((a, b) => a.brand.localeCompare(b.brand));
+  return [...merged.filter((item) => item.brand !== "Other"), { brand: "Other", models: ["Other"] }];
+}
+
 const serviceTypes = [
   "Oil change",
   "Oil filter",
@@ -104,6 +207,11 @@ const copy = {
     sendCode: "Send WhatsApp code",
     verifyCode: "Verify code",
     codeSent: "We sent a WhatsApp verification code.",
+    resendCode: "Resend WhatsApp code",
+    resendAvailableIn: "Resend available in",
+    resendLimitReached: "Maximum WhatsApp code attempts reached. Please try again later.",
+    minutesShort: "min",
+    secondsShort: "sec",
     codeInvalid: "Enter the 6 digit WhatsApp code.",
     loginFailed: "Could not complete WhatsApp login.",
     enter: "Enter App",
@@ -157,6 +265,7 @@ const copy = {
     shopHint: "For this test version, open the shop with the button below. In the real phone app, this page will use a mobile WebView so customers stay inside the app.",
     profileTitle: "Customer Profile",
     reset: "Reset demo data",
+    signOut: "Sign out",
     totalCars: "Cars",
     totalRecords: "Service records",
     nextService: "Next service",
@@ -398,6 +507,11 @@ copy.ar = {
   sendCode: "إرسال رمز واتساب",
   verifyCode: "تأكيد الرمز",
   codeSent: "تم إرسال رمز التحقق عبر واتساب.",
+  resendCode: "إعادة إرسال رمز واتساب",
+  resendAvailableIn: "إعادة الإرسال متاحة خلال",
+  resendLimitReached: "تم الوصول إلى الحد الأقصى لإرسال الرمز. يرجى المحاولة لاحقا.",
+  minutesShort: "د",
+  secondsShort: "ث",
   codeInvalid: "أدخل رمز واتساب المكون من 6 أرقام.",
   loginFailed: "تعذر إكمال تسجيل الدخول عبر واتساب.",
   enter: "دخول التطبيق",
@@ -450,6 +564,7 @@ copy.ar = {
   openExternal: "فتح في المتصفح",
   profileTitle: "ملف العميل",
   reset: "مسح بيانات التجربة",
+  signOut: "تسجيل الخروج",
   totalCars: "السيارات",
   totalRecords: "سجلات الصيانة",
   nextService: "الصيانة القادمة",
@@ -586,6 +701,10 @@ function defaultState() {
     pendingLoginName: "",
     pendingLoginPhone: "",
     pendingCustomerType: "",
+    codeSentAt: 0,
+    codeSendCount: 0,
+    codeSentAt: 0,
+    codeSendCount: 0,
     selectedCarId: null,
     cars: [],
     records: [],
@@ -904,6 +1023,7 @@ function render() {
   if (!state.user || !state.authToken) {
     app.innerHTML = loginView();
     bindLogin();
+    scheduleResendRefresh();
     return;
   }
 
@@ -964,6 +1084,7 @@ function loginView() {
           ${customerTypeField(state.pendingCustomerType || "")}
           ${phoneField(state.pendingLoginPhone || "")}
           ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
+          ${isCodeStep ? resendCodeView() : ""}
           <p class="form-error" data-login-error hidden></p>
           <button class="primary" type="submit">${isCodeStep ? t("verifyCode") : t("sendCode")}</button>
           <div class="language">
@@ -1981,6 +2102,38 @@ function phoneField(value = "") {
   `;
 }
 
+function resendCodeView() {
+  const waitSeconds = resendWaitSeconds();
+  if ((state.codeSendCount || 0) >= MAX_CODE_SENDS) {
+    return `<p class="muted">${t("resendLimitReached")}</p>`;
+  }
+  if (waitSeconds > 0) {
+    return `<p class="muted">${t("resendAvailableIn")} ${formatWait(waitSeconds)}</p>`;
+  }
+  return `<button class="ghost resend-code" type="button" data-resend-code>${t("resendCode")}</button>`;
+}
+
+function resendWaitSeconds() {
+  if (!state.codeSentAt) return 0;
+  return Math.max(0, Math.ceil((Number(state.codeSentAt) + RESEND_COOLDOWN_MS - Date.now()) / 1000));
+}
+
+function formatWait(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  if (minutes <= 0) return `${rest} ${t("secondsShort")}`;
+  return `${minutes} ${t("minutesShort")} ${rest} ${t("secondsShort")}`;
+}
+
+function scheduleResendRefresh() {
+  clearTimeout(window.sayaratiResendTimer);
+  if (state.loginStep !== "code") return;
+  const waitSeconds = resendWaitSeconds();
+  if (waitSeconds > 0) {
+    window.sayaratiResendTimer = setTimeout(render, Math.min(waitSeconds * 1000, 60000));
+  }
+}
+
 function customerTypeField(value = "") {
   return `
     <div class="field">
@@ -2273,6 +2426,8 @@ function bindLogin() {
     phoneInput.value = sanitizePhone(phoneInput.value);
   });
 
+  document.querySelector("[data-resend-code]")?.addEventListener("click", handleResendCode);
+
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
     handleLoginSubmit(event.currentTarget);
@@ -2316,12 +2471,30 @@ async function handleLoginSubmit(form) {
         pendingLoginName: data.name || "Customer",
         pendingLoginPhone: phone,
         pendingCustomerType: data.customerType || "",
+        codeSentAt: Date.now(),
+        codeSendCount: Number(result.sendCount || state.codeSendCount || 0) || 1,
         notice: t("codeSent"),
       });
     } catch (error) {
       showLoginError(form, error.message || t("loginFailed"));
       if (submit) submit.disabled = false;
     }
+}
+
+async function handleResendCode() {
+  const form = document.querySelector("#login-form");
+  if (!form || resendWaitSeconds() > 0 || (state.codeSendCount || 0) >= MAX_CODE_SENDS) return;
+  try {
+    const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone: state.pendingLoginPhone }, "");
+    if (!result.ok) throw new Error(result.error || t("loginFailed"));
+    setState({
+      codeSentAt: Date.now(),
+      codeSendCount: Number(result.sendCount || state.codeSendCount + 1 || 1),
+      notice: t("codeSent"),
+    });
+  } catch (error) {
+    showLoginError(form, error.message || t("loginFailed"));
+  }
 }
 
 function showLoginError(form, message) {

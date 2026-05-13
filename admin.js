@@ -82,7 +82,10 @@ function dashboardView() {
     <section class="panel">
       <div class="toolbar">
         <h2>Customer database</h2>
-        <input data-search placeholder="Search by phone, name, car, plate, VIN" value="${adminState.search}" />
+        <div class="toolbar-actions">
+          <input data-search placeholder="Search by phone, name, customer category, car, plate, VIN" value="${adminState.search}" />
+          <button class="secondary" type="button" data-export-excel>Export Excel</button>
+        </div>
       </div>
       <div class="customer-list">
         ${filteredCustomers.length ? filteredCustomers.map(customerCard).join("") : `<p class="muted">No customers found yet.</p>`}
@@ -147,7 +150,7 @@ function customerCard(customer) {
         <div>
           <h3>${customer.name || "Customer"}</h3>
           <p class="muted">${customer.phone}</p>
-          ${customer.customer_type ? `<p class="muted">${customerTypeLabel(customer.customer_type)}</p>` : ""}
+          <p class="muted">Category: ${customerTypeLabel(customer.customer_type || "personal")}</p>
         </div>
         <span class="pill">${cars.length} cars / ${records.length} records</span>
       </div>
@@ -197,6 +200,8 @@ function bind() {
       endsAt: form.get("endsAt"),
     });
   });
+
+  document.querySelector("[data-export-excel]")?.addEventListener("click", exportAdminData);
 }
 
 async function requestOtp(phone) {
@@ -320,6 +325,82 @@ function customerTypeLabel(value) {
     other: "Other",
   };
   return labels[value] || value;
+}
+
+function exportAdminData() {
+  const data = adminState.data || { customers: [], cars: [], records: [] };
+  const rows = [[
+    "Customer name",
+    "Phone",
+    "Customer category",
+    "Car brand",
+    "Car model",
+    "Car year",
+    "Plate",
+    "Mileage",
+    "VIN",
+    "Service date",
+    "Service types",
+    "Service mileage",
+    "Cost",
+    "Next service date",
+    "Next service note",
+    "Service notes",
+  ]];
+
+  data.customers.forEach((customer) => {
+    const cars = carsFor(customer.id);
+    if (!cars.length) {
+      rows.push(customerExportRow(customer));
+      return;
+    }
+    cars.forEach((car) => {
+      const records = (data.records || []).filter((record) => record.car_id === car.id);
+      if (!records.length) {
+        rows.push(customerExportRow(customer, car));
+        return;
+      }
+      records.forEach((record) => rows.push(customerExportRow(customer, car, record)));
+    });
+  });
+
+  const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\n")}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `sayarati-admin-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function customerExportRow(customer, car = {}, record = {}) {
+  return [
+    customer.name || "Customer",
+    customer.phone || "",
+    customerTypeLabel(customer.customer_type || "personal"),
+    car.brand || "",
+    car.model || "",
+    car.year || "",
+    car.plate || "",
+    car.mileage || "",
+    car.vin || "",
+    formatDate(record.service_date),
+    Array.isArray(record.service_types) ? record.service_types.join(" / ") : "",
+    record.mileage || "",
+    record.cost || "",
+    formatDate(record.next_due),
+    record.next_service_note || "",
+    record.notes || "",
+  ];
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
 }
 
 function sanitizePhone(value) {

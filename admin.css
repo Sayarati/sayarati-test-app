@@ -40,7 +40,8 @@ input {
 }
 
 .admin-top button,
-.primary {
+.primary,
+.secondary {
   border: 0;
   border-radius: 8px;
   background: var(--accent);
@@ -48,6 +49,11 @@ input {
   font-weight: 800;
   min-height: 44px;
   padding: 0 16px;
+}
+
+.secondary {
+  background: #0b0f12;
+  color: #fff;
 }
 
 .admin-wrap {
@@ -172,6 +178,13 @@ p {
   padding: 10px 12px;
 }
 
+.toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1;
+}
+
 .customer-list {
   display: grid;
   gap: 12px;
@@ -221,5 +234,15 @@ p {
 
   .admin-top {
     align-items: flex-start;
+  }
+
+  .toolbar,
+  .toolbar-actions {
+    display: grid;
+    width: 100%;
+  }
+
+  .toolbar input {
+    width: 100%;
   }
 }

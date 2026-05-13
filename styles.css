@@ -184,6 +184,10 @@ button {
   padding: 0 12px;
 }
 
+.resend-code {
+  width: 100%;
+}
+
 .top-controls .language button {
   min-height: 36px;
   padding: 0 9px;
@@ -969,30 +973,6 @@ button:disabled {
   text-align: center;
 }
 
-.tile-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  width: 100%;
-}
-
-.tile-actions button,
-.tile-share {
-  min-height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 0 8px;
-}
-
-.tile-open {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
-}
-
 .category-tile:hover {
   border-color: var(--accent);
   box-shadow: 0 14px 30px rgba(11, 15, 18, 0.12);
@@ -1051,12 +1031,13 @@ button:disabled {
 
 .card-share {
   position: absolute;
-  top: 8px;
+  top: 50%;
   right: 8px;
+  transform: translateY(-50%);
   z-index: 2;
-  width: 34px;
-  height: 34px;
-  min-height: 34px;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.94);
@@ -1068,8 +1049,8 @@ button:disabled {
 }
 
 .card-share svg {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;

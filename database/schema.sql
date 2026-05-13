@@ -53,6 +53,8 @@ create table if not exists public.otp_codes (
   code_hash text not null,
   expires_at timestamptz not null,
   attempts integer not null default 0,
+  send_count integer not null default 0,
+  last_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
