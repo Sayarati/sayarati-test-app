@@ -64,6 +64,7 @@ const carCatalog = mergeCarCatalog(baseCarCatalog, [
   { brand: "Abarth", models: ["124 Spider", "500", "595", "695", "Grande Panda"] },
   { brand: "Aiways", models: ["U5", "U6"] },
   { brand: "Aion", models: ["Aion ES", "Aion S", "Aion V", "Aion Y", "Hyper GT", "Hyper HT", "Hyptec HT"] },
+  { brand: "AITO", models: ["M5", "M6", "M7", "M8", "M9"] },
   { brand: "Alpine", models: ["A110", "A290", "A390"] },
   { brand: "Arcfox", models: ["Alpha S", "Alpha T", "Kaola"] },
   { brand: "Avatr", models: ["07", "11", "12"] },
@@ -101,6 +102,7 @@ const carCatalog = mergeCarCatalog(baseCarCatalog, [
   { brand: "Great Wall", models: ["C30", "C50", "Cannon", "Haval H6", "King Kong Poer", "Poer", "Wingle 5", "Wingle 7"] },
   { brand: "Haval", models: ["Big Dog", "Cool Dog", "Dargo", "H2", "H4", "H5", "H6", "H6 GT", "H7", "H9", "Jolion", "M6", "Raptor", "Shenshou"] },
   { brand: "Hongqi", models: ["E-HS9", "E-QM5", "H5", "H6", "H7", "H9", "HS3", "HS5", "HS7", "L5"] },
+  { brand: "Hycan", models: ["A06", "V09", "Z03"] },
   { brand: "iCar", models: ["03", "V23"] },
   { brand: "IM Motors", models: ["L6", "L7", "LS6", "LS7"] },
   { brand: "Ineos", models: ["Fusilier", "Grenadier", "Quartermaster"] },
@@ -113,6 +115,7 @@ const carCatalog = mergeCarCatalog(baseCarCatalog, [
   { brand: "Leapmotor", models: ["B10", "C01", "C10", "C11", "C16", "T03"] },
   { brand: "Li Auto", models: ["L6", "L7", "L8", "L9", "Mega"] },
   { brand: "Lincoln", models: ["Aviator", "Corsair", "MKC", "MKS", "MKT", "MKX", "MKZ", "Nautilus", "Navigator", "Zephyr"] },
+  { brand: "Livan", models: ["7", "8", "9", "Maple 30X", "Maple 60S"] },
   { brand: "Lotus", models: ["Elise", "Emira", "Emeya", "Eletre", "Evija", "Exige"] },
   { brand: "Lucid", models: ["Air", "Gravity"] },
   { brand: "Luxeed", models: ["R7", "S7"] },
@@ -122,12 +125,15 @@ const carCatalog = mergeCarCatalog(baseCarCatalog, [
   { brand: "McLaren", models: ["570S", "600LT", "720S", "750S", "Artura", "Elva", "GT", "Senna", "Solus GT", "W1"] },
   { brand: "Mercedes-Benz", models: ["AMG GT", "B-Class", "CLE", "EQA", "EQB", "EQC", "EQE", "EQS", "GLS Maybach", "SL", "Sprinter", "Vito"] },
   { brand: "Nio", models: ["EC6", "EC7", "EL6", "EL7", "EL8", "ES6", "ES7", "ES8", "ET5", "ET5 Touring", "ET7"] },
+  { brand: "Neta", models: ["Aya", "GT", "L", "S", "U", "V", "X"] },
   { brand: "Omoda", models: ["C3", "C5", "C7", "E5"] },
   { brand: "Onvo", models: ["L60"] },
   { brand: "Ora", models: ["03", "07", "Ballet Cat", "Good Cat", "Lightning Cat"] },
   { brand: "Polestar", models: ["1", "2", "3", "4", "5", "6"] },
   { brand: "RAM", models: ["1200", "1500", "2500", "3500", "Dakota", "ProMaster"] },
+  { brand: "Radar", models: ["RD6", "RD7", "R6"] },
   { brand: "Rivian", models: ["R1S", "R1T", "R2", "R3"] },
+  { brand: "Rising Auto", models: ["F7", "R7"] },
   { brand: "Roewe", models: ["D7", "Ei5", "i5", "i6", "RX3", "RX5", "RX8"] },
   { brand: "Rolls-Royce", models: ["Cullinan", "Dawn", "Ghost", "Phantom", "Spectre", "Wraith"] },
   { brand: "Seres", models: ["3", "5", "7", "Aito M5", "Aito M7", "Aito M8", "Aito M9"] },
@@ -226,7 +232,9 @@ const copy = {
     addCar: "Add Car",
     carDetails: "Car Details",
     brand: "Brand",
+    customBrand: "Brand name",
     model: "Model",
+    customModel: "Model name",
     year: "Year",
     plate: "Plate Number",
     mileage: "Mileage (km)",
@@ -236,6 +244,7 @@ const copy = {
     addRecord: "Add Service Record",
     serviceType: "Service Type",
     date: "Date",
+    mechanicName: "Mechanic name",
     parts: "Parts Changed",
     cost: "Cost",
     nextDue: "Next Service Date",
@@ -264,7 +273,6 @@ const copy = {
     openExternal: "Open in browser",
     shopHint: "For this test version, open the shop with the button below. In the real phone app, this page will use a mobile WebView so customers stay inside the app.",
     profileTitle: "Customer Profile",
-    reset: "Reset demo data",
     signOut: "Sign out",
     totalCars: "Cars",
     totalRecords: "Service records",
@@ -381,7 +389,7 @@ const copy = {
     tour9Title: "Language",
     tour9Text: "Switch between English and Arabic from here.",
     tour10Title: "Profile",
-    tour10Text: "Open your profile from the initial circle. You can reset demo data there.",
+    tour10Text: "Open your profile from the initial circle. You can sign out there.",
   },
   ar: {
     appName: "Ø³ÙŠØ§Ø±ØªÙŠ",
@@ -526,7 +534,9 @@ copy.ar = {
   addCar: "إضافة سيارة",
   carDetails: "تفاصيل السيارة",
   brand: "الشركة",
+  customBrand: "اسم الشركة",
   model: "الموديل",
+  customModel: "اسم الموديل",
   year: "السنة",
   plate: "رقم اللوحة",
   mileage: "عداد الكيلومترات (كم)",
@@ -536,6 +546,7 @@ copy.ar = {
   addRecord: "إضافة سجل صيانة",
   serviceType: "نوع الصيانة",
   date: "التاريخ",
+  mechanicName: "اسم الميكانيكي",
   parts: "القطع المستبدلة",
   cost: "التكلفة",
   nextDue: "موعد الصيانة القادمة",
@@ -730,7 +741,7 @@ function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      const parsed = { ...defaults, ...JSON.parse(saved) };
+      const parsed = { ...defaults, ...JSON.parse(saved), carFormOpen: false };
       return { ...parsed, view: parsed.view === "overview" ? "cars" : parsed.view };
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -1351,8 +1362,12 @@ function overviewView() {
 function carsView() {
   const editingCar = state.cars.find((car) => car.id === state.editingCarId);
   const formCar = editingCar || {};
-  const formBrand = formCar.brand || "Toyota";
-  const formModel = formCar.model || modelsForBrand(formBrand)[0] || "";
+  const catalogBrandNames = carCatalog.map((item) => item.brand);
+  const isKnownBrand = !formCar.brand || catalogBrandNames.includes(formCar.brand);
+  const formBrand = isKnownBrand ? (formCar.brand || "Toyota") : "Other";
+  const knownModels = modelsForBrand(formBrand);
+  const isKnownModel = !formCar.model || knownModels.includes(formCar.model);
+  const formModel = isKnownModel ? (formCar.model || knownModels[0] || "Other") : "Other";
   return `
     <section class="grid">
       <div class="panel" data-tour="garage-list">
@@ -1369,7 +1384,9 @@ function carsView() {
           <h2>${editingCar ? t("editCar") : t("addCar")}</h2>
           <form class="form" id="car-form">
             ${selectField("brand", t("brand"), carCatalog.map((item) => item.brand), formBrand, t("chooseBrand"))}
+            <div data-custom-brand-wrap class="${formBrand === "Other" ? "" : "is-hidden"}">${field("customBrand", t("customBrand"), "text", isKnownBrand ? "" : formCar.brand || "")}</div>
             ${selectField("model", t("model"), modelsForBrand(formBrand), formModel, t("chooseModel"))}
+            <div data-custom-model-wrap class="${formModel === "Other" ? "" : "is-hidden"}">${field("customModel", t("customModel"), "text", isKnownModel ? "" : formCar.model || "")}</div>
             ${field("year", t("year"), "number", formCar.year || "2022")}
             ${field("plate", t("plate"), "text", formCar.plate || "123456")}
             ${field("mileage", t("mileage"), "number", formCar.mileage || "45000")}
@@ -1490,6 +1507,7 @@ function serviceFormView(car) {
       ${car ? `
         <form class="form" id="record-form">
           ${field("date", t("date"), "date", editingRecord?.date || new Date().toISOString().slice(0, 10))}
+          ${field("mechanicName", t("mechanicName"), "text", editingRecord?.mechanicName || "")}
           ${field("mileage", t("mileage"), "number", editingRecord?.mileage || car.mileage || "")}
           ${serviceCheckboxes(selectedServices, editingRecord)}
           ${field("otherServiceDetails", t("otherServiceDetails"), "text", editingRecord?.otherServiceDetails || "")}
@@ -1560,9 +1578,9 @@ function categoryLandingView() {
       <p class="muted">${t("chooseCategoryFirst")}</p>
       <div class="category-grid">
         ${shopState.categories.map((category) => `
-    <article class="category-tile" data-category-tile="${category.id}">
+    <article class="category-tile">
             <button class="card-share" data-share-category="${category.id}" aria-label="${t("shareCategory")}">${shareIcon()}</button>
-            ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(translatedText(category, "name"))}" />` : `<span>${escapeHtml(translatedText(category, "name")).slice(0, 1)}</span>`}
+            ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="${escapeAttr(translatedText(category, "name"))}" data-category-tile="${category.id}" />` : `<span data-category-tile="${category.id}">${escapeHtml(translatedText(category, "name")).slice(0, 1)}</span>`}
             <strong>${escapeHtml(translatedText(category, "name"))}</strong>
             ${Number(category.productCount || 0) ? `<small>${category.productCount}</small>` : ""}
           </article>
@@ -1670,9 +1688,9 @@ function translatedValue(item) {
 function productCard(product) {
   const productName = translatedText(product, "name");
   return `
-    <article class="product-card" data-product-id="${product.id}">
+    <article class="product-card">
       <button class="card-share" data-share-product="${product.id}" aria-label="${t("shareProduct")}">${shareIcon()}</button>
-      <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" />
+      <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" data-product-id="${product.id}" />
       <div>
         <strong>${escapeHtml(productName)}</strong>
         <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
@@ -2076,7 +2094,7 @@ function profileView() {
       <p class="muted">${contact}</p>
       ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
       <div class="actions">
-        <button class="ghost" data-reset>${t("reset")}</button>
+        <button class="ghost" data-sign-out>${t("signOut")}</button>
       </div>
     </section>
   `;
@@ -2216,7 +2234,8 @@ function textarea(name, label, value, placeholder = "") {
 }
 
 function modelsForBrand(brand) {
-  return (carCatalog.find((item) => item.brand === brand) || carCatalog[0]).models;
+  const models = (carCatalog.find((item) => item.brand === brand) || carCatalog[0]).models;
+  return models.includes("Other") ? models : [...models, "Other"];
 }
 
 function carLabel(car) {
@@ -2289,7 +2308,7 @@ function renderRecordSummaries(carId) {
         <strong>${formatServices(record)}</strong>
         <span class="pill gold">${record.date || "-"}</span>
       </div>
-      <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}</p>
+      <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}${record.mechanicName ? ` | ${t("mechanicName")}: ${escapeHtml(record.mechanicName)}` : ""}</p>
       ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
     </article>
   `).join("");
@@ -2311,6 +2330,7 @@ function serviceDetailView(record) {
       </div>
       <div class="detail-grid">
         <div><span>${t("selectedServices")}</span><strong>${formatServices(record)}</strong></div>
+        <div><span>${t("mechanicName")}</span><strong>${record.mechanicName || "-"}</strong></div>
         ${record.oilViscosity || record.oilLiters ? `<div><span>${t("oilDetails")}</span><strong>${formatOilDetails(record)}</strong></div>` : ""}
         ${record.brakePadPosition ? `<div><span>${t("brakePadDetails")}</span><strong>${record.brakePadPosition}</strong></div>` : ""}
         <div><span>${t("parts")}</span><strong>${record.parts || "-"}</strong></div>
@@ -2620,8 +2640,9 @@ function bindApp() {
 
   document.querySelectorAll("[data-toggle-car-form]").forEach((button) => {
     button.addEventListener("click", () => {
-      setState({ carFormOpen: !state.carFormOpen, view: "cars", editingCarId: state.carFormOpen ? null : state.editingCarId });
-      if (!state.carFormOpen) scrollAfterRender("car-form-panel");
+      const willOpen = !state.carFormOpen;
+      setState({ carFormOpen: willOpen, view: "cars", editingCarId: willOpen ? state.editingCarId : null });
+      if (willOpen) scrollAfterRender("car-form-panel");
     });
   });
 
@@ -2792,15 +2813,29 @@ function bindApp() {
     const brandSelect = carForm.querySelector("#brand");
     const modelSelect = carForm.querySelector("#model");
     if (brandSelect && modelSelect) {
+      const syncCustomCarFields = () => {
+        carForm.querySelector("[data-custom-brand-wrap]")?.classList.toggle("is-hidden", brandSelect.value !== "Other");
+        carForm.querySelector("[data-custom-model-wrap]")?.classList.toggle("is-hidden", modelSelect.value !== "Other");
+      };
       brandSelect.addEventListener("change", () => {
         const models = modelsForBrand(brandSelect.value);
         modelSelect.innerHTML = `<option value="">${t("chooseModel")}</option>${models.map((model) => `<option value="${model}">${model}</option>`).join("")}`;
+        syncCustomCarFields();
       });
+      modelSelect.addEventListener("change", syncCustomCarFields);
+      syncCustomCarFields();
     }
 
     carForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const data = formData(carForm);
+      const rawData = formData(carForm);
+      const data = {
+        ...rawData,
+        brand: rawData.brand === "Other" ? String(rawData.customBrand || "").trim() || "Other" : rawData.brand,
+        model: rawData.model === "Other" ? String(rawData.customModel || "").trim() || "Other" : rawData.model,
+      };
+      delete data.customBrand;
+      delete data.customModel;
       if (!String(data.brand || "").trim() || !String(data.model || "").trim()) {
         setState({ notice: t("carRequired") });
         return;
@@ -2890,16 +2925,17 @@ function bindApp() {
       });
       persistCustomerData(state.cars, updatedRecords);
       notify(existingRecord ? t("recordUpdated") : t("recordSaved"));
-      scrollAfterRender("service-history-panel");
+      scrollAfterRender("app");
     });
   }
 
-  const reset = document.querySelector("[data-reset]");
-  if (reset) {
-    reset.addEventListener("click", () => {
+  const signOut = document.querySelector("[data-sign-out]");
+  if (signOut) {
+    signOut.addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
       state = loadState();
       customerDataLoaded = false;
+      adminMessagesLoaded = false;
       render();
       syncTourHighlight();
     });

@@ -46,6 +46,7 @@ async function loadCustomerData(customerId) {
       id: record.client_id || record.id,
       carId: carIdByUuid.get(record.car_id) || record.car_id,
       date: formatDate(record.service_date),
+      mechanicName: record.mechanic_name || "",
       mileage: record.mileage || "",
       serviceType: record.service_type || "",
       serviceTypes: record.service_types || [],
@@ -112,15 +113,16 @@ async function saveCustomerData(request, customerId) {
     if (!clientId || !carUuid) continue;
     await dbQuery(`
       insert into service_records (
-        customer_id, car_id, client_id, service_date, mileage, service_type, service_types,
+        customer_id, car_id, client_id, service_date, mechanic_name, mileage, service_type, service_types,
         oil_viscosity, oil_liters, brake_pad_position, other_service_details, parts, cost,
         next_due, next_service_note, invoice_path, part_photo_paths, notes, updated_at
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, now())
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19, now())
       on conflict (customer_id, client_id)
       do update set
         car_id = excluded.car_id,
         service_date = excluded.service_date,
+        mechanic_name = excluded.mechanic_name,
         mileage = excluded.mileage,
         service_type = excluded.service_type,
         service_types = excluded.service_types,
@@ -141,6 +143,7 @@ async function saveCustomerData(request, customerId) {
       carUuid,
       clientId,
       record.date || null,
+      record.mechanicName || null,
       toInteger(record.mileage),
       record.serviceType || "",
       record.serviceTypes || [],

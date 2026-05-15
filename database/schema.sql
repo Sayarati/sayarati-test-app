@@ -32,6 +32,7 @@ create table if not exists public.service_records (
   customer_id uuid not null references public.customers(id) on delete cascade,
   car_id uuid not null references public.cars(id) on delete cascade,
   service_date date,
+  mechanic_name text,
   mileage integer,
   service_types text[] not null default '{}',
   oil_viscosity text,
