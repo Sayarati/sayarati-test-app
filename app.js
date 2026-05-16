@@ -1095,9 +1095,9 @@ function loginView() {
           ${customerTypeField(state.pendingCustomerType || "")}
           ${phoneField(state.pendingLoginPhone || "")}
           ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
-          ${isCodeStep ? sendCodeButtonView() : ""}
+          ${sendCodeButtonView()}
           <p class="form-error" data-login-error hidden></p>
-          <button class="primary" type="submit">${isCodeStep ? t("verifyCode") : t("sendCode")}</button>
+          ${isCodeStep ? `<button class="primary" type="submit">${t("verifyCode")}</button>` : ""}
           <div class="language">
             <button type="button" class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
             <button type="button" class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
@@ -2127,7 +2127,7 @@ function sendCodeButtonView() {
   const label = waitSeconds > 0 ? `${t("sendCode")} (${formatWait(waitSeconds)})` : t("sendCode");
   const note = limitReached ? `<p class="muted">${t("resendLimitReached")}</p>` : "";
   return `
-    <button class="primary send-code-button" type="button" data-resend-code ${disabled ? "disabled" : ""}>${label}</button>
+    <button class="primary send-code-button" type="button" data-send-code ${disabled ? "disabled" : ""}>${label}</button>
     ${note}
   `;
 }
@@ -2458,7 +2458,8 @@ function bindLogin() {
     phoneInput.value = sanitizePhone(phoneInput.value);
   });
 
-  document.querySelector("[data-resend-code]")?.addEventListener("click", handleResendCode);
+  document.querySelector("[data-send-code]")?.addEventListener("click", handleSendCode);
+  document.querySelector("[data-resend-code]")?.addEventListener("click", handleSendCode);
 
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -2496,30 +2497,35 @@ async function handleLoginSubmit(form) {
         return;
       }
 
-      const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone });
-      if (!result.ok) throw new Error(result.error || t("loginFailed"));
-      setState({
-        loginStep: "code",
-        pendingLoginName: data.name || "Customer",
-        pendingLoginPhone: phone,
-        pendingCustomerType: data.customerType || "",
-        codeSentAt: Date.now(),
-        codeSendCount: Number(result.sendCount || state.codeSendCount || 0) || 1,
-        notice: t("codeSent"),
-      });
+      await requestLoginCode(form, data);
     } catch (error) {
       showLoginError(form, error.message || t("loginFailed"));
       if (submit) submit.disabled = false;
     }
 }
 
-async function handleResendCode() {
+async function handleSendCode() {
   const form = document.querySelector("#login-form");
   if (!form || resendWaitSeconds() > 0 || (state.codeSendCount || 0) >= MAX_CODE_SENDS) return;
+  const data = formData(form);
+  await requestLoginCode(form, data);
+}
+
+async function requestLoginCode(form, data) {
+  const phone = sanitizePhone(data.phone || state.pendingLoginPhone);
+  if (!isValidPhone(phone)) {
+    showLoginError(form, t("phoneInvalid"));
+    form.querySelector("#phone")?.focus();
+    return;
+  }
   try {
-    const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone: state.pendingLoginPhone }, "");
+    const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone }, "");
     if (!result.ok) throw new Error(result.error || t("loginFailed"));
     setState({
+      loginStep: "code",
+      pendingLoginName: data.name || state.pendingLoginName || "Customer",
+      pendingLoginPhone: phone,
+      pendingCustomerType: data.customerType || state.pendingCustomerType || "",
       codeSentAt: Date.now(),
       codeSendCount: Number(result.sendCount || state.codeSendCount + 1 || 1),
       notice: t("codeSent"),
