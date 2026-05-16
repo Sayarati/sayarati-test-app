@@ -11,7 +11,7 @@ import {
   validPhone,
 } from "./shared.mjs";
 
-const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_CODE_SENDS = 3;
 
 export default async function handler(request) {

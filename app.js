@@ -8,7 +8,7 @@ const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
 const SHOP_PAGE_SIZE = 24;
 const IMAGE_MAX_EDGE = 900;
 const IMAGE_QUALITY = 0.64;
-const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_CODE_SENDS = 3;
 
 const baseCarCatalog = [
@@ -1095,7 +1095,7 @@ function loginView() {
           ${customerTypeField(state.pendingCustomerType || "")}
           ${phoneField(state.pendingLoginPhone || "")}
           ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
-          ${isCodeStep ? resendCodeView() : ""}
+          ${isCodeStep ? sendCodeButtonView() : ""}
           <p class="form-error" data-login-error hidden></p>
           <button class="primary" type="submit">${isCodeStep ? t("verifyCode") : t("sendCode")}</button>
           <div class="language">
@@ -2117,6 +2117,18 @@ function phoneField(value = "") {
       <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" />
       <small>${t("phoneHelp")}</small>
     </div>
+  `;
+}
+
+function sendCodeButtonView() {
+  const waitSeconds = resendWaitSeconds();
+  const limitReached = (state.codeSendCount || 0) >= MAX_CODE_SENDS;
+  const disabled = waitSeconds > 0 || limitReached;
+  const label = waitSeconds > 0 ? `${t("sendCode")} (${formatWait(waitSeconds)})` : t("sendCode");
+  const note = limitReached ? `<p class="muted">${t("resendLimitReached")}</p>` : "";
+  return `
+    <button class="primary send-code-button" type="button" data-resend-code ${disabled ? "disabled" : ""}>${label}</button>
+    ${note}
   `;
 }
 
