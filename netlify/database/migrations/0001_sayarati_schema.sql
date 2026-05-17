@@ -4,7 +4,6 @@ create table if not exists customers (
   id uuid primary key default gen_random_uuid(),
   phone text not null unique,
   name text,
-  customer_type text,
   created_at timestamptz not null default now(),
   last_login_at timestamptz
 );
@@ -29,7 +28,6 @@ create table if not exists service_records (
   customer_id uuid not null references customers(id) on delete cascade,
   car_id uuid not null references cars(id) on delete cascade,
   service_date date,
-  mechanic_name text,
   mileage integer,
   service_types text[] not null default '{}',
   oil_viscosity text,
@@ -38,7 +36,6 @@ create table if not exists service_records (
   parts text,
   cost numeric,
   next_due date,
-  next_service_note text,
   invoice_path text,
   part_photo_paths jsonb not null default '[]'::jsonb,
   notes text,
@@ -51,8 +48,6 @@ create table if not exists otp_codes (
   code_hash text not null,
   expires_at timestamptz not null,
   attempts integer not null default 0,
-  send_count integer not null default 0,
-  last_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
