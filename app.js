@@ -188,6 +188,29 @@ const serviceTypes = [
 
 const oilViscosities = ["0W-20", "0W-30", "5W-20", "5W-30", "5W-40", "10W-30", "10W-40", "15W-40", "20W-50", "Other"];
 const brakePadPositions = ["Front", "Rear", "Front and rear"];
+const serviceTypeLabels = {
+  "Oil change": { ar: "تغيير الزيت" },
+  "Oil filter": { ar: "فلتر الزيت" },
+  "Air filter": { ar: "فلتر الهواء" },
+  "Cabin filter": { ar: "فلتر المكيف" },
+  "Brake pads": { ar: "فحمات الفرامل" },
+  "Brake discs": { ar: "دسكات الفرامل" },
+  Tires: { ar: "الإطارات" },
+  Battery: { ar: "البطارية" },
+  "Spark plugs": { ar: "البواجي" },
+  "Transmission service": { ar: "صيانة علبة السرعة" },
+  "Coolant service": { ar: "صيانة سائل التبريد" },
+  "AC service": { ar: "صيانة المكيف" },
+  "Wheel alignment": { ar: "ترصيص / ميزان" },
+  Inspection: { ar: "فحص" },
+  Repair: { ar: "تصليح" },
+  Other: { ar: "أخرى" },
+};
+const brakePadPositionLabels = {
+  Front: { ar: "أمامية" },
+  Rear: { ar: "خلفية" },
+  "Front and rear": { ar: "أمامية وخلفية" },
+};
 const customerTypes = [
   { value: "personal", labels: { en: "Personal car owner", ar: "استخدام شخصي لسيارتي" } },
   { value: "garage", labels: { en: "Garage / workshop owner", ar: "صاحب كراج أو ورشة" } },
@@ -691,7 +714,7 @@ copy.ar = {
   tour9Title: "اللغة",
   tour9Text: "بدل بين الإنجليزية والعربية من هنا.",
   tour10Title: "الملف الشخصي",
-  tour10Text: "افتح ملفك من دائرة الحرف. يمكنك مسح بيانات التجربة من هناك.",
+  tour10Text: "افتح ملفك من دائرة الحرف. يمكنك تسجيل الخروج من هناك.",
 };
 
 let state = loadState();
@@ -2182,7 +2205,7 @@ function selectField(name, label, options, value, placeholder) {
       <label for="${name}">${label}</label>
       <select id="${name}" name="${name}">
         <option value="">${placeholder}</option>
-        ${options.map((option) => `<option value="${option}" ${option === value ? "selected" : ""}>${option}</option>`).join("")}
+        ${options.map((option) => `<option value="${option}" ${option === value ? "selected" : ""}>${optionLabel(option)}</option>`).join("")}
       </select>
     </div>
   `;
@@ -2196,7 +2219,7 @@ function serviceCheckboxes(selectedServices = [], record = {}) {
         ${serviceTypes.map((service) => `
           <label class="check-option">
             <input type="checkbox" name="serviceTypes" value="${service}" ${selectedServices.includes(service) ? "checked" : ""} />
-            <span>${service}</span>
+            <span>${serviceLabel(service)}</span>
           </label>
           ${service === "Oil change" ? oilServiceFields(record, selectedServices.includes("Oil change")) : ""}
           ${service === "Brake pads" ? brakePadServiceFields(record, selectedServices.includes("Brake pads")) : ""}
@@ -2344,7 +2367,7 @@ function serviceDetailView(record) {
         <div><span>${t("selectedServices")}</span><strong>${formatServices(record)}</strong></div>
         <div><span>${t("mechanicName")}</span><strong>${record.mechanicName || "-"}</strong></div>
         ${record.oilViscosity || record.oilLiters ? `<div><span>${t("oilDetails")}</span><strong>${formatOilDetails(record)}</strong></div>` : ""}
-        ${record.brakePadPosition ? `<div><span>${t("brakePadDetails")}</span><strong>${record.brakePadPosition}</strong></div>` : ""}
+        ${record.brakePadPosition ? `<div><span>${t("brakePadDetails")}</span><strong>${brakePadPositionLabel(record.brakePadPosition)}</strong></div>` : ""}
         <div><span>${t("parts")}</span><strong>${record.parts || "-"}</strong></div>
         <div><span>${t("cost")}</span><strong>${record.cost || "-"}</strong></div>
         <div><span>${t("nextDue")}</span><strong>${record.nextDue || "-"}</strong></div>
@@ -2366,10 +2389,25 @@ function selectedRecord(carId) {
 function formatServices(record) {
   const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
   const namedServices = services.map((service) => {
-    if (service === "Other" && record.otherServiceDetails) return `Other: ${record.otherServiceDetails}`;
-    return service;
+    if (service === "Other" && record.otherServiceDetails) return `${serviceLabel(service)}: ${record.otherServiceDetails}`;
+    return serviceLabel(service);
   });
   return namedServices.length ? namedServices.join(", ") : "-";
+}
+
+function optionLabel(option) {
+  if (state.lang !== "ar") return option;
+  return serviceTypeLabels[option]?.ar || brakePadPositionLabels[option]?.ar || (option === "Other" ? "أخرى" : option);
+}
+
+function serviceLabel(service) {
+  if (state.lang !== "ar") return service;
+  return serviceTypeLabels[service]?.ar || service;
+}
+
+function brakePadPositionLabel(position) {
+  if (state.lang !== "ar") return position;
+  return brakePadPositionLabels[position]?.ar || position;
 }
 
 function formatOilDetails(record) {

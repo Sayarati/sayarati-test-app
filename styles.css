@@ -630,6 +630,10 @@ h1 {
   display: none;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 .service-extra-inline {
   grid-column: 1 / -1;
   margin-top: -4px;
