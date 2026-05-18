@@ -2187,7 +2187,7 @@ function phoneField(value = "") {
   return `
     <div class="field">
       <label for="phone">${t("phone")}</label>
-      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" required />
+      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="9610000000" required />
       <small>${t("phoneHelp")}</small>
     </div>
   `;
