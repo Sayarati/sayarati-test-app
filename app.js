@@ -10,6 +10,7 @@ const IMAGE_MAX_EDGE = 900;
 const IMAGE_QUALITY = 0.64;
 const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_CODE_SENDS = 3;
+let deferredInstallPrompt = null;
 
 const baseCarCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -385,6 +386,11 @@ const copy = {
     share: "Share",
     shareProduct: "Share product",
     shareCategory: "Share category",
+    installApp: "Install app",
+    installAppTitle: "Add Sayarati to your phone",
+    installAppText: "Save the app icon on your home screen for faster access.",
+    installAppAndroid: "Android: tap Install app, or Chrome menu > Add to Home screen.",
+    installAppIos: "iPhone: open in Safari, tap Share, then Add to Home Screen.",
     linkCopied: "Link copied.",
     tourNext: "Next",
     tourBack: "Back",
@@ -687,6 +693,11 @@ copy.ar = {
   share: "مشاركة",
   shareProduct: "مشاركة المنتج",
   shareCategory: "مشاركة الفئة",
+  installApp: "تثبيت التطبيق",
+  installAppTitle: "أضف سيارتي إلى شاشة الهاتف",
+  installAppText: "احفظ أيقونة التطبيق على الشاشة الرئيسية للوصول السريع.",
+  installAppAndroid: "أندرويد: اضغط تثبيت التطبيق، أو من قائمة كروم اختر إضافة إلى الشاشة الرئيسية.",
+  installAppIos: "آيفون: افتح الرابط في سفاري، اضغط مشاركة، ثم إضافة إلى الشاشة الرئيسية.",
   linkCopied: "تم نسخ الرابط.",
   tourNext: "التالي",
   tourBack: "رجوع",
@@ -2116,11 +2127,29 @@ function profileView() {
       <h2>${state.user.name}</h2>
       <p class="muted">${contact}</p>
       ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
+      ${installHelpView()}
       <div class="actions">
         <button class="ghost" data-sign-out>${t("signOut")}</button>
       </div>
     </section>
   `;
+}
+
+function installHelpView() {
+  if (isStandaloneApp()) return "";
+  return `
+    <div class="install-help">
+      <h3>${t("installAppTitle")}</h3>
+      <p>${t("installAppText")}</p>
+      ${deferredInstallPrompt ? `<button class="primary" type="button" data-install-app>${t("installApp")}</button>` : ""}
+      <small>${t("installAppAndroid")}</small>
+      <small>${t("installAppIos")}</small>
+    </div>
+  `;
+}
+
+function isStandaloneApp() {
+  return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
 }
 
 function field(name, label, type, value) {
@@ -2997,6 +3026,14 @@ function bindApp() {
     });
   }
 
+  document.querySelector("[data-install-app]")?.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice.catch(() => null);
+    deferredInstallPrompt = null;
+    render();
+  });
+
   const sample = document.querySelector("[data-sample]");
   if (sample) {
     sample.addEventListener("click", addSampleData);
@@ -3180,5 +3217,15 @@ function addSampleData() {
     ],
   });
 }
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  if (state?.user && state.view === "profile") render();
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+});
 
 render();
