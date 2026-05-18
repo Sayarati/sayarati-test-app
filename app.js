@@ -232,6 +232,8 @@ const copy = {
     phoneHelp: "Use digits only. Example: 96170123456",
     customerType: "I am using Sayarati as",
     chooseCustomerType: "Choose one",
+    nameRequired: "Please enter your name.",
+    customerTypeRequired: "Please choose why you are using Sayarati.",
     phoneInvalid: "Please enter a valid mobile number using 8 to 15 digits.",
     verificationCode: "Verification code",
     sendCode: "Send WhatsApp code",
@@ -541,6 +543,8 @@ copy.ar = {
   phoneHelp: "استخدم الأرقام فقط. مثال: 96170123456",
   customerType: "أستخدم Sayarati كـ",
   chooseCustomerType: "اختر نوع الاستخدام",
+  nameRequired: "يرجى إدخال الاسم.",
+  customerTypeRequired: "يرجى اختيار سبب استخدام Sayarati.",
   phoneInvalid: "يرجى إدخال رقم هاتف صحيح من 8 إلى 15 رقما.",
   verificationCode: "رمز التحقق",
   sendCode: "إرسال رمز واتساب",
@@ -1129,7 +1133,7 @@ function loginView() {
         <h1>${t("loginTitle")}</h1>
         <p class="muted">${t("loginText")}</p>
         <div class="form">
-          ${field("name", t("name"), "text", state.pendingLoginName || "Cedric")}
+          ${field("name", t("name"), "text", state.pendingLoginName || "", true)}
           ${customerTypeField(state.pendingCustomerType || "")}
           ${phoneField(state.pendingLoginPhone || "")}
           ${isCodeStep ? field("code", t("verificationCode"), "tel", "") : ""}
@@ -2168,12 +2172,13 @@ function isStandaloneApp() {
   return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
 }
 
-function field(name, label, type, value) {
+function field(name, label, type, value, required = false) {
   const inputMode = name === "code" ? ` inputmode="numeric" maxlength="6" autocomplete="one-time-code"` : "";
+  const requiredAttr = required ? " required" : "";
   return `
     <div class="field">
       <label for="${name}">${label}</label>
-      <input id="${name}" name="${name}" type="${type}" value="${value || ""}"${inputMode} />
+      <input id="${name}" name="${name}" type="${type}" value="${value || ""}"${inputMode}${requiredAttr} />
     </div>
   `;
 }
@@ -2182,7 +2187,7 @@ function phoneField(value = "") {
   return `
     <div class="field">
       <label for="phone">${t("phone")}</label>
-      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" />
+      <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" pattern="[0-9]{8,15}" value="${value}" placeholder="96170123456" required />
       <small>${t("phoneHelp")}</small>
     </div>
   `;
@@ -2552,17 +2557,8 @@ function bindLogin() {
 
 async function handleLoginSubmit(form) {
     const data = formData(form);
-    const phoneInput = form.querySelector("#phone");
-    const phone = sanitizePhone(data.phone || "");
-    if (!isValidPhone(phone)) {
-      const error = form.querySelector("[data-login-error]");
-      if (error) {
-        error.textContent = t("phoneInvalid");
-        error.hidden = false;
-      }
-      phoneInput?.focus();
-      return;
-    }
+    const requiredData = validateLoginRequired(form, data);
+    if (!requiredData) return;
 
     const submit = form.querySelector("button[type='submit']");
     if (submit?.disabled) return;
@@ -2576,11 +2572,11 @@ async function handleLoginSubmit(form) {
           if (submit) submit.disabled = false;
           return;
         }
-        await verifyCustomerCode({ name: data.name || "Customer", phone, code, customerType: data.customerType || "" });
+        await verifyCustomerCode({ name: requiredData.name, phone: requiredData.phone, code, customerType: requiredData.customerType });
         return;
       }
 
-      await requestLoginCode(form, data);
+      await requestLoginCode(form, requiredData);
     } catch (error) {
       showLoginError(form, error.message || t("loginFailed"));
       if (submit) submit.disabled = false;
@@ -2595,20 +2591,16 @@ async function handleSendCode() {
 }
 
 async function requestLoginCode(form, data) {
-  const phone = sanitizePhone(data.phone || state.pendingLoginPhone);
-  if (!isValidPhone(phone)) {
-    showLoginError(form, t("phoneInvalid"));
-    form.querySelector("#phone")?.focus();
-    return;
-  }
+  const requiredData = validateLoginRequired(form, data);
+  if (!requiredData) return;
   try {
-    const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone }, "");
+    const result = await apiPost("/.netlify/functions/request-whatsapp-otp", { phone: requiredData.phone }, "");
     if (!result.ok) throw new Error(result.error || t("loginFailed"));
     setState({
       loginStep: "code",
-      pendingLoginName: data.name || state.pendingLoginName || "Customer",
-      pendingLoginPhone: phone,
-      pendingCustomerType: data.customerType || state.pendingCustomerType || "",
+      pendingLoginName: requiredData.name,
+      pendingLoginPhone: requiredData.phone,
+      pendingCustomerType: requiredData.customerType,
       codeSentAt: Date.now(),
       codeSendCount: Number(result.sendCount || state.codeSendCount + 1 || 1),
       notice: t("codeSent"),
@@ -2616,6 +2608,28 @@ async function requestLoginCode(form, data) {
   } catch (error) {
     showLoginError(form, error.message || t("loginFailed"));
   }
+}
+
+function validateLoginRequired(form, data) {
+  const name = String(data.name || state.pendingLoginName || "").trim();
+  const customerType = String(data.customerType || state.pendingCustomerType || "").trim();
+  const phone = sanitizePhone(data.phone || state.pendingLoginPhone || "");
+  if (!name) {
+    showLoginError(form, t("nameRequired"));
+    form.querySelector("#name")?.focus();
+    return null;
+  }
+  if (!customerType) {
+    showLoginError(form, t("customerTypeRequired"));
+    form.querySelector("#customerType")?.focus();
+    return null;
+  }
+  if (!isValidPhone(phone)) {
+    showLoginError(form, t("phoneInvalid"));
+    form.querySelector("#phone")?.focus();
+    return null;
+  }
+  return { name, customerType, phone };
 }
 
 function showLoginError(form, message) {
