@@ -393,6 +393,7 @@ const copy = {
     installAppText: "Save the app icon on your home screen for faster access.",
     installAppAndroid: "Android: tap Install app, or Chrome menu > Add to Home screen.",
     installAppIos: "iPhone: open in Safari, tap Share, then Add to Home Screen.",
+    installManualHelp: "If the install window does not open, tap the browser menu and choose Add to Home screen.",
     linkCopied: "Link copied.",
     tourNext: "Next",
     tourBack: "Back",
@@ -704,6 +705,7 @@ copy.ar = {
   installAppText: "احفظ أيقونة التطبيق على الشاشة الرئيسية للوصول السريع.",
   installAppAndroid: "أندرويد: اضغط تثبيت التطبيق، أو من قائمة كروم اختر إضافة إلى الشاشة الرئيسية.",
   installAppIos: "آيفون: افتح الرابط في سفاري، اضغط مشاركة، ثم إضافة إلى الشاشة الرئيسية.",
+  installManualHelp: "إذا لم تظهر نافذة التثبيت، اضغط قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.",
   linkCopied: "تم نسخ الرابط.",
   tourNext: "التالي",
   tourBack: "رجوع",
@@ -1317,7 +1319,7 @@ function tourOverlay() {
 function tourInstallPanel() {
   return `
     <div class="tour-install-panel">
-      ${deferredInstallPrompt ? `<button class="primary" type="button" data-install-app>${t("installApp")}</button>` : ""}
+      <button class="primary" type="button" data-install-app>${t("installApp")}</button>
       <small>${t("installAppAndroid")}</small>
       <small>${t("installAppIos")}</small>
     </div>
@@ -2161,7 +2163,7 @@ function installHelpView() {
     <div class="install-help">
       <h3>${t("installAppTitle")}</h3>
       <p>${t("installAppText")}</p>
-      ${deferredInstallPrompt ? `<button class="primary" type="button" data-install-app>${t("installApp")}</button>` : ""}
+      <button class="primary" type="button" data-install-app>${t("installApp")}</button>
       <small>${t("installAppAndroid")}</small>
       <small>${t("installAppIos")}</small>
     </div>
@@ -3057,7 +3059,10 @@ function bindApp() {
   }
 
   document.querySelector("[data-install-app]")?.addEventListener("click", async () => {
-    if (!deferredInstallPrompt) return;
+    if (!deferredInstallPrompt) {
+      notify(t("installManualHelp"));
+      return;
+    }
     deferredInstallPrompt.prompt();
     await deferredInstallPrompt.userChoice.catch(() => null);
     deferredInstallPrompt = null;
