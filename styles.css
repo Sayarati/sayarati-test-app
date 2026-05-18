@@ -613,6 +613,20 @@ h1 {
   line-height: 1.45;
 }
 
+.tour-install-panel {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff9d8;
+}
+
+.tour-install-panel small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

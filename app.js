@@ -399,6 +399,8 @@ const copy = {
     tourCount: "Step",
     tourWelcomeTitle: "Welcome to your digital service booklet",
     tourWelcomeText: "Let me give you a quick tour so you know how to use the app.",
+    tourInstallTitle: "Save the app on your phone",
+    tourInstallText: "For faster access, add Sayarati.online 2.0 to your home screen before you continue.",
     tour1Title: "Your garage",
     tour1Text: "This is where your saved cars appear with their photos and key details.",
     tour2Title: "Add a car",
@@ -706,6 +708,8 @@ copy.ar = {
   tourCount: "خطوة",
   tourWelcomeTitle: "أهلا بك في دفتر الصيانة الرقمي",
   tourWelcomeText: "دعني أعطيك جولة سريعة لتعرف كيف تستخدم التطبيق.",
+  tourInstallTitle: "احفظ التطبيق على هاتفك",
+  tourInstallText: "للوصول السريع، أضف Sayarati.online 2.0 إلى الشاشة الرئيسية قبل المتابعة.",
   tour1Title: "مرآب سياراتك",
   tour1Text: "هنا تظهر سياراتك المحفوظة مع الصور والتفاصيل الأساسية.",
   tour2Title: "إضافة سيارة",
@@ -1270,6 +1274,7 @@ function tourSteps() {
   const carActionTarget = state.cars.length ? "view-history" : "add-car";
   return [
     { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center" },
+    { target: "", title: t("tourInstallTitle"), text: t("tourInstallText"), placement: "center", install: true },
     { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
     { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
     { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
@@ -1294,12 +1299,23 @@ function tourOverlay() {
         <span class="pill gold">${t("tourCount")} ${stepIndex + 1} / ${steps.length}</span>
         <h2>${step.title}</h2>
         <p class="muted">${step.text}</p>
+        ${step.install ? tourInstallPanel() : ""}
         <div class="tour-actions">
           <button class="ghost" data-tour-skip>${t("tourSkip")}</button>
           ${stepIndex > 0 ? `<button class="ghost" data-tour-back>${t("tourBack")}</button>` : ""}
           <button class="primary" data-tour-next>${stepIndex === steps.length - 1 ? t("tourDone") : t("tourNext")}</button>
         </div>
       </div>
+    </div>
+  `;
+}
+
+function tourInstallPanel() {
+  return `
+    <div class="tour-install-panel">
+      ${deferredInstallPrompt ? `<button class="primary" type="button" data-install-app>${t("installApp")}</button>` : ""}
+      <small>${t("installAppAndroid")}</small>
+      <small>${t("installAppIos")}</small>
     </div>
   `;
 }
