@@ -398,6 +398,11 @@ const copy = {
     installAppAndroid: "Android: tap Install app, or Chrome menu > Add to Home screen.",
     installAppIos: "iPhone: open in Safari, tap Share, then Add to Home Screen.",
     installManualHelp: "If the install window does not open, tap the browser menu and choose Add to Home screen.",
+    enableNotifications: "Enable notifications",
+    notificationsEnabled: "Notifications enabled.",
+    notificationsUnavailable: "Notifications are not available on this browser. On iPhone, add the app to Home Screen first.",
+    notificationsDenied: "Notifications are blocked. You can enable them from your phone/browser settings.",
+    notificationsFailed: "Could not enable notifications. Please try again.",
     linkCopied: "Link copied.",
     tourNext: "Next",
     tourBack: "Back",
@@ -714,6 +719,11 @@ copy.ar = {
   installAppAndroid: "أندرويد: اضغط تثبيت التطبيق، أو من قائمة كروم اختر إضافة إلى الشاشة الرئيسية.",
   installAppIos: "آيفون: افتح الرابط في سفاري، اضغط مشاركة، ثم إضافة إلى الشاشة الرئيسية.",
   installManualHelp: "إذا لم تظهر نافذة التثبيت، اضغط قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.",
+  enableNotifications: "تفعيل الإشعارات",
+  notificationsEnabled: "تم تفعيل الإشعارات.",
+  notificationsUnavailable: "الإشعارات غير متاحة في هذا المتصفح. على آيفون، أضف التطبيق إلى الشاشة الرئيسية أولا.",
+  notificationsDenied: "الإشعارات محظورة. يمكنك تفعيلها من إعدادات الهاتف أو المتصفح.",
+  notificationsFailed: "تعذر تفعيل الإشعارات. يرجى المحاولة مرة أخرى.",
   linkCopied: "تم نسخ الرابط.",
   tourNext: "التالي",
   tourBack: "رجوع",
@@ -753,6 +763,7 @@ let adminMessagesLoaded = false;
 const initialShopLink = readInitialShopLink();
 let initialShopLinkApplied = false;
 let customerDataLoaded = false;
+let appOpenTracked = false;
 
 function defaultState() {
   return {
@@ -1128,6 +1139,7 @@ function render() {
   bindApp();
   loadCustomerDataOnce();
   loadAdminMessagesOnce();
+  trackAppOpenOnce();
   applyInitialShopLink();
   syncTourHighlight();
 }
@@ -2159,6 +2171,7 @@ function profileView() {
       ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
       ${installHelpView()}
       <div class="actions">
+        <button class="primary" data-enable-notifications>${t("enableNotifications")}</button>
         <button class="ghost" data-sign-out>${t("signOut")}</button>
         <button class="danger" data-delete-account>${t("deleteAccount")}</button>
       </div>
@@ -2731,6 +2744,77 @@ async function persistCustomerData(cars = state.cars, records = state.records) {
   }
 }
 
+async function trackAppOpenOnce(forceInstalled = false) {
+  if (!state.authToken || (appOpenTracked && !forceInstalled)) return;
+  appOpenTracked = true;
+  try {
+    await apiPost("/.netlify/functions/track-app-open", {
+      openedAsApp: forceInstalled || isStandaloneApp(),
+    });
+  } catch {
+    // This is only for admin analytics; it should never interrupt customers.
+  }
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    return await navigator.serviceWorker.register("/sw.js");
+  } catch {
+    return null;
+  }
+}
+
+async function enablePushNotifications() {
+  if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+    notify(t("notificationsUnavailable"));
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    notify(t("notificationsDenied"));
+    return;
+  }
+
+  try {
+    const keyResult = await fetch("/.netlify/functions/push-public-key").then((res) => res.json());
+    if (!keyResult.ok || !keyResult.publicKey) {
+      notify(t("notificationsFailed"));
+      return;
+    }
+
+    const registration = await registerServiceWorker();
+    if (!registration) {
+      notify(t("notificationsFailed"));
+      return;
+    }
+
+    const existing = await registration.pushManager.getSubscription();
+    const subscription = existing || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(keyResult.publicKey),
+    });
+
+    const result = await apiPost("/.netlify/functions/subscribe-push", { subscription });
+    if (!result.ok) throw new Error(result.error || "Subscription failed");
+    notify(t("notificationsEnabled"));
+  } catch {
+    notify(t("notificationsFailed"));
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 async function deleteOwnAccount() {
   if (!confirm(t("deleteAccountConfirm"))) return;
   try {
@@ -3089,6 +3173,8 @@ function bindApp() {
     deleteAccount.addEventListener("click", deleteOwnAccount);
   }
 
+  document.querySelector("[data-enable-notifications]")?.addEventListener("click", enablePushNotifications);
+
   document.querySelector("[data-install-app]")?.addEventListener("click", async () => {
     if (!deferredInstallPrompt) {
       notify(t("installManualHelp"));
@@ -3292,6 +3378,8 @@ window.addEventListener("beforeinstallprompt", (event) => {
 
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
+  trackAppOpenOnce(true);
 });
 
+registerServiceWorker();
 render();

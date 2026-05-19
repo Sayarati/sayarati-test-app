@@ -70,6 +70,8 @@ function dashboardView() {
 
   const data = adminState.data || { customers: [], cars: [], records: [], messages: [] };
   const totalExpenses = data.records.reduce((sum, record) => sum + Number(record.cost || 0), 0);
+  const installedCount = data.customers.filter((customer) => customer.app_installed).length;
+  const notificationCount = data.customers.filter((customer) => customer.notifications_enabled).length;
   const filteredCustomers = filterCustomers(data);
   const brandOptions = uniqueValues(data.cars.map((car) => car.brand));
   const modelOptions = uniqueValues(data.cars
@@ -84,6 +86,8 @@ function dashboardView() {
       ${stat("Service records", data.records.length)}
       ${stat("Messages", data.messages.length)}
       ${stat("Total expenses", formatMoney(totalExpenses))}
+      ${stat("Home Screen", installedCount)}
+      ${stat("Notifications", notificationCount)}
     </div>
     ${messageComposer(data.messages)}
     <section class="panel">
@@ -117,7 +121,7 @@ function messageComposer(messages = []) {
   return `
     <section class="panel message-panel">
       <h2>Send app notification</h2>
-      <p class="muted">Create a small announcement or promotion that appears inside the customer app.</p>
+      <p class="muted">Create a small announcement or promotion. It appears inside the app and is sent as a phone notification to customers who enabled notifications.</p>
       <form class="form message-form" data-create-message>
         <div class="field">
           <label for="messageTitle">Title</label>
@@ -170,6 +174,8 @@ function customerCard(customer) {
           <h3>${escapeHtml(customer.name || "Customer")}</h3>
           <p class="muted">${escapeHtml(customer.phone || "")}</p>
           <p class="muted">Category: ${customerTypeLabel(customer.customer_type || "personal")}</p>
+          <p class="muted">Home Screen: ${customer.app_installed ? "Yes" : "No"}${customer.last_app_opened_at ? ` · Last app open: ${formatDateTime(customer.last_app_opened_at)}` : ""}</p>
+          <p class="muted">Notifications: ${customer.notifications_enabled ? "Enabled" : "Not enabled"}</p>
         </div>
         <span class="pill">${cars.length} cars / ${records.length} records</span>
       </div>
@@ -414,6 +420,10 @@ function exportAdminData() {
     "Customer name",
     "Phone",
     "Customer category",
+    "Home Screen installed/opened",
+    "Last app open",
+    "Last browser open",
+    "Notifications enabled",
     "Car brand",
     "Car model",
     "Car year",
@@ -460,6 +470,10 @@ function customerExportRow(customer, car = {}, record = {}) {
     customer.name || "Customer",
     customer.phone || "",
     customerTypeLabel(customer.customer_type || "personal"),
+    customer.app_installed ? "Yes" : "No",
+    formatDateTime(customer.last_app_opened_at),
+    formatDateTime(customer.last_browser_opened_at),
+    customer.notifications_enabled ? "Yes" : "No",
     car.brand || "",
     car.model || "",
     car.year || "",
@@ -484,6 +498,13 @@ function csvCell(value) {
 function formatDate(value) {
   if (!value) return "";
   return String(value).slice(0, 10);
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
 }
 
 function sanitizePhone(value) {

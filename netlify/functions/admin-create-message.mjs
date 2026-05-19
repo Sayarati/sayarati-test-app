@@ -1,6 +1,10 @@
+import webpush from "web-push";
 import {
   bearerToken,
   dbOne,
+  dbQuery,
+  dbRows,
+  env,
   isAdminPhone,
   methodOptions,
   readJson,
@@ -34,8 +38,54 @@ export default async function handler(request) {
       returning *
     `, [title, message, ctaLabel || null, ctaUrl || null, endsAt, session.phone]);
 
-    return response(200, { ok: true, message: data });
+    const push = await sendPushToSubscribers({
+      title,
+      body: message,
+      url: ctaUrl || "/",
+    });
+
+    return response(200, { ok: true, message: data, push });
   } catch (error) {
     return response(500, { error: error.message || "Could not create message" });
   }
+}
+
+async function sendPushToSubscribers(payload) {
+  const publicKey = env("WEB_PUSH_PUBLIC_KEY") || env("VAPID_PUBLIC_KEY");
+  const privateKey = env("WEB_PUSH_PRIVATE_KEY") || env("VAPID_PRIVATE_KEY");
+  if (!publicKey || !privateKey) return { ok: false, sent: 0, skipped: "Missing Web Push keys" };
+
+  webpush.setVapidDetails(
+    env("WEB_PUSH_SUBJECT") || "mailto:info@sayarati.online",
+    publicKey,
+    privateKey,
+  );
+
+  const subscriptions = await dbRows(`
+    select endpoint, subscription
+    from push_subscriptions
+    order by updated_at desc
+    limit 5000
+  `);
+
+  let sent = 0;
+  let failed = 0;
+
+  await Promise.all(subscriptions.map(async (item) => {
+    try {
+      await webpush.sendNotification(item.subscription, JSON.stringify(payload));
+      sent += 1;
+      await dbQuery("update push_subscriptions set last_success_at = now(), last_error = null where endpoint = $1", [item.endpoint]);
+    } catch (error) {
+      failed += 1;
+      const statusCode = error?.statusCode || 0;
+      if (statusCode === 404 || statusCode === 410) {
+        await dbQuery("delete from push_subscriptions where endpoint = $1", [item.endpoint]);
+        return;
+      }
+      await dbQuery("update push_subscriptions set last_error = $2 where endpoint = $1", [item.endpoint, error?.message || "Push failed"]);
+    }
+  }));
+
+  return { ok: true, sent, failed };
 }
