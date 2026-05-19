@@ -240,9 +240,9 @@ p {
 }
 
 .message-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 12px;
 }
 
@@ -250,6 +250,29 @@ p {
   min-height: 34px;
   padding: 0 10px;
   white-space: nowrap;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message-copy p {
+  margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .message-item {
+    grid-template-columns: 1fr;
+  }
+
+  .message-actions {
+    justify-content: stretch;
+  }
+
+  .message-actions .compact {
+    width: 100%;
+  }
 }
 
 .card-actions {

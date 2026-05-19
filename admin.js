@@ -150,11 +150,13 @@ function messageComposer(messages = []) {
       <div class="message-list">
         ${messages.length ? messages.slice(0, 5).map((message) => `
           <div class="mini message-item">
-            <div>
+            <div class="message-copy">
               <strong>${escapeHtml(message.title)}</strong>
               <p class="muted">${escapeHtml(message.body)}</p>
             </div>
-            <button class="danger compact" type="button" data-delete-message="${escapeHtml(message.id)}" data-message-title="${escapeHtml(message.title)}">Delete offer</button>
+            <div class="message-actions">
+              <button class="danger compact" type="button" data-delete-message="${escapeHtml(message.id)}" data-message-title="${escapeHtml(message.title)}">Delete offer</button>
+            </div>
           </div>
         `).join("") : `<p class="muted">No admin messages yet.</p>`}
       </div>
