@@ -300,6 +300,10 @@ const copy = {
     shopHint: "For this test version, open the shop with the button below. In the real phone app, this page will use a mobile WebView so customers stay inside the app.",
     profileTitle: "Customer Profile",
     signOut: "Sign out",
+    deleteAccount: "Delete my account",
+    deleteAccountConfirm: "Delete your account permanently?\n\nThis is not sign out. This will delete your cars, photos, and all service history data from Sayarati. This cannot be undone.",
+    accountDeleted: "Your account and car data were deleted.",
+    accountDeleteFailed: "Could not delete your account. Please try again.",
     totalCars: "Cars",
     totalRecords: "Service records",
     nextService: "Next service",
@@ -423,7 +427,7 @@ const copy = {
     tour9Title: "Language",
     tour9Text: "Switch between English and Arabic from here.",
     tour10Title: "Profile",
-    tour10Text: "Open your profile from the initial circle. You can sign out there.",
+    tour10Text: "Open your profile from the initial circle. You can sign out or delete your account there.",
   },
   ar: {
     appName: "Ø³ÙŠØ§Ø±ØªÙŠ",
@@ -612,6 +616,10 @@ copy.ar = {
   profileTitle: "ملف العميل",
   reset: "مسح بيانات التجربة",
   signOut: "تسجيل الخروج",
+  deleteAccount: "حذف حسابي",
+  deleteAccountConfirm: "هل تريد حذف حسابك نهائيا؟\n\nهذا ليس تسجيل خروج. سيتم حذف سياراتك وصورك وكل سجل الصيانة من سيارتي. لا يمكن التراجع عن هذه العملية.",
+  accountDeleted: "تم حذف حسابك وبيانات سياراتك.",
+  accountDeleteFailed: "تعذر حذف حسابك. يرجى المحاولة مرة أخرى.",
   totalCars: "السيارات",
   totalRecords: "سجلات الصيانة",
   nextService: "الصيانة القادمة",
@@ -735,7 +743,7 @@ copy.ar = {
   tour9Title: "اللغة",
   tour9Text: "بدل بين الإنجليزية والعربية من هنا.",
   tour10Title: "الملف الشخصي",
-  tour10Text: "افتح ملفك من دائرة الحرف. يمكنك تسجيل الخروج من هناك.",
+  tour10Text: "افتح ملفك من دائرة الحرف. يمكنك تسجيل الخروج أو حذف حسابك من هناك.",
 };
 
 let state = loadState();
@@ -1092,7 +1100,7 @@ function render() {
           <div class="top-controls">
             <div class="language" data-tour="language">
               <button class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
-              <button class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
+              <button class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">عربي</button>
             </div>
             <button class="profile-chip" data-view="profile" data-tour="profile" title="${t("profile")}">
               ${userInitials()}
@@ -1144,7 +1152,7 @@ function loginView() {
           ${isCodeStep ? `<button class="primary" type="submit">${t("verifyCode")}</button>` : ""}
           <div class="language">
             <button type="button" class="${state.lang === "en" ? "active" : ""}" data-lang="en">EN</button>
-            <button type="button" class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">AR</button>
+            <button type="button" class="${state.lang === "ar" ? "active" : ""}" data-lang="ar">عربي</button>
           </div>
         </div>
       </form>
@@ -2152,6 +2160,7 @@ function profileView() {
       ${installHelpView()}
       <div class="actions">
         <button class="ghost" data-sign-out>${t("signOut")}</button>
+        <button class="danger" data-delete-account>${t("deleteAccount")}</button>
       </div>
     </section>
   `;
@@ -2722,6 +2731,23 @@ async function persistCustomerData(cars = state.cars, records = state.records) {
   }
 }
 
+async function deleteOwnAccount() {
+  if (!confirm(t("deleteAccountConfirm"))) return;
+  try {
+    const result = await apiPost("/.netlify/functions/delete-account", {});
+    if (!result.ok) throw new Error(result.error || t("accountDeleteFailed"));
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHOP_CACHE_KEY);
+    state = loadState();
+    customerDataLoaded = false;
+    adminMessagesLoaded = false;
+    render();
+    notify(t("accountDeleted"));
+  } catch {
+    notify(t("accountDeleteFailed"));
+  }
+}
+
 function sanitizePhone(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 15);
 }
@@ -3056,6 +3082,11 @@ function bindApp() {
       render();
       syncTourHighlight();
     });
+  }
+
+  const deleteAccount = document.querySelector("[data-delete-account]");
+  if (deleteAccount) {
+    deleteAccount.addEventListener("click", deleteOwnAccount);
   }
 
   document.querySelector("[data-install-app]")?.addEventListener("click", async () => {

@@ -10,6 +10,9 @@ let adminState = {
   error: "",
   data: null,
   search: "",
+  brandFilter: "",
+  modelFilter: "",
+  customerTypeFilter: "",
   messageTitle: "",
   messageBody: "",
   messageCtaLabel: "",
@@ -68,6 +71,10 @@ function dashboardView() {
   const data = adminState.data || { customers: [], cars: [], records: [], messages: [] };
   const totalExpenses = data.records.reduce((sum, record) => sum + Number(record.cost || 0), 0);
   const filteredCustomers = filterCustomers(data);
+  const brandOptions = uniqueValues(data.cars.map((car) => car.brand));
+  const modelOptions = uniqueValues(data.cars
+    .filter((car) => !adminState.brandFilter || car.brand === adminState.brandFilter)
+    .map((car) => car.model));
 
   return `
     <h1>Admin dashboard</h1>
@@ -84,6 +91,18 @@ function dashboardView() {
         <h2>Customer database</h2>
         <div class="toolbar-actions">
           <input data-search placeholder="Search by phone, name, customer category, car, plate, VIN" value="${adminState.search}" />
+          <select data-filter-type>
+            <option value="">All customer types</option>
+            ${customerTypeOptions().map((type) => `<option value="${type.value}" ${adminState.customerTypeFilter === type.value ? "selected" : ""}>${type.label}</option>`).join("")}
+          </select>
+          <select data-filter-brand>
+            <option value="">All brands</option>
+            ${brandOptions.map((brand) => `<option value="${escapeHtml(brand)}" ${adminState.brandFilter === brand ? "selected" : ""}>${escapeHtml(brand)}</option>`).join("")}
+          </select>
+          <select data-filter-model>
+            <option value="">All models</option>
+            ${modelOptions.map((model) => `<option value="${escapeHtml(model)}" ${adminState.modelFilter === model ? "selected" : ""}>${escapeHtml(model)}</option>`).join("")}
+          </select>
           <button class="secondary" type="button" data-export-excel>Export Excel</button>
         </div>
       </div>
@@ -148,8 +167,8 @@ function customerCard(customer) {
     <article class="customer-card">
       <div class="customer-head">
         <div>
-          <h3>${customer.name || "Customer"}</h3>
-          <p class="muted">${customer.phone}</p>
+          <h3>${escapeHtml(customer.name || "Customer")}</h3>
+          <p class="muted">${escapeHtml(customer.phone || "")}</p>
           <p class="muted">Category: ${customerTypeLabel(customer.customer_type || "personal")}</p>
         </div>
         <span class="pill">${cars.length} cars / ${records.length} records</span>
@@ -157,12 +176,15 @@ function customerCard(customer) {
       <div class="mini-grid">
         <div class="mini">
           <strong>Cars</strong>
-          <p class="muted">${cars.length ? cars.map((car) => `${car.brand} ${car.model} ${car.year || ""}`).join(", ") : "No cars yet"}</p>
+          <p class="muted">${cars.length ? cars.map((car) => escapeHtml(`${car.brand} ${car.model} ${car.year || ""}`)).join(", ") : "No cars yet"}</p>
         </div>
         <div class="mini">
           <strong>Total spent</strong>
           <p class="muted">${formatMoney(spent)}</p>
         </div>
+      </div>
+      <div class="card-actions">
+        <button class="danger" type="button" data-delete-customer="${customer.id}" data-customer-name="${escapeHtml(customer.name || customer.phone || "Customer")}">Delete customer</button>
       </div>
     </article>
   `;
@@ -189,6 +211,22 @@ function bind() {
     render();
   });
 
+  document.querySelector("[data-filter-type]")?.addEventListener("change", (event) => {
+    adminState.customerTypeFilter = event.target.value;
+    render();
+  });
+
+  document.querySelector("[data-filter-brand]")?.addEventListener("change", (event) => {
+    adminState.brandFilter = event.target.value;
+    adminState.modelFilter = "";
+    render();
+  });
+
+  document.querySelector("[data-filter-model]")?.addEventListener("change", (event) => {
+    adminState.modelFilter = event.target.value;
+    render();
+  });
+
   document.querySelector("[data-create-message]")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -202,6 +240,10 @@ function bind() {
   });
 
   document.querySelector("[data-export-excel]")?.addEventListener("click", exportAdminData);
+
+  document.querySelectorAll("[data-delete-customer]").forEach((button) => {
+    button.addEventListener("click", () => deleteCustomer(button.dataset.deleteCustomer, button.dataset.customerName));
+  });
 }
 
 async function requestOtp(phone) {
@@ -280,6 +322,32 @@ async function createMessage(message) {
   render();
 }
 
+async function deleteCustomer(customerId, customerName) {
+  const name = customerName || "this customer";
+  const confirmed = confirm(`Delete ${name} completely?\n\nThis will permanently delete the customer, their cars, and all service history from the database.`);
+  if (!confirmed) return;
+
+  adminState = { ...adminState, loading: true, error: "" };
+  render();
+
+  const result = await fetch("/.netlify/functions/admin-delete-customer", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminState.token}`,
+    },
+    body: JSON.stringify({ customerId }),
+  }).then((res) => res.json()).catch(() => ({ error: "Could not delete customer" }));
+
+  if (result.ok) {
+    await loadAdminData();
+    return;
+  }
+
+  adminState = { ...adminState, loading: false, error: result.error || "Could not delete customer" };
+  render();
+}
+
 async function api(url, body) {
   return fetch(url, {
     method: "POST",
@@ -290,9 +358,14 @@ async function api(url, body) {
 
 function filterCustomers(data) {
   const term = adminState.search.trim().toLowerCase();
-  if (!term) return data.customers;
   return data.customers.filter((customer) => {
     const cars = carsFor(customer.id);
+    const customerType = customer.customer_type || "personal";
+    const matchesType = !adminState.customerTypeFilter || customerType === adminState.customerTypeFilter;
+    const matchesBrand = !adminState.brandFilter || cars.some((car) => car.brand === adminState.brandFilter);
+    const matchesModel = !adminState.modelFilter || cars.some((car) => car.model === adminState.modelFilter);
+    if (!matchesType || !matchesBrand || !matchesModel) return false;
+    if (!term) return true;
     const text = [
       customer.name,
       customer.phone,
@@ -316,15 +389,23 @@ function formatMoney(value) {
 }
 
 function customerTypeLabel(value) {
-  const labels = {
-    personal: "Personal car owner",
-    garage: "Garage / workshop owner",
-    company_fleet: "Company fleet owner",
-    rental_company: "Rental company owner",
-    car_dealer: "Car dealer / showroom",
-    other: "Other",
-  };
-  return labels[value] || value;
+  return customerTypeOptions().find((type) => type.value === value)?.label || value;
+}
+
+function customerTypeOptions() {
+  return [
+    { value: "personal", label: "Personal car owner" },
+    { value: "garage", label: "Garage / workshop owner" },
+    { value: "company_fleet", label: "Company fleet owner" },
+    { value: "rental_company", label: "Rental company owner" },
+    { value: "car_dealer", label: "Car dealer / showroom" },
+    { value: "other", label: "Other" },
+  ];
+}
+
+function uniqueValues(values) {
+  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function exportAdminData() {

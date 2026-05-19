@@ -19,7 +19,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -41,7 +42,8 @@ input {
 
 .admin-top button,
 .primary,
-.secondary {
+.secondary,
+.danger {
   border: 0;
   border-radius: 8px;
   background: var(--accent);
@@ -54,6 +56,12 @@ input {
 .secondary {
   background: #0b0f12;
   color: #fff;
+}
+
+.danger {
+  background: #fff1f1;
+  border: 1px solid #f1b5b5;
+  color: var(--danger);
 }
 
 .admin-wrap {
@@ -170,7 +178,8 @@ p {
   margin-bottom: 14px;
 }
 
-.toolbar input {
+.toolbar input,
+.toolbar select {
   width: min(420px, 100%);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -181,8 +190,13 @@ p {
 .toolbar-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   flex: 1;
+}
+
+.toolbar-actions select {
+  width: min(190px, 100%);
 }
 
 .customer-list {
@@ -223,6 +237,12 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 @media (max-width: 760px) {
