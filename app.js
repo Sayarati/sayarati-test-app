@@ -398,6 +398,7 @@ const copy = {
     installAppAndroid: "Android: tap Install app, or Chrome menu > Add to Home screen.",
     installAppIos: "iPhone: open in Safari, tap Share, then Add to Home Screen.",
     installManualHelp: "If the install window does not open, tap the browser menu and choose Add to Home screen.",
+    installNotificationsPrompt: "Turn on notifications so we can remind you before your next service.",
     enableNotifications: "Enable notifications",
     notificationsEnabled: "Notifications enabled.",
     notificationsUnavailable: "Notifications are not available on this browser. On iPhone, add the app to Home Screen first.",
@@ -413,6 +414,8 @@ const copy = {
     tourWelcomeText: "Let me give you a quick tour so you know how to use the app.",
     tourInstallTitle: "Save the app on your phone",
     tourInstallText: "For faster access, add Sayarati.online 2.0 to your home screen before you continue.",
+    tourNotificationsTitle: "Enable service reminders and offers",
+    tourNotificationsText: "Allow notifications so Sayarati can remind you on the day of your next service and send useful offers.",
     tour1Title: "Your garage",
     tour1Text: "This is where your saved cars appear with their photos and key details.",
     tour2Title: "Add a car",
@@ -719,6 +722,7 @@ copy.ar = {
   installAppAndroid: "أندرويد: اضغط تثبيت التطبيق، أو من قائمة كروم اختر إضافة إلى الشاشة الرئيسية.",
   installAppIos: "آيفون: افتح الرابط في سفاري، اضغط مشاركة، ثم إضافة إلى الشاشة الرئيسية.",
   installManualHelp: "إذا لم تظهر نافذة التثبيت، اضغط قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.",
+  installNotificationsPrompt: "فعّل الإشعارات لكي نذكرك قبل موعد الصيانة القادمة.",
   enableNotifications: "تفعيل الإشعارات",
   notificationsEnabled: "تم تفعيل الإشعارات.",
   notificationsUnavailable: "الإشعارات غير متاحة في هذا المتصفح. على آيفون، أضف التطبيق إلى الشاشة الرئيسية أولا.",
@@ -734,6 +738,8 @@ copy.ar = {
   tourWelcomeText: "دعني أعطيك جولة سريعة لتعرف كيف تستخدم التطبيق.",
   tourInstallTitle: "احفظ التطبيق على هاتفك",
   tourInstallText: "للوصول السريع، أضف Sayarati.online 2.0 إلى الشاشة الرئيسية قبل المتابعة.",
+  tourNotificationsTitle: "فعّل تذكيرات الصيانة والعروض",
+  tourNotificationsText: "اسمح بالإشعارات لكي يذكرك تطبيق سيارتي في يوم الصيانة القادمة ويرسل لك عروضا مفيدة.",
   tour1Title: "مرآب سياراتك",
   tour1Text: "هنا تظهر سياراتك المحفوظة مع الصور والتفاصيل الأساسية.",
   tour2Title: "إضافة سيارة",
@@ -1301,6 +1307,7 @@ function tourSteps() {
   return [
     { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center" },
     { target: "", title: t("tourInstallTitle"), text: t("tourInstallText"), placement: "center", install: true },
+    { target: "", title: t("tourNotificationsTitle"), text: t("tourNotificationsText"), placement: "center", notifications: true },
     { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
     { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
     { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
@@ -1326,6 +1333,7 @@ function tourOverlay() {
         <h2>${step.title}</h2>
         <p class="muted">${step.text}</p>
         ${step.install ? tourInstallPanel() : ""}
+        ${step.notifications ? tourNotificationPanel() : ""}
         <div class="tour-actions">
           <button class="ghost" data-tour-skip>${t("tourSkip")}</button>
           ${stepIndex > 0 ? `<button class="ghost" data-tour-back>${t("tourBack")}</button>` : ""}
@@ -1342,6 +1350,14 @@ function tourInstallPanel() {
       <button class="primary" type="button" data-install-app>${t("installApp")}</button>
       <small>${t("installAppAndroid")}</small>
       <small>${t("installAppIos")}</small>
+    </div>
+  `;
+}
+
+function tourNotificationPanel() {
+  return `
+    <div class="tour-install-panel">
+      <button class="primary" type="button" data-enable-notifications>${t("enableNotifications")}</button>
     </div>
   `;
 }
@@ -3379,6 +3395,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   trackAppOpenOnce(true);
+  if (state?.user) notify(t("installNotificationsPrompt"));
 });
 
 registerServiceWorker();
