@@ -2185,6 +2185,7 @@ function resetShopHome() {
 
 function profileView() {
   const contact = state.user.phone || state.user.email || "";
+  const notificationsOn = notificationsActive();
   return `
     <section class="panel">
       <h2>${state.user.name}</h2>
@@ -2192,7 +2193,7 @@ function profileView() {
       ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
       ${installHelpView()}
       <div class="actions">
-        <button class="primary" data-toggle-notifications>${state.notificationsEnabled ? t("disableNotifications") : t("enableNotifications")}</button>
+        <button class="primary" data-toggle-notifications>${notificationsOn ? t("disableNotifications") : t("enableNotifications")}</button>
         <button class="ghost" data-sign-out>${t("signOut")}</button>
         <button class="danger" data-delete-account>${t("deleteAccount")}</button>
       </div>
@@ -2798,6 +2799,10 @@ async function enablePushNotifications() {
     return;
   }
 
+  state = { ...state, notificationsEnabled: true };
+  saveState();
+  render();
+
   try {
     const keyResult = await fetch("/.netlify/functions/push-public-key").then((res) => res.json());
     if (!keyResult.ok || !keyResult.publicKey) {
@@ -2819,11 +2824,9 @@ async function enablePushNotifications() {
 
     const result = await apiPost("/.netlify/functions/subscribe-push", { subscription });
     if (!result.ok) throw new Error(result.error || "Subscription failed");
-    state = { ...state, notificationsEnabled: true };
-    saveState();
-    render();
     notify(t("notificationsEnabled"));
   } catch {
+    refreshNotificationStatus();
     notify(t("notificationsFailed"));
   }
 }
@@ -2851,11 +2854,16 @@ async function disablePushNotifications() {
 }
 
 async function togglePushNotifications() {
-  if (state.notificationsEnabled) {
+  if (notificationsActive()) {
     await disablePushNotifications();
     return;
   }
   await enablePushNotifications();
+}
+
+function notificationsActive() {
+  return Boolean(state.notificationsEnabled)
+    || (typeof Notification !== "undefined" && Notification.permission === "granted");
 }
 
 async function refreshNotificationStatus() {
