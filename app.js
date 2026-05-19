@@ -400,7 +400,9 @@ const copy = {
     installManualHelp: "If the install window does not open, tap the browser menu and choose Add to Home screen.",
     installNotificationsPrompt: "Turn on notifications so we can remind you before your next service.",
     enableNotifications: "Enable notifications",
+    disableNotifications: "Disable notifications",
     notificationsEnabled: "Notifications enabled.",
+    notificationsDisabled: "Notifications disabled.",
     notificationsUnavailable: "Notifications are not available on this browser. On iPhone, add the app to Home Screen first.",
     notificationsDenied: "Notifications are blocked. You can enable them from your phone/browser settings.",
     notificationsFailed: "Could not enable notifications. Please try again.",
@@ -724,7 +726,9 @@ copy.ar = {
   installManualHelp: "إذا لم تظهر نافذة التثبيت، اضغط قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.",
   installNotificationsPrompt: "فعّل الإشعارات لكي نذكرك قبل موعد الصيانة القادمة.",
   enableNotifications: "تفعيل الإشعارات",
+  disableNotifications: "إيقاف الإشعارات",
   notificationsEnabled: "تم تفعيل الإشعارات.",
+  notificationsDisabled: "تم إيقاف الإشعارات.",
   notificationsUnavailable: "الإشعارات غير متاحة في هذا المتصفح. على آيفون، أضف التطبيق إلى الشاشة الرئيسية أولا.",
   notificationsDenied: "الإشعارات محظورة. يمكنك تفعيلها من إعدادات الهاتف أو المتصفح.",
   notificationsFailed: "تعذر تفعيل الإشعارات. يرجى المحاولة مرة أخرى.",
@@ -799,6 +803,7 @@ function defaultState() {
     expenseYear: String(new Date().getFullYear()),
     editingCarId: null,
     dismissedServiceReminders: {},
+    notificationsEnabled: false,
     tourActive: false,
     tourStep: 0,
     tourSeen: false,
@@ -2187,7 +2192,7 @@ function profileView() {
       ${state.user.customerType ? `<p class="muted">${customerTypeLabel(state.user.customerType)}</p>` : ""}
       ${installHelpView()}
       <div class="actions">
-        <button class="primary" data-enable-notifications>${t("enableNotifications")}</button>
+        <button class="primary" data-toggle-notifications>${state.notificationsEnabled ? t("disableNotifications") : t("enableNotifications")}</button>
         <button class="ghost" data-sign-out>${t("signOut")}</button>
         <button class="danger" data-delete-account>${t("deleteAccount")}</button>
       </div>
@@ -2814,9 +2819,58 @@ async function enablePushNotifications() {
 
     const result = await apiPost("/.netlify/functions/subscribe-push", { subscription });
     if (!result.ok) throw new Error(result.error || "Subscription failed");
+    state = { ...state, notificationsEnabled: true };
+    saveState();
+    render();
     notify(t("notificationsEnabled"));
   } catch {
     notify(t("notificationsFailed"));
+  }
+}
+
+async function disablePushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    setState({ notificationsEnabled: false });
+    notify(t("notificationsDisabled"));
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready.catch(() => null);
+    const subscription = await registration?.pushManager?.getSubscription?.();
+    const endpoint = subscription?.endpoint || "";
+    if (subscription) await subscription.unsubscribe();
+    await apiPost("/.netlify/functions/unsubscribe-push", { endpoint });
+    state = { ...state, notificationsEnabled: false };
+    saveState();
+    render();
+    notify(t("notificationsDisabled"));
+  } catch {
+    notify(t("notificationsFailed"));
+  }
+}
+
+async function togglePushNotifications() {
+  if (state.notificationsEnabled) {
+    await disablePushNotifications();
+    return;
+  }
+  await enablePushNotifications();
+}
+
+async function refreshNotificationStatus() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  try {
+    const registration = await navigator.serviceWorker.ready.catch(() => null);
+    const subscription = await registration?.pushManager?.getSubscription?.();
+    const enabled = Boolean(subscription) && Notification?.permission === "granted";
+    if (enabled !== Boolean(state.notificationsEnabled)) {
+      state = { ...state, notificationsEnabled: enabled };
+      saveState();
+      if (state.view === "profile") render();
+    }
+  } catch {
+    // Leave the saved status as-is if the browser blocks checking.
   }
 }
 
@@ -3190,6 +3244,9 @@ function bindApp() {
   }
 
   document.querySelector("[data-enable-notifications]")?.addEventListener("click", enablePushNotifications);
+  document.querySelector("[data-toggle-notifications]")?.addEventListener("click", togglePushNotifications);
+
+  if (state.view === "profile") refreshNotificationStatus();
 
   document.querySelector("[data-install-app]")?.addEventListener("click", async () => {
     if (!deferredInstallPrompt) {
