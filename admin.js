@@ -149,9 +149,12 @@ function messageComposer(messages = []) {
       </form>
       <div class="message-list">
         ${messages.length ? messages.slice(0, 5).map((message) => `
-          <div class="mini">
-            <strong>${escapeHtml(message.title)}</strong>
-            <p class="muted">${escapeHtml(message.body)}</p>
+          <div class="mini message-item">
+            <div>
+              <strong>${escapeHtml(message.title)}</strong>
+              <p class="muted">${escapeHtml(message.body)}</p>
+            </div>
+            <button class="danger compact" type="button" data-delete-message="${escapeHtml(message.id)}" data-message-title="${escapeHtml(message.title)}">Delete offer</button>
           </div>
         `).join("") : `<p class="muted">No admin messages yet.</p>`}
       </div>
@@ -249,6 +252,10 @@ function bind() {
 
   document.querySelectorAll("[data-delete-customer]").forEach((button) => {
     button.addEventListener("click", () => deleteCustomer(button.dataset.deleteCustomer, button.dataset.customerName));
+  });
+
+  document.querySelectorAll("[data-delete-message]").forEach((button) => {
+    button.addEventListener("click", () => deleteMessage(button.dataset.deleteMessage, button.dataset.messageTitle));
   });
 }
 
@@ -351,6 +358,30 @@ async function deleteCustomer(customerId, customerName) {
   }
 
   adminState = { ...adminState, loading: false, error: result.error || "Could not delete customer" };
+  render();
+}
+
+async function deleteMessage(messageId, title) {
+  if (!confirm(`Delete this offer?\n\n${title || ""}\n\nIt will stop appearing in the app.`)) return;
+
+  adminState = { ...adminState, loading: true, error: "" };
+  render();
+
+  const result = await fetch("/.netlify/functions/admin-delete-message", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminState.token}`,
+    },
+    body: JSON.stringify({ messageId }),
+  }).then((res) => res.json()).catch(() => ({ error: "Could not delete offer" }));
+
+  if (result.ok) {
+    await loadAdminData();
+    return;
+  }
+
+  adminState = { ...adminState, loading: false, error: result.error || "Could not delete offer" };
   render();
 }
 

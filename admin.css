@@ -239,6 +239,19 @@ p {
   padding: 10px;
 }
 
+.message-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.compact {
+  min-height: 34px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
 .card-actions {
   display: flex;
   justify-content: flex-end;
