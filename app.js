@@ -432,6 +432,12 @@ const copy = {
     tour6Text: "Filter expenses by this month, this year, last year, or a selected year.",
     tour7Title: "Service History tab",
     tour7Text: "This tab lets you select a car and view or filter its full maintenance history.",
+    tourServiceListTitle: "Service records",
+    tourServiceListText: "Here you see every service already done for the selected car.",
+    tourAddServiceTitle: "Add a service record",
+    tourAddServiceText: "Tap this button when you want to record a new oil change, repair, filter, brake job, expense, or next service reminder.",
+    tourServiceFormTitle: "Fill the service details",
+    tourServiceFormText: "This is where you enter the date, mileage, mechanic, service type, parts, cost, photos, and next service note.",
     tour8Title: "Shop tab",
     tour8Text: "Browse Sayarati products, categories, search, filters, product details, and checkout.",
     tour9Title: "Language",
@@ -758,6 +764,12 @@ copy.ar = {
   tour6Text: "يمكنك فلترة المصاريف حسب هذا الشهر أو هذه السنة أو السنة الماضية أو سنة محددة.",
   tour7Title: "سجل الصيانة",
   tour7Text: "من هذا التبويب تختار السيارة وتشاهد أو تفلتر سجل الصيانة الكامل.",
+  tourServiceListTitle: "سجلات الصيانة",
+  tourServiceListText: "هنا ترى كل الصيانات التي تمت للسيارة المختارة.",
+  tourAddServiceTitle: "إضافة سجل صيانة",
+  tourAddServiceText: "اضغط هذا الزر عندما تريد تسجيل تغيير زيت أو تصليح أو فلاتر أو فرامل أو مصروف أو تذكير للصيانة القادمة.",
+  tourServiceFormTitle: "املأ تفاصيل الصيانة",
+  tourServiceFormText: "هنا تدخل التاريخ والعداد واسم الميكانيكي ونوع الصيانة والقطع والتكلفة والصور وملاحظة الصيانة القادمة.",
   tour8Title: "المتجر",
   tour8Text: "تصفح منتجات سيارتي والفئات والبحث والفلاتر وتفاصيل المنتج والدفع.",
   tour9Title: "اللغة",
@@ -1317,16 +1329,19 @@ function startOfDay(date) {
 function tourSteps() {
   const carActionTarget = state.cars.length ? "view-history" : "add-car";
   return [
-    { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center" },
-    { target: "", title: t("tourInstallTitle"), text: t("tourInstallText"), placement: "center", install: true },
-    { target: "", title: t("tourNotificationsTitle"), text: t("tourNotificationsText"), placement: "center", notifications: true },
-    { target: "garage-list", title: t("tour1Title"), text: t("tour1Text") },
-    { target: "add-car", title: t("tour2Title"), text: t("tour2Text") },
-    { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text") },
-    { target: "dashboard-totals", title: t("tour5Title"), text: t("tour5Text") },
-    { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text"), placement: "top" },
-    { target: "service-tab", title: t("tour7Title"), text: t("tour7Text"), placement: "top" },
-    { target: "shop-tab", title: t("tour8Title"), text: t("tour8Text"), placement: "top" },
+    { target: "", title: t("tourWelcomeTitle"), text: t("tourWelcomeText"), placement: "center", view: "cars", serviceMode: "summary" },
+    { target: "", title: t("tourInstallTitle"), text: t("tourInstallText"), placement: "center", install: true, view: "cars", serviceMode: "summary" },
+    { target: "", title: t("tourNotificationsTitle"), text: t("tourNotificationsText"), placement: "center", notifications: true, view: "cars", serviceMode: "summary" },
+    { target: "garage-list", title: t("tour1Title"), text: t("tour1Text"), view: "cars", serviceMode: "summary" },
+    { target: "add-car", title: t("tour2Title"), text: t("tour2Text"), view: "cars", serviceMode: "summary" },
+    { target: carActionTarget, title: t("tour3Title"), text: t("tour3Text"), view: "cars", serviceMode: "summary" },
+    { target: "dashboard-totals", title: t("tour5Title"), text: t("tour5Text"), view: "cars", serviceMode: "summary" },
+    { target: "expense-filter", title: t("tour6Title"), text: t("tour6Text"), placement: "top", view: "cars", serviceMode: "summary" },
+    { target: "service-tab", title: t("tour7Title"), text: t("tour7Text"), placement: "top", view: "cars", serviceMode: "summary" },
+    { target: "service-list", title: t("tourServiceListTitle"), text: t("tourServiceListText"), placement: "top", view: "booklet", serviceMode: "summary" },
+    { target: "service-add", title: t("tourAddServiceTitle"), text: t("tourAddServiceText"), placement: "top", view: "booklet", serviceMode: "summary" },
+    { target: "service-form", title: t("tourServiceFormTitle"), text: t("tourServiceFormText"), placement: "top", view: "booklet", serviceMode: "add" },
+    { target: "shop-tab", title: t("tour8Title"), text: t("tour8Text"), placement: "top", view: "shop", serviceMode: "summary" },
     { target: "language", title: t("tour9Title"), text: t("tour9Text"), placement: "bottom" },
     { target: "profile", title: t("tour10Title"), text: t("tour10Text"), placement: "bottom" },
   ];
@@ -1397,11 +1412,11 @@ function nextTourStep() {
     finishTour();
     return;
   }
-  setState({ tourStep: (state.tourStep || 0) + 1 });
+  goToTourStep((state.tourStep || 0) + 1);
 }
 
 function previousTourStep() {
-  setState({ tourStep: Math.max(0, (state.tourStep || 0) - 1) });
+  goToTourStep(Math.max(0, (state.tourStep || 0) - 1));
 }
 
 function skipTour() {
@@ -1413,6 +1428,8 @@ function finishTour() {
     tourActive: false,
     tourSeen: true,
     tourStep: 0,
+    view: "cars",
+    serviceMode: "summary",
   };
   if (state.demoMode) {
     Object.assign(cleanState, {
@@ -1420,11 +1437,25 @@ function finishTour() {
       cars: [],
       records: [],
       selectedCarId: null,
-      serviceMode: "summary",
       selectedRecordId: null,
     });
   }
   setState(cleanState);
+}
+
+function goToTourStep(stepIndex) {
+  const steps = tourSteps();
+  const nextStep = steps[Math.min(Math.max(stepIndex, 0), steps.length - 1)] || {};
+  const update = { tourStep: stepIndex };
+  if (nextStep.view) update.view = nextStep.view;
+  if (nextStep.serviceMode) update.serviceMode = nextStep.serviceMode;
+  if (nextStep.view === "booklet" && !state.selectedCarId && state.cars[0]) {
+    update.selectedCarId = state.cars[0].id;
+  }
+  if (nextStep.serviceMode === "add") {
+    update.selectedRecordId = null;
+  }
+  setState(update);
 }
 
 function overviewView() {
@@ -1569,7 +1600,7 @@ function bookletView() {
   const record = selectedRecord(car?.id);
   return `
     <section class="grid">
-      <div class="panel" id="service-history-panel">
+      <div class="panel" id="service-history-panel" data-tour="service-list">
         <div class="field car-picker">
           <label for="bookletCarSelect">${t("chooseCar")}</label>
           <select id="bookletCarSelect" data-booklet-car>
@@ -1583,7 +1614,7 @@ function bookletView() {
             <p class="muted">${car ? `${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${filteredCarRecords(car.id).length}` : t("noCars")}</p>
           </div>
           <div class="actions">
-            ${car ? `<button class="primary" data-add-service="${car.id}">${t("addServiceHistory")}</button>` : `<button class="primary" data-view="cars">${t("addCar")}</button>`}
+            ${car ? `<button class="primary" data-add-service="${car.id}" data-tour="service-add">${t("addServiceHistory")}</button>` : `<button class="primary" data-view="cars">${t("addCar")}</button>`}
           </div>
         </div>
         <div class="list">
@@ -1619,7 +1650,7 @@ function serviceFormView(car) {
   const editingRecord = state.serviceMode === "edit" ? selectedRecord(car?.id) : null;
   const selectedServices = editingRecord?.serviceTypes?.length ? editingRecord.serviceTypes : [editingRecord?.serviceType].filter(Boolean);
   return `
-    <div class="panel" id="service-form-panel">
+    <div class="panel" id="service-form-panel" data-tour="service-form">
       <div class="row section-head">
         <div>
           <h2>${editingRecord ? t("editRecord") : t("addRecord")}</h2>
