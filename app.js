@@ -413,7 +413,7 @@ const copy = {
     tourDone: "Done",
     tourCount: "Step",
     tourWelcomeTitle: "Welcome to your digital service booklet",
-    tourWelcomeText: "Let me give you a quick tour so you know how to use the app.",
+    tourWelcomeText: "Let me give you a quick tour using sample data. When the tour ends, your real account will be empty and ready for your own cars.",
     tourInstallTitle: "Save the app on your phone",
     tourInstallText: "For faster access, add Sayarati.online 2.0 to your home screen before you continue.",
     tourNotificationsTitle: "Enable service reminders and offers",
@@ -739,7 +739,7 @@ copy.ar = {
   tourDone: "تم",
   tourCount: "خطوة",
   tourWelcomeTitle: "أهلا بك في دفتر الصيانة الرقمي",
-  tourWelcomeText: "دعني أعطيك جولة سريعة لتعرف كيف تستخدم التطبيق.",
+  tourWelcomeText: "دعني أعطيك جولة سريعة باستخدام بيانات تجريبية. عند انتهاء الجولة، سيكون حسابك الحقيقي فارغا وجاهزا لسياراتك.",
   tourInstallTitle: "احفظ التطبيق على هاتفك",
   tourInstallText: "للوصول السريع، أضف Sayarati.online 2.0 إلى الشاشة الرئيسية قبل المتابعة.",
   tourNotificationsTitle: "فعّل تذكيرات الصيانة والعروض",
@@ -807,6 +807,7 @@ function defaultState() {
     tourActive: false,
     tourStep: 0,
     tourSeen: false,
+    demoMode: false,
   };
 }
 
@@ -816,6 +817,12 @@ function loadState() {
   if (saved) {
     try {
       const parsed = { ...defaults, ...JSON.parse(saved), carFormOpen: false };
+      if (parsed.demoMode && !parsed.tourActive) {
+        parsed.demoMode = false;
+        parsed.cars = [];
+        parsed.records = [];
+        parsed.selectedCarId = null;
+      }
       return { ...parsed, view: parsed.view === "overview" ? "cars" : parsed.view };
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -1387,7 +1394,7 @@ function syncTourHighlight() {
 function nextTourStep() {
   const lastStep = tourSteps().length - 1;
   if ((state.tourStep || 0) >= lastStep) {
-    setState({ tourActive: false, tourSeen: true, tourStep: 0 });
+    finishTour();
     return;
   }
   setState({ tourStep: (state.tourStep || 0) + 1 });
@@ -1398,7 +1405,26 @@ function previousTourStep() {
 }
 
 function skipTour() {
-  setState({ tourActive: false, tourSeen: true, tourStep: 0 });
+  finishTour();
+}
+
+function finishTour() {
+  const cleanState = {
+    tourActive: false,
+    tourSeen: true,
+    tourStep: 0,
+  };
+  if (state.demoMode) {
+    Object.assign(cleanState, {
+      demoMode: false,
+      cars: [],
+      records: [],
+      selectedCarId: null,
+      serviceMode: "summary",
+      selectedRecordId: null,
+    });
+  }
+  setState(cleanState);
 }
 
 function overviewView() {
@@ -2696,6 +2722,84 @@ async function apiPost(url, body, token = state.authToken) {
   }).then((res) => res.json());
 }
 
+function demoTourData() {
+  const year = new Date().getFullYear();
+  const nextYear = year + 1;
+  return {
+    demoMode: true,
+    selectedCarId: "demo-car-1",
+    cars: [
+      {
+        id: "demo-car-1",
+        brand: "Toyota",
+        model: "Prado",
+        year: "2021",
+        plate: "Demo 123456",
+        mileage: "68000",
+        vin: "DEMO-VIN-PRADO",
+        notes: "Sample car used only for this first tour.",
+      },
+      {
+        id: "demo-car-2",
+        brand: "BMW",
+        model: "X5",
+        year: "2020",
+        plate: "Demo 654321",
+        mileage: "91000",
+        vin: "DEMO-VIN-X5",
+        notes: "Second sample car to show multiple vehicles.",
+      },
+    ],
+    records: [
+      {
+        id: "demo-record-1",
+        carId: "demo-car-1",
+        date: `${year}-04-15`,
+        mileage: "68000",
+        mechanic: "Sayarati Garage",
+        serviceType: "Oil change",
+        serviceTypes: ["Oil change", "Oil filter", "Cabin filter"],
+        oilType: "5W-30",
+        oilQuantity: "6",
+        parts: "Engine oil, oil filter, cabin filter",
+        cost: "95",
+        nextDue: `${year}-10-15`,
+        nextServiceNote: "Check brake pads and rotate tyres.",
+        notes: "Demo oil service record.",
+      },
+      {
+        id: "demo-record-2",
+        carId: "demo-car-1",
+        date: `${year}-01-22`,
+        mileage: "61000",
+        mechanic: "Sayarati Garage",
+        serviceType: "Brake pads",
+        serviceTypes: ["Brake pads", "Brake inspection"],
+        brakePadPosition: "Front",
+        parts: "Front brake pads",
+        cost: "140",
+        nextDue: `${nextYear}-01-22`,
+        nextServiceNote: "Inspect rear brake pads.",
+        notes: "Demo brake service record.",
+      },
+      {
+        id: "demo-record-3",
+        carId: "demo-car-2",
+        date: `${year}-03-03`,
+        mileage: "91000",
+        mechanic: "Sayarati Garage",
+        serviceType: "Battery",
+        serviceTypes: ["Battery", "Computer check"],
+        parts: "Battery replacement",
+        cost: "180",
+        nextDue: `${year}-09-03`,
+        nextServiceNote: "Computer scan and charging check.",
+        notes: "Demo battery service record.",
+      },
+    ],
+  };
+}
+
 async function verifyCustomerCode({ name, phone, code, customerType }) {
   const result = await apiPost("/.netlify/functions/verify-whatsapp-otp", { name, phone, code, customerType }, "");
   if (!result.ok || !result.token) throw new Error(result.error || t("loginFailed"));
@@ -2727,6 +2831,11 @@ async function verifyCustomerCode({ name, phone, code, customerType }) {
     persistCustomerData(localCars, localRecords);
   }
 
+  if (shouldStartTour && !state.cars.length && !state.records.length) {
+    state = { ...state, ...demoTourData() };
+    saveState();
+  }
+
   render();
 }
 
@@ -2742,6 +2851,7 @@ async function loadCustomerData(token = state.authToken) {
 }
 
 async function loadCustomerDataOnce() {
+  if (state.demoMode) return;
   if (!state.authToken || customerDataLoaded) return;
   customerDataLoaded = true;
   const remote = await loadCustomerData();
@@ -2758,6 +2868,7 @@ async function loadCustomerDataOnce() {
 }
 
 async function persistCustomerData(cars = state.cars, records = state.records) {
+  if (state.demoMode) return;
   if (!state.authToken) return;
   try {
     await apiPost("/.netlify/functions/customer-data", { cars, records });
