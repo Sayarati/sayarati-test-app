@@ -354,6 +354,13 @@ const copy = {
     createdNotification: "Created successfully.",
     redirectingShop: "Opening Sayarati.online...",
     shopInAppNote: "Browse Sayarati products inside the app. Your app navigation stays available.",
+    shopBrandTitle: "Sayarati.online",
+    shopBrandSubtitle: "Quick service parts and car care",
+    shopHeroTitle: "Delivered across Lebanon",
+    shopHeroText: "Oils, filters, batteries, brakes and essentials for your car.",
+    shopBadgeDelivery: "Fast delivery",
+    shopBadgeCheckout: "Secure checkout",
+    shopBadgeSupport: "WhatsApp support",
     shopLoading: "Loading Sayarati shop...",
     shopHome: "Shop home",
     shopBack: "Back",
@@ -686,6 +693,13 @@ copy.ar = {
   createdNotification: "تم الإنشاء بنجاح.",
   redirectingShop: "جاري فتح Sayarati.online...",
   shopInAppNote: "تصفح منتجات سيارتي داخل التطبيق.",
+  shopBrandTitle: "Sayarati.online",
+  shopBrandSubtitle: "قطع صيانة سريعة وعناية بالسيارة",
+  shopHeroTitle: "توصيل إلى كل لبنان",
+  shopHeroText: "زيوت، فلاتر، بطاريات، فرامل ومستلزمات أساسية لسيارتك.",
+  shopBadgeDelivery: "توصيل سريع",
+  shopBadgeCheckout: "دفع آمن",
+  shopBadgeSupport: "دعم واتساب",
   shopLoading: "جاري تحميل متجر سيارتي...",
   shopHome: "الرئيسية",
   shopBack: "رجوع",
@@ -1686,6 +1700,21 @@ function shopView() {
 
   return `
     <section class="panel">
+      <div class="shop-hero">
+        <div>
+          <span>${t("shopBrandTitle")}</span>
+          <h2>${t("shopBrandSubtitle")}</h2>
+          <p>${t("shopHeroText")}</p>
+        </div>
+        <div class="shop-hero-side">
+          <strong>${t("shopHeroTitle")}</strong>
+          <div class="shop-badges">
+            <span>${t("shopBadgeDelivery")}</span>
+            <span>${t("shopBadgeCheckout")}</span>
+            <span>${t("shopBadgeSupport")}</span>
+          </div>
+        </div>
+      </div>
       <div class="shop-tools">
         <strong>${SHOP_URL}</strong>
         <div class="actions">

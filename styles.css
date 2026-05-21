@@ -902,6 +902,72 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.shop-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 18px;
+  border-radius: 8px;
+  background: #0b0f12;
+  color: #fff;
+  overflow: hidden;
+}
+
+.shop-hero span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.shop-hero h2 {
+  margin: 6px 0 8px;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.shop-hero p {
+  margin: 0;
+  color: #d8dee2;
+  line-height: 1.45;
+}
+
+.shop-hero-side {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.shop-hero-side strong {
+  color: var(--accent);
+  font-size: 20px;
+  line-height: 1.15;
+  text-align: right;
+}
+
+.shop-badges {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.shop-badges span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: none;
+}
+
 .shop-launcher {
   min-height: 520px;
   border: 1px solid var(--line);
@@ -1292,6 +1358,18 @@ button:disabled {
   text-align: right;
 }
 
+.rtl .shop-hero-side {
+  justify-items: start;
+}
+
+.rtl .shop-hero-side strong {
+  text-align: left;
+}
+
+.rtl .shop-badges {
+  justify-content: flex-start;
+}
+
 @media (max-width: 860px) {
   .shell {
     display: block;
@@ -1363,6 +1441,39 @@ button:disabled {
 
   .topbar {
     margin-bottom: 8px;
+  }
+
+  .shop-hero {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .shop-hero h2 {
+    font-size: 24px;
+  }
+
+  .shop-hero-side {
+    justify-items: start;
+  }
+
+  .shop-hero-side strong {
+    text-align: left;
+  }
+
+  .shop-badges {
+    justify-content: flex-start;
+  }
+
+  .rtl .shop-hero-side {
+    justify-items: end;
+  }
+
+  .rtl .shop-hero-side strong {
+    text-align: right;
+  }
+
+  .rtl .shop-badges {
+    justify-content: flex-end;
   }
 
   .shop-tools .actions {
