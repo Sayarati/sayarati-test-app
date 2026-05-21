@@ -903,69 +903,30 @@ button:disabled {
 }
 
 .shop-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 18px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
   border-radius: 8px;
   background: #0b0f12;
   color: #fff;
   overflow: hidden;
 }
 
-.shop-hero span {
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .shop-hero h2 {
-  margin: 6px 0 8px;
-  font-size: 28px;
-  line-height: 1.1;
-}
-
-.shop-hero p {
   margin: 0;
-  color: #d8dee2;
-  line-height: 1.45;
-}
-
-.shop-hero-side {
-  display: grid;
-  gap: 10px;
-  justify-items: end;
-}
-
-.shop-hero-side strong {
-  color: var(--accent);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1.15;
-  text-align: right;
+  color: #fff;
 }
 
-.shop-badges {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: 320px;
-}
-
-.shop-badges span {
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  padding: 0 10px;
-  font-size: 12px;
+.shop-hero strong {
+  color: var(--accent);
+  font-size: 17px;
   font-weight: 900;
-  text-transform: none;
+  white-space: nowrap;
 }
 
 .shop-launcher {
@@ -1358,18 +1319,6 @@ button:disabled {
   text-align: right;
 }
 
-.rtl .shop-hero-side {
-  justify-items: start;
-}
-
-.rtl .shop-hero-side strong {
-  text-align: left;
-}
-
-.rtl .shop-badges {
-  justify-content: flex-start;
-}
-
 @media (max-width: 860px) {
   .shell {
     display: block;
@@ -1444,36 +1393,18 @@ button:disabled {
   }
 
   .shop-hero {
+    display: grid;
     grid-template-columns: 1fr;
-    padding: 16px;
+    gap: 8px;
+    padding: 12px 14px;
   }
 
   .shop-hero h2 {
-    font-size: 24px;
+    font-size: 20px;
   }
 
-  .shop-hero-side {
-    justify-items: start;
-  }
-
-  .shop-hero-side strong {
-    text-align: left;
-  }
-
-  .shop-badges {
-    justify-content: flex-start;
-  }
-
-  .rtl .shop-hero-side {
-    justify-items: end;
-  }
-
-  .rtl .shop-hero-side strong {
-    text-align: right;
-  }
-
-  .rtl .shop-badges {
-    justify-content: flex-end;
+  .shop-hero strong {
+    white-space: normal;
   }
 
   .shop-tools .actions {

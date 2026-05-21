@@ -356,7 +356,7 @@ const copy = {
     shopInAppNote: "Browse Sayarati products inside the app. Your app navigation stays available.",
     shopBrandTitle: "Sayarati.online",
     shopBrandSubtitle: "Quick service parts and car care",
-    shopHeroTitle: "Delivered across Lebanon",
+    shopHeroTitle: "Delivery across Lebanon",
     shopHeroText: "Oils, filters, batteries, brakes and essentials for your car.",
     shopBadgeDelivery: "Fast delivery",
     shopBadgeCheckout: "Secure checkout",
@@ -1245,6 +1245,7 @@ function navIcon(icon) {
 }
 
 function header() {
+  if (state.view === "shop") return "";
   return `
     <div class="topbar">
       <div>
@@ -1701,27 +1702,13 @@ function shopView() {
   return `
     <section class="panel">
       <div class="shop-hero">
-        <div>
-          <span>${t("shopBrandTitle")}</span>
-          <h2>${t("shopBrandSubtitle")}</h2>
-          <p>${t("shopHeroText")}</p>
-        </div>
-        <div class="shop-hero-side">
-          <strong>${t("shopHeroTitle")}</strong>
-          <div class="shop-badges">
-            <span>${t("shopBadgeDelivery")}</span>
-            <span>${t("shopBadgeCheckout")}</span>
-            <span>${t("shopBadgeSupport")}</span>
-          </div>
-        </div>
+        <h2>${t("shopBrandSubtitle")}</h2>
+        <strong>${t("shopHeroTitle")}</strong>
       </div>
       <div class="shop-tools">
-        <strong>${SHOP_URL}</strong>
         <div class="actions">
           <button class="ghost" data-shop-home>${t("shopHome")}</button>
-          <button class="ghost" data-refresh-shop>${t("refreshShop")}</button>
           <button class="primary" data-shop-checkout>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
-          <a class="ghost" href="${SHOP_URL}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">${t("openExternal")}</a>
         </div>
       </div>
       <div class="custom-shop">
