@@ -1525,3 +1525,296 @@ button:disabled {
     top: 14px;
   }
 }
+
+/* Sayarati visual refresh: light usability, stronger black/yellow brand, clearer service timeline */
+:root {
+  --ink-2: #111a20;
+  --paper-2: #fffaf0;
+  --shadow-soft: 0 10px 28px rgba(16, 24, 32, 0.08);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 210, 31, 0.16), transparent 32%),
+    linear-gradient(180deg, #fffaf0 0%, var(--paper) 38%, #f2efe7 100%);
+}
+
+.sidebar {
+  background: linear-gradient(180deg, #06090b 0%, #0f171d 100%);
+  border-right: 1px solid rgba(255, 210, 31, 0.18);
+}
+
+.brand-wordmark {
+  width: min(66%, 290px);
+}
+
+.nav {
+  gap: 10px;
+}
+
+.nav button {
+  min-height: 52px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+  font-weight: 800;
+}
+
+.nav button.active {
+  box-shadow: 0 12px 28px rgba(255, 210, 31, 0.18);
+}
+
+.language button,
+.ghost,
+.primary,
+.danger,
+.field input,
+.field select,
+.field textarea,
+.expense-filter select,
+.facet-filters select {
+  border-radius: 11px;
+}
+
+.profile-chip {
+  background: radial-gradient(circle at 30% 25%, #24313a 0%, #0b0f12 68%);
+}
+
+.topbar {
+  margin-bottom: 16px;
+  padding: 4px 0 2px;
+}
+
+h1 {
+  font-size: 34px;
+  letter-spacing: -0.2px;
+}
+
+.panel,
+.card {
+  border: 1px solid rgba(17, 26, 32, 0.10);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(16, 24, 32, 0.10);
+}
+
+.panel {
+  padding: 20px;
+}
+
+.section-head h2 {
+  margin-bottom: 4px;
+}
+
+.stat {
+  position: relative;
+  overflow: hidden;
+  border-top: 5px solid var(--accent);
+}
+
+.stat::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: rgba(255, 210, 31, 0.18);
+}
+
+.primary {
+  padding: 0 18px;
+  box-shadow: 0 10px 22px rgba(255, 210, 31, 0.20);
+}
+
+.car-card,
+.record {
+  border: 1px solid rgba(17, 26, 32, 0.10);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+}
+
+.car-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.car-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--accent);
+  opacity: 0.92;
+}
+
+.car-card.selected {
+  background: linear-gradient(180deg, #fff7c6 0%, #fff2a3 100%);
+}
+
+.car-card-head {
+  grid-template-columns: 78px 1fr;
+  gap: 14px;
+}
+
+.car-photo {
+  width: 78px;
+  height: 78px;
+  border-radius: 14px;
+}
+
+.placeholder-car {
+  background: linear-gradient(145deg, #0b0f12, #18252d);
+}
+
+.check-option,
+.service-extra,
+.detail-grid div,
+.expense-list div,
+.product-images img,
+.category-tile,
+.product-card {
+  border-radius: 12px;
+}
+
+.summary-record {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: start;
+  position: relative;
+  margin-left: 18px;
+  overflow: visible;
+}
+
+.summary-record::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 33px;
+  bottom: -16px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(255, 210, 31, 0.72);
+}
+
+.summary-record:last-child::before {
+  display: none;
+}
+
+.record-service-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: #0b0f12;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 20px rgba(11, 15, 18, 0.18);
+}
+
+.record-service-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.record-body {
+  min-width: 0;
+}
+
+.summary-record:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(16, 24, 32, 0.12);
+}
+
+.detail-grid div {
+  background: #fffdf6;
+}
+
+.expense-list div {
+  border-left: 6px solid var(--accent);
+}
+
+.shop-hero {
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 210, 31, 0.16) 0%, rgba(255, 210, 31, 0) 42%),
+    #0b0f12;
+}
+
+.category-tile,
+.product-card {
+  box-shadow: var(--shadow-soft);
+}
+
+.category-tile:hover,
+.product-card:hover {
+  transform: translateY(-1px);
+}
+
+.login-card {
+  border-radius: 16px;
+}
+
+.login-logo {
+  border-radius: 14px;
+}
+
+@media (max-width: 860px) {
+  .sidebar {
+    border-right: 0;
+    box-shadow: 0 12px 26px rgba(11, 15, 18, 0.18);
+  }
+
+  .nav {
+    border-radius: 14px;
+    box-shadow: 0 18px 45px rgba(11, 15, 18, 0.24);
+  }
+
+  .nav button {
+    border-radius: 11px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .car-card-head {
+    grid-template-columns: 74px 1fr;
+  }
+
+  .car-photo {
+    width: 74px;
+    height: 74px;
+  }
+
+  .summary-record {
+    grid-template-columns: 38px 1fr;
+    margin-left: 10px;
+  }
+
+  .summary-record::before {
+    left: -10px;
+  }
+
+  .record-service-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .record-service-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+}

@@ -2508,14 +2508,28 @@ function renderRecordSummaries(carId) {
   if (!records.length) return `<p class="muted">${t("noRecords")}</p>`;
   return records.map((record) => `
     <article class="record summary-record" data-view-record="${record.id}">
-      <div class="row">
-        <strong>${formatServices(record)}</strong>
-        <span class="pill gold">${record.date || "-"}</span>
+      <div class="record-service-icon">${serviceRecordIcon(record)}</div>
+      <div class="record-body">
+        <div class="row">
+          <strong>${formatServices(record)}</strong>
+          <span class="pill gold">${record.date || "-"}</span>
+        </div>
+        <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}${record.mechanicName ? ` | ${t("mechanicName")}: ${escapeHtml(record.mechanicName)}` : ""}</p>
+        ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
       </div>
-      <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}${record.mechanicName ? ` | ${t("mechanicName")}: ${escapeHtml(record.mechanicName)}` : ""}</p>
-      ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
     </article>
   `).join("");
+}
+
+function serviceRecordIcon(record) {
+  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  const primary = String(services[0] || "").toLowerCase();
+  if (primary.includes("oil")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l1 5v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9l1-5Zm0 5h9M10 13h4" /></svg>`;
+  if (primary.includes("brake")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3v10M8 12h8" /></svg>`;
+  if (primary.includes("battery")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15v9H4V8Zm15 3h2v3h-2M10 10l-2 4h3l-1 3 4-5h-3l1-2" /></svg>`;
+  if (primary.includes("filter")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M7 10h10M9 14h6M11 18h2" /></svg>`;
+  if (primary.includes("tire") || primary.includes("tyre")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" /></svg>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>`;
 }
 
 function serviceDetailView(record) {
