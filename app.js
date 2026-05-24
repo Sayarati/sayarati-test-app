@@ -1257,7 +1257,7 @@ function header() {
 }
 
 function pageTitle() {
-  if (state.view === "cars" || state.view === "overview") return t("overview");
+  if (state.view === "cars" || state.view === "overview") return t("myCars");
   if (state.view === "booklet") return t("myServiceHistory");
   if (state.view === "shop") return t("shop");
   if (state.view === "profile") return t("profileTitle");
