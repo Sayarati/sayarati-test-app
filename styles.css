@@ -1608,6 +1608,9 @@ h1 {
   position: relative;
   overflow: hidden;
   border-top: 5px solid var(--accent);
+  display: grid;
+  gap: 8px;
+  align-content: start;
 }
 
 .stat::after {
@@ -1619,6 +1622,40 @@ h1 {
   height: 82px;
   border-radius: 50%;
   background: rgba(255, 210, 31, 0.18);
+}
+
+.stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: #0b0f12;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 10px 20px rgba(11, 15, 18, 0.16);
+}
+
+.stat-icon svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stat span,
+.stat strong {
+  position: relative;
+  z-index: 1;
+}
+
+.stat-compact strong {
+  font-size: 24px;
+  line-height: 1.15;
 }
 
 .primary {

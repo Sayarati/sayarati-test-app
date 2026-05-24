@@ -829,6 +829,7 @@ function defaultState() {
     expenseYear: String(new Date().getFullYear()),
     editingCarId: null,
     dismissedServiceReminders: {},
+    serviceReminderSnoozedUntil: "",
     notificationsEnabled: false,
     tourActive: false,
     tourStep: 0,
@@ -1295,6 +1296,7 @@ function adminMessageBanner() {
 }
 
 function upcomingServiceReminder() {
+  if (state.serviceReminderSnoozedUntil && localDateKey(new Date()) < state.serviceReminderSnoozedUntil) return "";
   const reminder = nextDueReminder();
   if (!reminder) return "";
   const dueText = reminder.daysUntil < 0
@@ -1318,6 +1320,7 @@ function upcomingServiceReminder() {
 function nextDueReminder() {
   const dismissed = state.dismissedServiceReminders || {};
   const today = startOfDay(new Date());
+  const todayKey = localDateKey(today);
   const reminders = state.records
     .filter((record) => record.nextDue)
     .map((record) => {
@@ -1327,7 +1330,7 @@ function nextDueReminder() {
       const car = state.cars.find((item) => item.id === record.carId);
       return { record, car, daysUntil, key: `${record.id}:${record.nextDue}` };
     })
-    .filter((item) => item && item.car && item.daysUntil <= 5 && item.daysUntil >= -30 && dismissed[item.key] !== today.toISOString().slice(0, 10))
+    .filter((item) => item && item.car && item.daysUntil <= 5 && item.daysUntil >= -30 && dismissed[item.key] !== todayKey)
     .sort((a, b) => a.daysUntil - b.daysUntil);
   return reminders[0] || null;
 }
@@ -1339,6 +1342,19 @@ function parseDate(value) {
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function localDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
 
 function tourSteps() {
@@ -1492,10 +1508,10 @@ function overviewView() {
       </div>
     </section>
     <section class="grid dashboard-grid">
-      <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
-      <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
-      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
-      <div class="panel stat"><span>${t("totalExpenses")}</span><strong style="font-size: 24px;">${formatMoney(totalExpenses())}</strong></div>
+      ${statCard("cars", t("totalCars"), state.cars.length)}
+      ${statCard("records", t("totalRecords"), state.records.length)}
+      ${statCard("calendar", t("nextService"), nextServiceDate(), "compact")}
+      ${statCard("expenses", t("totalExpenses"), formatMoney(totalExpenses()), "compact")}
     </section>
     <section class="panel">
       <div class="row section-head">
@@ -1574,10 +1590,10 @@ function carsView() {
 function dashboardSummaryView() {
   return `
     <section class="grid dashboard-grid" data-tour="dashboard-totals">
-      <div class="panel stat"><span>${t("totalCars")}</span><strong>${state.cars.length}</strong></div>
-      <div class="panel stat"><span>${t("totalRecords")}</span><strong>${state.records.length}</strong></div>
-      <div class="panel stat"><span>${t("nextService")}</span><strong style="font-size: 24px;">${nextServiceDate()}</strong></div>
-      <div class="panel stat"><span>${t("totalExpenses")}</span><strong style="font-size: 24px;">${formatMoney(totalExpenses())}</strong></div>
+      ${statCard("cars", t("totalCars"), state.cars.length)}
+      ${statCard("records", t("totalRecords"), state.records.length)}
+      ${statCard("calendar", t("nextService"), nextServiceDate(), "compact")}
+      ${statCard("expenses", t("totalExpenses"), formatMoney(totalExpenses()), "compact")}
     </section>
     <section class="panel">
       <div class="row section-head">
@@ -1608,6 +1624,26 @@ function dashboardSummaryView() {
       </div>
     </section>
   `;
+}
+
+function statCard(type, label, value, size = "") {
+  return `
+    <div class="panel stat ${size ? `stat-${size}` : ""}">
+      <div class="stat-icon">${dashboardStatIcon(type)}</div>
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `;
+}
+
+function dashboardStatIcon(type) {
+  const icons = {
+    cars: '<svg viewBox="0 0 24 24"><path d="M5 17h14"/><path d="M6.5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M17.5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M4 17l1.5-5.5A2 2 0 0 1 7.4 10h9.2a2 2 0 0 1 1.9 1.5L20 17"/><path d="M8 10l1.5-4h5L16 10"/></svg>',
+    records: '<svg viewBox="0 0 24 24"><path d="M5 4h10a4 4 0 0 1 4 4v12H8a3 3 0 0 1-3-3V4Z"/><path d="M8 4v13a3 3 0 0 0 3 3"/><path d="M9 8h6"/><path d="M9 12h5"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24"><path d="M7 3v4"/><path d="M17 3v4"/><path d="M4 8h16"/><path d="M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 13h3"/><path d="M13 13h3"/><path d="M8 17h3"/></svg>',
+    expenses: '<svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 6.5c-1.2-1-2.7-1.5-4.6-1.5-2.6 0-4.4 1.2-4.4 3s1.6 2.6 4.5 3.2c3 .6 4.5 1.5 4.5 3.5 0 1.9-1.8 3.3-4.8 3.3-2.1 0-3.9-.6-5.2-1.8"/></svg>',
+  };
+  return icons[type] || icons.records;
 }
 
 function bookletView() {
@@ -3570,10 +3606,12 @@ function bindApp() {
 
   document.querySelectorAll("[data-dismiss-service-reminder]").forEach((button) => {
     button.addEventListener("click", () => {
+      const tomorrow = localDateKey(addDays(new Date(), 1));
       setState({
+        serviceReminderSnoozedUntil: tomorrow,
         dismissedServiceReminders: {
           ...(state.dismissedServiceReminders || {}),
-          [button.dataset.dismissServiceReminder]: new Date().toISOString().slice(0, 10),
+          [button.dataset.dismissServiceReminder]: localDateKey(new Date()),
         },
       });
     });
