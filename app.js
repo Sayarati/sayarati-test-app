@@ -1907,7 +1907,7 @@ function productCard(product) {
 }
 
 function shareIcon() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8M13 7l5 5-5 5M18 12H6" /></svg>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.7 15.3 6.3"/><path d="M8.7 13.3 15.3 17.7"/></svg>`;
 }
 
 function productDetailView(product) {
