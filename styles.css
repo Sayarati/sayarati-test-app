@@ -3290,3 +3290,736 @@ h1 {
     border-radius: 15px;
   }
 }
+
+/* Premium reference layout pass */
+:root {
+  --app-black: #020303;
+  --app-card: #080a0b;
+  --app-card-soft: #101314;
+  --app-line: rgba(255, 255, 255, 0.16);
+  --app-yellow: #ffd21f;
+  --app-muted: #aeb6bb;
+}
+
+body {
+  background: var(--app-black) !important;
+  color: #ffffff;
+}
+
+.app {
+  background: var(--app-black) !important;
+}
+
+.main {
+  background: var(--app-black) !important;
+}
+
+.main::before {
+  content: "";
+  position: fixed;
+  inset: 78px 0 auto 0;
+  height: 220px;
+  pointer-events: none;
+  background: transparent;
+  border-top: 1px solid rgba(255, 210, 31, 0.12);
+  opacity: 0.7;
+}
+
+.sidebar {
+  background: #020303 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.page-title,
+.main > h1,
+.main h1 {
+  color: #ffffff !important;
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.page-title::before,
+.main > h1::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 24px;
+  margin-inline-end: 8px;
+  background: var(--app-yellow);
+  border-radius: 10px;
+  vertical-align: -2px;
+}
+
+.panel {
+  background: var(--app-card) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 210, 31, 0.34) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+}
+
+.panel h2,
+.section-head h2 {
+  color: #ffffff !important;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.muted,
+.panel .muted,
+.field label,
+.category-landing > p {
+  color: var(--app-muted) !important;
+}
+
+.primary {
+  background: var(--app-yellow) !important;
+  color: #030303 !important;
+  border: 1px solid var(--app-yellow) !important;
+  box-shadow: 0 12px 20px rgba(255, 210, 31, 0.16);
+}
+
+.ghost {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+}
+
+.shop-hero-premium {
+  position: relative;
+  min-height: 238px;
+  padding: 24px 18px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  align-items: center;
+  background: #050606 !important;
+  border-color: rgba(255, 210, 31, 0.52) !important;
+}
+
+.shop-hero-premium::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.shop-hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.shop-hero h2,
+.shop-hero-premium h2 {
+  max-width: 220px;
+  color: #ffffff !important;
+  font-size: clamp(28px, 7vw, 40px) !important;
+  line-height: 1.03;
+  font-weight: 950;
+}
+
+.shop-hero strong,
+.shop-hero-premium strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--app-yellow) !important;
+  font-size: 18px !important;
+  line-height: 1.2;
+}
+
+.shop-hero-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.shop-hero-actions .primary,
+.shop-hero-actions .ghost {
+  min-height: 46px;
+  border-radius: 13px;
+}
+
+.shop-hero-visual {
+  position: relative;
+  min-height: 188px;
+  z-index: 1;
+}
+
+.hero-part {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(255, 210, 31, 0.5);
+  background: #111415;
+  box-shadow: 0 18px 28px rgba(0, 0, 0, 0.45);
+}
+
+.hero-oil {
+  right: 28px;
+  bottom: 14px;
+  width: 68px;
+  height: 132px;
+  border-radius: 18px 18px 12px 12px;
+}
+
+.hero-oil::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  height: 58px;
+  border-radius: 10px;
+  background: var(--app-yellow);
+}
+
+.hero-oil::after {
+  content: "";
+  position: absolute;
+  bottom: 16px;
+  left: 13px;
+  right: 13px;
+  height: 8px;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.hero-brake {
+  right: 64px;
+  bottom: 18px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #171a1c;
+}
+
+.hero-brake::before {
+  content: "";
+  position: absolute;
+  inset: 23px;
+  border: 11px solid rgba(255, 255, 255, 0.64);
+  border-radius: 50%;
+}
+
+.hero-filter {
+  right: 130px;
+  bottom: 8px;
+  width: 58px;
+  height: 78px;
+  border-radius: 12px;
+  background: #161a1c;
+}
+
+.hero-filter::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 15px;
+  width: 5px;
+  border-radius: 10px;
+  background: var(--app-yellow);
+  box-shadow: 11px 0 0 rgba(255, 210, 31, 0.9), 22px 0 0 rgba(255, 210, 31, 0.72);
+}
+
+.custom-shop {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.shop-filters,
+.service-filters,
+.expense-filter {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.shop-filters input,
+.shop-filters select,
+.facet-filters select,
+.field input,
+.field select,
+.field textarea,
+.expense-filter select,
+.service-extra .field input,
+.service-extra .field select {
+  min-height: 56px;
+  background: #090b0c !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 15px !important;
+}
+
+.shop-filters input::placeholder,
+.field input::placeholder {
+  color: #8f969a;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.category-tile,
+.product-card {
+  position: relative;
+  background: #070909 !important;
+  border: 1px solid rgba(255, 210, 31, 0.46) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.category-tile {
+  min-height: 176px;
+  padding: 16px 10px 14px;
+}
+
+.category-tile::before,
+.product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.category-tile img {
+  width: 86px;
+  height: 86px;
+  margin-top: 10px;
+  background: #111516 !important;
+  border-radius: 16px;
+  padding: 8px;
+  object-fit: contain;
+}
+
+.category-tile strong {
+  margin-top: 10px;
+  color: #ffffff !important;
+  font-size: 17px;
+  line-height: 1.12;
+}
+
+.category-tile small,
+.product-card span,
+.product-price {
+  color: var(--app-yellow) !important;
+  font-weight: 950;
+}
+
+.product-card {
+  min-height: 252px;
+  grid-template-rows: 148px 1fr;
+}
+
+.product-card img {
+  height: 148px;
+  padding: 14px;
+  background: #0d1011 !important;
+  object-fit: contain;
+}
+
+.product-card div {
+  padding: 12px;
+  gap: 8px;
+}
+
+.product-card strong {
+  color: #ffffff !important;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.card-share {
+  top: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #020303 !important;
+  border: 1px solid var(--app-yellow) !important;
+  border-radius: 50% !important;
+  color: var(--app-yellow) !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+}
+
+.card-share svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.stat {
+  min-height: 118px !important;
+  padding: 18px !important;
+  background: #070909 !important;
+  border: 1px solid rgba(255, 210, 31, 0.40) !important;
+  border-top: 0 !important;
+  border-radius: 18px !important;
+}
+
+.stat::after {
+  display: none !important;
+}
+
+.stat-icon,
+.record-service-icon {
+  background: #050606 !important;
+  border-color: rgba(255, 210, 31, 0.55) !important;
+  color: var(--app-yellow) !important;
+  border-radius: 50% !important;
+}
+
+.stat span {
+  color: #c8ced1 !important;
+  font-weight: 800;
+}
+
+.stat strong {
+  color: #ffffff !important;
+  font-size: 32px;
+}
+
+.garage-list {
+  gap: 14px;
+}
+
+.car-card,
+.summary-record,
+.record,
+.detail-grid > div,
+.expense-list div {
+  background: #070909 !important;
+  border: 1px solid rgba(255, 210, 31, 0.34) !important;
+  border-radius: 18px !important;
+  color: #ffffff !important;
+}
+
+.car-card::before,
+.summary-record::before {
+  background: var(--app-yellow) !important;
+}
+
+.car-card .muted,
+.record .muted,
+.summary-record .muted {
+  color: #c0c6c9 !important;
+}
+
+.car-photo,
+.placeholder-car {
+  background: #020303 !important;
+  border: 1px solid rgba(255, 210, 31, 0.54) !important;
+  color: var(--app-yellow) !important;
+}
+
+.empty-garage-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 278px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 26px 20px;
+  background: #070909;
+  border: 1px solid rgba(255, 210, 31, 0.44);
+  border-radius: 20px;
+}
+
+.empty-garage-card::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.empty-garage-card::after {
+  content: "";
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  width: 210px;
+  height: 70px;
+  transform: translateX(-50%);
+  border: 2px solid rgba(255, 210, 31, 0.18);
+  border-bottom: 0;
+  border-radius: 70px 70px 0 0;
+}
+
+.empty-garage-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.empty-garage-visual {
+  width: 94px;
+  height: 94px;
+  display: grid;
+  place-items: center;
+  background: #030405;
+  border: 1px solid rgba(255, 210, 31, 0.42);
+  border-radius: 24px;
+  color: var(--app-yellow);
+}
+
+.empty-garage-visual svg {
+  width: 42px;
+  height: 42px;
+}
+
+.empty-garage-card strong {
+  color: var(--app-yellow);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.empty-garage-card p {
+  max-width: 250px;
+  margin: 0;
+  color: #c8ced1;
+}
+
+.empty-garage-card .primary {
+  min-width: 170px;
+}
+
+.nav {
+  background: #050606 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 24px !important;
+  padding: 8px !important;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.62);
+}
+
+.nav button {
+  min-height: 66px !important;
+  background: #111314 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 18px !important;
+  font-weight: 950 !important;
+}
+
+.nav button.active {
+  background: var(--app-yellow) !important;
+  color: #020303 !important;
+  border-color: var(--app-yellow) !important;
+}
+
+.nav button.active svg {
+  stroke: #020303 !important;
+}
+
+.service-reminder,
+.app-message,
+.notice {
+  background: #070909 !important;
+  border: 1px solid rgba(255, 210, 31, 0.48) !important;
+  color: #ffffff !important;
+  border-radius: 18px !important;
+}
+
+@media (max-width: 860px) {
+  .main {
+    padding: 20px 12px 98px !important;
+  }
+
+  .shop-hero-premium {
+    min-height: 245px;
+    grid-template-columns: 1fr 0.72fr;
+    padding: 24px 16px;
+  }
+
+  .shop-hero h2,
+  .shop-hero-premium h2 {
+    max-width: 210px;
+    font-size: 29px !important;
+  }
+
+  .shop-hero-actions {
+    grid-template-columns: 1fr 1fr;
+    max-width: 232px;
+  }
+
+  .shop-hero-visual {
+    min-height: 190px;
+    transform: translateX(6px);
+  }
+
+  .hero-oil {
+    right: 4px;
+    bottom: 18px;
+    width: 58px;
+    height: 122px;
+  }
+
+  .hero-brake {
+    right: 32px;
+    width: 88px;
+    height: 88px;
+  }
+
+  .hero-filter {
+    right: 92px;
+    width: 48px;
+    height: 72px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .stat {
+    min-height: 112px !important;
+    padding: 16px !important;
+  }
+
+  .stat strong {
+    font-size: 28px;
+  }
+
+  .category-tile {
+    min-height: 170px;
+  }
+
+  .product-card {
+    min-height: 242px;
+  }
+
+  .nav {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 10px !important;
+  }
+}
+
+@media (min-width: 861px) {
+  .shop-hero-premium {
+    min-height: 280px;
+  }
+
+  .category-grid,
+  .product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Login page isolation: keep the premium app theme readable on first sign-in */
+.login-wrap {
+  background: #020303 !important;
+  padding: 18px !important;
+}
+
+.login-card {
+  width: min(440px, 100%) !important;
+  background: #070909 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 210, 31, 0.78) !important;
+  border-radius: 18px !important;
+  padding: 24px !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.48) !important;
+}
+
+.login-logo {
+  background: #0b0f12 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+}
+
+.login-card h1 {
+  color: #ffffff !important;
+  font-size: clamp(28px, 8vw, 38px) !important;
+  line-height: 1.15 !important;
+  font-weight: 950 !important;
+  text-shadow: none !important;
+}
+
+.login-card h1::before,
+.login-card .page-title::before {
+  display: none !important;
+}
+
+.login-card .muted {
+  color: #b8c0c5 !important;
+}
+
+.login-card .field label {
+  color: #dfe5e8 !important;
+  font-weight: 900 !important;
+}
+
+.login-card .field input,
+.login-card .field select,
+.login-card .field textarea,
+.login-card select {
+  background: #ffffff !important;
+  color: #060708 !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-radius: 12px !important;
+}
+
+.login-card .field input::placeholder {
+  color: #7a8389 !important;
+}
+
+.login-card .helper,
+.login-card small,
+.login-card .hint {
+  color: #b8c0c5 !important;
+}
+
+.login-card .language {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.login-card .language button {
+  min-width: 50px;
+  min-height: 42px;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  font-weight: 950;
+}
+
+.login-card .language button.active {
+  background: var(--app-yellow) !important;
+  color: #020303 !important;
+  border-color: var(--app-yellow) !important;
+}
+
+.login-card .form-error {
+  background: #2b0808 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 125, 125, 0.55) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+}
