@@ -4023,3 +4023,78 @@ body {
   border-radius: 12px !important;
   padding: 12px !important;
 }
+
+.login-start {
+  margin: 16px 0 8px;
+  color: #ffffff;
+  font-weight: 850;
+}
+
+.login-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 4px;
+}
+
+.login-feature {
+  min-height: 122px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 12px;
+  background: #0b0e0f;
+  border: 1px solid rgba(255, 210, 31, 0.42);
+  border-radius: 14px;
+}
+
+.login-feature span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: #020303;
+  border: 1px solid rgba(255, 210, 31, 0.46);
+  border-radius: 50%;
+  color: var(--app-yellow);
+}
+
+.login-feature svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.login-feature strong {
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.15;
+  font-weight: 950;
+}
+
+.login-feature small {
+  color: #b8c0c5 !important;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+@media (max-width: 420px) {
+  .login-card {
+    padding: 20px 18px !important;
+  }
+
+  .login-features {
+    gap: 8px;
+  }
+
+  .login-feature {
+    min-height: 116px;
+    padding: 10px;
+  }
+
+  .login-feature small {
+    font-size: 10.5px;
+  }
+}

@@ -225,8 +225,17 @@ const copy = {
   en: {
     appName: "Sayarati",
     subtitle: "Digital car service booklet",
-    loginTitle: "Welcome to your Digital service booklet by Sayarati.online",
-    loginText: "Enter your name and mobile number to start.",
+    loginTitle: "Welcome to Sayarati.online",
+    loginText: "Your digital service booklet and online car care store.",
+    loginStartText: "Enter your name and mobile number to start.",
+    loginFeatureServiceTitle: "Service history",
+    loginFeatureServiceText: "Track repairs, mileage, expenses, and next service.",
+    loginFeatureCarsTitle: "My cars",
+    loginFeatureCarsText: "Save multiple vehicles in one account.",
+    loginFeatureReminderTitle: "Reminders",
+    loginFeatureReminderText: "Get notified before your next service.",
+    loginFeatureShopTitle: "Car care store",
+    loginFeatureShopText: "Shop oils, filters, brakes, batteries, and more.",
     name: "Name",
     phone: "Mobile number",
     phoneHelp: "Use digits only. Example: 96170123456",
@@ -564,8 +573,17 @@ copy.ar = {
   ...copy.en,
   appName: "سيارتي",
   subtitle: "دفتر صيانة رقمي للسيارة",
-  loginTitle: "أهلا بك في دفتر الصيانة الرقمي من Sayarati.online",
-  loginText: "أدخل اسمك ورقم هاتفك للبدء.",
+  loginTitle: "أهلا بك في Sayarati.online",
+  loginText: "دفتر صيانة رقمي ومتجر أونلاين للعناية بسيارتك.",
+  loginStartText: "أدخل اسمك ورقم هاتفك للبدء.",
+  loginFeatureServiceTitle: "سجل الصيانة",
+  loginFeatureServiceText: "تابع الصيانة، الكيلومترات، المصاريف، والموعد القادم.",
+  loginFeatureCarsTitle: "سياراتي",
+  loginFeatureCarsText: "احفظ أكثر من سيارة في حساب واحد.",
+  loginFeatureReminderTitle: "التذكيرات",
+  loginFeatureReminderText: "استلم تنبيه قبل موعد الصيانة القادمة.",
+  loginFeatureShopTitle: "متجر العناية",
+  loginFeatureShopText: "تسوق زيوت، فلاتر، فرامل، بطاريات والمزيد.",
   name: "الاسم",
   phone: "رقم الهاتف",
   phoneHelp: "استخدم الأرقام فقط. مثال: 96170123456",
@@ -1199,6 +1217,8 @@ function loginView() {
         </div>
         <h1>${t("loginTitle")}</h1>
         <p class="muted">${t("loginText")}</p>
+        ${loginFeatureGrid()}
+        <p class="login-start">${t("loginStartText")}</p>
         <div class="form">
           ${field("name", t("name"), "text", state.pendingLoginName || "", true)}
           ${customerTypeField(state.pendingCustomerType || "")}
@@ -1214,6 +1234,26 @@ function loginView() {
         </div>
       </form>
     </section>
+  `;
+}
+
+function loginFeatureGrid() {
+  const features = [
+    { icon: dashboardStatIcon("records"), title: t("loginFeatureServiceTitle"), text: t("loginFeatureServiceText") },
+    { icon: dashboardStatIcon("cars"), title: t("loginFeatureCarsTitle"), text: t("loginFeatureCarsText") },
+    { icon: dashboardStatIcon("calendar"), title: t("loginFeatureReminderTitle"), text: t("loginFeatureReminderText") },
+    { icon: navIcon("shop"), title: t("loginFeatureShopTitle"), text: t("loginFeatureShopText") },
+  ];
+  return `
+    <div class="login-features" aria-label="${escapeAttr(t("loginText"))}">
+      ${features.map((feature) => `
+        <div class="login-feature">
+          <span>${feature.icon}</span>
+          <strong>${feature.title}</strong>
+          <small>${feature.text}</small>
+        </div>
+      `).join("")}
+    </div>
   `;
 }
 
