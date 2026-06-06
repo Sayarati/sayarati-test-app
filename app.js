@@ -395,7 +395,7 @@ const copy = {
     inStockOnly: "In stock only",
     outOfStockOnly: "Out of stock only",
     filterAll: "All",
-    whatsapp: "WhatsApp",
+    whatsapp: "Support",
     share: "Share",
     shareProduct: "Share product",
     shareCategory: "Share category",
@@ -734,7 +734,7 @@ copy.ar = {
   inStockOnly: "المتوفر فقط",
   outOfStockOnly: "غير المتوفر فقط",
   filterAll: "الكل",
-  whatsapp: "واتساب",
+  whatsapp: "الدعم",
   share: "مشاركة",
   shareProduct: "مشاركة المنتج",
   shareCategory: "مشاركة الفئة",
@@ -1164,9 +1164,9 @@ function render() {
           </div>
         </div>
         <nav class="nav">
+          ${navButton("shop", "shop", t("shop"), "shop-tab")}
           ${navButton("cars", "cars", t("cars"))}
           ${navButton("booklet", "booklet", t("booklet"), "service-tab")}
-          ${navButton("shop", "shop", t("shop"), "shop-tab")}
           ${whatsappNavButton()}
         </nav>
       </aside>
