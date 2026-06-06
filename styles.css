@@ -2877,3 +2877,416 @@ body {
     box-shadow: none;
   }
 }
+
+/* Premium reference pass: deeper black, less grey, tighter luxury cards */
+:root {
+  --ref-black: #030405;
+  --ref-card: #080b0c;
+  --ref-card-soft: #0d1113;
+  --ref-line: rgba(255, 255, 255, 0.16);
+  --ref-yellow: #ffd21f;
+}
+
+body,
+.main,
+.sidebar {
+  background: var(--ref-black);
+}
+
+.main {
+  padding-top: 22px;
+}
+
+h1 {
+  font-size: 34px;
+  font-weight: 950;
+  color: #ffffff;
+}
+
+.topbar {
+  padding-bottom: 8px;
+  border-bottom: 0;
+}
+
+.panel,
+.card,
+.car-card,
+.record,
+.expense-list div,
+.detail-grid div,
+.category-tile,
+.product-card,
+.service-extra,
+.check-option {
+  background: var(--ref-card);
+  border: 1px solid var(--ref-line);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.panel,
+.card {
+  border-radius: 18px;
+}
+
+.panel h2,
+.card h2,
+.section-head h2 {
+  color: #ffffff;
+  font-weight: 950;
+}
+
+.section-head h2 {
+  font-size: 20px;
+}
+
+.section-head h2::before {
+  width: 3px;
+  height: 20px;
+  background: var(--ref-yellow);
+  border-radius: 999px;
+  margin-right: 8px;
+}
+
+.muted,
+.panel .muted,
+.card .muted,
+.expense-list span,
+.category-tile small {
+  color: #a9b1b7;
+}
+
+.sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.brand-wordmark img {
+  filter: none;
+}
+
+.language button,
+.top-controls .language button,
+.profile-chip {
+  min-height: 42px;
+  border-radius: 13px;
+  font-weight: 950;
+}
+
+.language button:not(.active) {
+  background: #ffffff;
+  color: #030405;
+  border-color: #ffffff;
+}
+
+.language button.active,
+.primary,
+.nav button.active {
+  background: var(--ref-yellow);
+  color: #030405;
+  border-color: var(--ref-yellow);
+  box-shadow: none;
+}
+
+.profile-chip,
+.card-share {
+  background: #030405;
+  border: 1px solid var(--ref-yellow);
+  color: var(--ref-yellow);
+}
+
+.nav {
+  background: #070909;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 8px;
+  gap: 8px;
+}
+
+.nav button {
+  min-height: 62px;
+  border-radius: 15px;
+  background: #111415;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.nav button.active {
+  color: #030405;
+}
+
+.nav-icon svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.15;
+}
+
+.primary,
+.ghost {
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 950;
+}
+
+.ghost {
+  background: #ffffff;
+  color: #030405;
+  border-color: #ffffff;
+}
+
+.dashboard-grid {
+  gap: 12px;
+}
+
+.stat {
+  min-height: 128px;
+  background: #080b0c;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 3px solid var(--ref-yellow);
+  border-radius: 18px;
+}
+
+.stat-icon,
+.record-service-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #030405;
+  border: 1px solid rgba(255, 210, 31, 0.62);
+  color: var(--ref-yellow);
+}
+
+.stat span {
+  color: #a9b1b7;
+}
+
+.stat strong,
+.car-card strong,
+.record strong,
+.expense-list strong,
+.detail-grid strong {
+  color: #ffffff;
+}
+
+.car-card {
+  border-radius: 18px;
+  min-height: 142px;
+}
+
+.car-card::before {
+  width: 3px;
+  background: var(--ref-yellow);
+}
+
+.car-card.selected {
+  background: #080b0c;
+  border-color: var(--ref-yellow);
+  box-shadow: inset 0 0 0 1px var(--ref-yellow);
+}
+
+.car-photo,
+.placeholder-car {
+  width: 82px;
+  height: 82px;
+  background: #030405;
+  border: 1px solid rgba(255, 210, 31, 0.56);
+  border-radius: 17px;
+}
+
+.placeholder-car small {
+  color: #ffffff;
+  font-weight: 950;
+}
+
+.shop-hero {
+  min-height: 82px;
+  padding: 16px 18px;
+  background: #080b0c;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 3px solid var(--ref-yellow);
+  border-radius: 18px;
+}
+
+.shop-hero h2 {
+  font-size: 22px;
+  font-weight: 950;
+  color: #ffffff !important;
+}
+
+.shop-hero strong {
+  color: var(--ref-yellow) !important;
+  font-size: 18px;
+}
+
+.shop-tools .actions {
+  gap: 10px;
+}
+
+.service-filters,
+.expense-filter,
+.shop-filters {
+  background: #080b0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 10px;
+}
+
+.field input,
+.field select,
+.field textarea,
+.shop-filters input,
+.shop-filters select,
+.facet-filters select,
+.expense-filter select,
+.service-extra .field input,
+.service-extra .field select {
+  background: #ffffff;
+  color: #030405;
+  border: 1px solid #ffffff;
+  border-radius: 14px;
+}
+
+.category-grid,
+.product-grid {
+  gap: 12px;
+}
+
+.category-tile,
+.product-card {
+  background: #080b0c;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+}
+
+.category-tile {
+  min-height: 158px;
+  padding: 12px 8px;
+}
+
+.category-tile:hover,
+.product-card:hover {
+  border-color: var(--ref-yellow);
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 31, 0.32);
+}
+
+.category-tile img {
+  width: 76px;
+  height: 76px;
+  background: #101415;
+  border-radius: 16px;
+  padding: 8px;
+}
+
+.category-tile strong,
+.product-card strong {
+  color: #ffffff;
+  font-weight: 950;
+}
+
+.category-tile small {
+  color: var(--ref-yellow);
+  font-weight: 950;
+}
+
+.product-card {
+  grid-template-rows: 136px 1fr;
+  min-height: 224px;
+}
+
+.product-card img {
+  height: 136px;
+  background: #101415;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.product-card span,
+.product-price {
+  color: var(--ref-yellow);
+  font-weight: 950;
+}
+
+.card-share {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  top: 9px;
+  right: 9px;
+  background: #030405;
+  border-color: var(--ref-yellow);
+}
+
+.summary-record {
+  background: #080b0c;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.summary-record::before {
+  width: 2px;
+  background: var(--ref-yellow);
+}
+
+.service-reminder,
+.app-message,
+.notice {
+  background: #080b0c;
+  border: 1px solid var(--ref-yellow);
+  color: #ffffff;
+}
+
+.check-option {
+  background: #080b0c;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.check-option:has(input:checked) {
+  background: #101006;
+  border-color: var(--ref-yellow);
+}
+
+.login-wrap {
+  background: #030405;
+}
+
+@media (max-width: 860px) {
+  .main {
+    padding: 20px 12px 94px;
+  }
+
+  .sidebar {
+    background: #030405;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .shop-hero {
+    min-height: 80px;
+  }
+
+  .shop-hero h2 {
+    font-size: 20px;
+  }
+
+  .category-grid,
+  .product-grid {
+    gap: 10px;
+  }
+
+  .category-tile {
+    min-height: 152px;
+  }
+
+  .nav {
+    background: #070909;
+    border-radius: 20px;
+  }
+
+  .nav button {
+    min-height: 62px;
+    border-radius: 15px;
+  }
+}

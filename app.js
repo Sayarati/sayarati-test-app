@@ -1501,7 +1501,7 @@ function overviewView() {
         </div>
       </div>
       <div class="list garage-list">
-        ${state.cars.length ? state.cars.map(dashboardCarCard).join("") : `<p class="muted">${t("noCars")}</p>`}
+        ${state.cars.length ? state.cars.map(dashboardCarCard).join("") : emptyGarageCard()}
       </div>
       <div class="actions bottom-actions">
         <button class="primary" data-view="cars">${t("addNewCar")}</button>
@@ -1561,7 +1561,7 @@ function carsView() {
           <button class="primary" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : t("addNewCar")}</button>
         </div>
         <div class="list">
-          ${state.cars.length ? state.cars.map(carCard).join("") : `<p class="muted">${t("noCars")}</p>`}
+          ${state.cars.length ? state.cars.map(carCard).join("") : emptyGarageCard()}
         </div>
       </div>
       ${state.carFormOpen ? `
@@ -1623,6 +1623,19 @@ function dashboardSummaryView() {
         `).join("") : `<p class="muted">${t("noCars")}</p>`}
       </div>
     </section>
+  `;
+}
+
+function emptyGarageCard() {
+  return `
+    <div class="empty-garage-card">
+      <div class="empty-garage-visual" aria-hidden="true">
+        <span>${dashboardStatIcon("cars")}</span>
+      </div>
+      <strong>${t("carGarage")}</strong>
+      <p>${t("noCars")}</p>
+      <button class="primary" data-toggle-car-form>${t("addNewCar")}</button>
+    </div>
   `;
 }
 
@@ -1737,14 +1750,19 @@ function shopView() {
 
   return `
     <section class="panel">
-      <div class="shop-hero">
-        <h2>${t("shopBrandSubtitle")}</h2>
-        <strong>${t("shopHeroTitle")}</strong>
-      </div>
-      <div class="shop-tools">
-        <div class="actions">
-          <button class="ghost" data-shop-home>${t("shopHome")}</button>
-          <button class="primary" data-shop-checkout>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
+      <div class="shop-hero shop-hero-premium">
+        <div class="shop-hero-copy">
+          <h2>${t("shopBrandSubtitle")}</h2>
+          <strong>${t("shopHeroTitle")}</strong>
+          <div class="shop-hero-actions">
+            <button class="primary" data-shop-home>${t("shopHome")}</button>
+            <button class="ghost" data-shop-checkout>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
+          </div>
+        </div>
+        <div class="shop-hero-visual" aria-hidden="true">
+          <span class="hero-part hero-oil"></span>
+          <span class="hero-part hero-brake"></span>
+          <span class="hero-part hero-filter"></span>
         </div>
       </div>
       <div class="custom-shop">
