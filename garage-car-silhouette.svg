@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" role="img" aria-label="Garage car silhouette">
+  <rect width="720" height="360" fill="#050607"/>
+  <path d="M52 252c82-51 153-70 262-72 110-2 184 10 354-61" fill="none" stroke="#ffd21f" stroke-width="3" opacity=".35"/>
+  <path d="M92 236h50c30-62 90-94 174-102l75-8c75-8 131 4 172 45l45 45h38c22 0 40 18 40 40v30H92v-50Z" fill="#111619" stroke="#31393d" stroke-width="4"/>
+  <path d="M169 214c23-45 73-68 150-75l64-6c57-5 101 2 138 34l36 32-388 15Z" fill="#1d2428"/>
+  <path d="M217 199c22-28 58-44 107-49l56-5c37-3 70 1 99 18l30 18-292 18Z" fill="#0a0d0e" stroke="#4f585e" stroke-width="3"/>
+  <circle cx="214" cy="285" r="46" fill="#050607" stroke="#616a70" stroke-width="10"/>
+  <circle cx="566" cy="285" r="46" fill="#050607" stroke="#616a70" stroke-width="10"/>
+  <path d="M118 243h488" stroke="#ffd21f" stroke-width="4" opacity=".5"/>
+  <path d="M590 207h54" stroke="#ffd21f" stroke-width="8" stroke-linecap="round"/>
+</svg>

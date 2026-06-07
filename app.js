@@ -352,6 +352,7 @@ const copy = {
     selectedCarHelp: "Select a car first, then view its service history or add a new service.",
     viewHistory: "View history",
     addServiceHistory: "Add service",
+    garageSubtitle: "Manage your vehicles in one place.",
     servicesFor: "Services for",
     latestRecords: "Latest service records",
     addNewCar: "Add new car",
@@ -701,6 +702,7 @@ copy.ar = {
   selectedCarHelp: "اختر سيارة أولا، ثم شاهد سجل الصيانة أو أضف خدمة جديدة.",
   viewHistory: "عرض السجل",
   addServiceHistory: "إضافة خدمة",
+  garageSubtitle: "إدارة سياراتك في مكان واحد.",
   servicesFor: "الخدمات الخاصة بـ",
   latestRecords: "آخر سجلات الصيانة",
   addNewCar: "إضافة سيارة جديدة",
@@ -1596,12 +1598,20 @@ function carsView() {
   const isKnownModel = !formCar.model || knownModels.includes(formCar.model);
   const formModel = isKnownModel ? (formCar.model || knownModels[0] || "Other") : "Other";
   return `
-    <section class="grid">
-      <div class="panel" data-tour="garage-list">
-        <div class="row section-head">
-          <div></div>
-          <button class="primary" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : t("addNewCar")}</button>
+    <section class="garage-shell">
+      <div class="garage-hero-row">
+        <div>
+          <h2>${t("myCars")}</h2>
+          <p>${t("garageSubtitle")}</p>
         </div>
+        <button class="primary garage-add-button" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : `+ ${t("addNewCar")}`}</button>
+      </div>
+      <div class="garage-stat-strip" data-tour="dashboard-totals">
+        ${garageMetric("cars", t("totalCars"), state.cars.length)}
+        ${garageMetric("records", t("totalRecords"), state.records.length)}
+        ${garageMetric("calendar", t("nextService"), nextServiceDate())}
+      </div>
+      <div class="panel garage-panel" data-tour="garage-list">
         <div class="list">
           ${state.cars.length ? state.cars.map(carCard).join("") : emptyGarageCard()}
         </div>
@@ -1626,6 +1636,16 @@ function carsView() {
       ` : ""}
     </section>
     ${dashboardSummaryView()}
+  `;
+}
+
+function garageMetric(type, label, value) {
+  return `
+    <div class="garage-metric">
+      <span>${dashboardStatIcon(type)}</span>
+      <small>${label}</small>
+      <strong>${value}</strong>
+    </div>
   `;
 }
 
@@ -1707,6 +1727,12 @@ function bookletView() {
   return `
     <section class="grid">
       <div class="panel" id="service-history-panel" data-tour="service-list">
+        <div class="service-page-hero">
+          <div>
+            <h2>${t("myServiceHistory")}</h2>
+            <p>${t("tour7Text")}</p>
+          </div>
+        </div>
         <div class="field car-picker">
           <label for="bookletCarSelect">${t("chooseCar")}</label>
           <select id="bookletCarSelect" data-booklet-car>
@@ -1802,9 +1828,7 @@ function shopView() {
           </div>
         </div>
         <div class="shop-hero-visual" aria-hidden="true">
-          <span class="hero-part hero-oil"></span>
-          <span class="hero-part hero-brake"></span>
-          <span class="hero-part hero-filter"></span>
+          <img src="assets/shop-hero-parts.svg" alt="" />
         </div>
       </div>
       <div class="custom-shop">
