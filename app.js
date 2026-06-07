@@ -10,6 +10,7 @@ const IMAGE_MAX_EDGE = 900;
 const IMAGE_QUALITY = 0.64;
 const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_CODE_SENDS = 3;
+const CODE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 let deferredInstallPrompt = null;
 
 const baseCarCatalog = [
@@ -245,12 +246,13 @@ const copy = {
     customerTypeRequired: "Please choose why you are using Sayarati.",
     phoneInvalid: "Please enter a valid mobile number using 8 to 15 digits.",
     verificationCode: "Verification code",
-    sendCode: "Send WhatsApp code",
+    sendCode: "Send verification WhatsApp code",
     verifyCode: "Verify code",
     codeSent: "We sent a WhatsApp verification code.",
-    resendCode: "Resend WhatsApp code",
+    resendCode: "Resend verification WhatsApp code",
     resendAvailableIn: "Resend available in",
-    resendLimitReached: "Maximum WhatsApp code attempts reached. Please try again later.",
+    resendLimitReached: "Maximum WhatsApp code attempts reached.",
+    tryAgainIn: "Try again in",
     minutesShort: "min",
     secondsShort: "sec",
     codeInvalid: "Enter the 6 digit WhatsApp code.",
@@ -593,12 +595,13 @@ copy.ar = {
   customerTypeRequired: "يرجى اختيار سبب استخدام Sayarati.",
   phoneInvalid: "يرجى إدخال رقم هاتف صحيح من 8 إلى 15 رقما.",
   verificationCode: "رمز التحقق",
-  sendCode: "إرسال رمز واتساب",
+  sendCode: "إرسال رمز التحقق عبر واتساب",
   verifyCode: "تأكيد الرمز",
   codeSent: "تم إرسال رمز التحقق عبر واتساب.",
-  resendCode: "إعادة إرسال رمز واتساب",
+  resendCode: "إعادة إرسال رمز التحقق عبر واتساب",
   resendAvailableIn: "إعادة الإرسال متاحة خلال",
-  resendLimitReached: "تم الوصول إلى الحد الأقصى لإرسال الرمز. يرجى المحاولة لاحقا.",
+  resendLimitReached: "تم الوصول إلى الحد الأقصى لإرسال الرمز.",
+  tryAgainIn: "حاول مرة أخرى خلال",
   minutesShort: "د",
   secondsShort: "ث",
   codeInvalid: "أدخل رمز واتساب المكون من 6 أرقام.",
@@ -1215,8 +1218,7 @@ function loginView() {
         <div class="login-logo">
           <img src="assets/sayarati-logo-with-online.png?v=1" alt="SAYARATI.online" />
         </div>
-        <h1>${t("loginTitle")}</h1>
-        <p class="muted">${t("loginText")}</p>
+        <p class="login-purpose">${t("loginText")}</p>
         ${loginFeatureGrid()}
         <p class="login-start">${t("loginStartText")}</p>
         <div class="form">
@@ -2408,10 +2410,15 @@ function phoneField(value = "") {
 
 function sendCodeButtonView() {
   const waitSeconds = resendWaitSeconds();
-  const limitReached = (state.codeSendCount || 0) >= MAX_CODE_SENDS;
+  const limitWaitSeconds = codeLimitWaitSeconds();
+  const limitReached = (state.codeSendCount || 0) >= MAX_CODE_SENDS && limitWaitSeconds > 0;
   const disabled = waitSeconds > 0 || limitReached;
-  const label = waitSeconds > 0 ? `${t("sendCode")} (${formatWait(waitSeconds)})` : t("sendCode");
-  const note = limitReached ? `<p class="muted">${t("resendLimitReached")}</p>` : "";
+  const label = waitSeconds > 0
+    ? `${t("sendCode")} (${formatWait(waitSeconds)})`
+    : limitReached
+      ? `${t("sendCode")} (${formatWait(limitWaitSeconds)})`
+      : t("sendCode");
+  const note = limitReached ? `<p class="muted">${t("resendLimitReached")} ${t("tryAgainIn")} ${formatWait(limitWaitSeconds)}.</p>` : "";
   return `
     <button class="primary send-code-button" type="button" data-send-code ${disabled ? "disabled" : ""}>${label}</button>
     ${note}
@@ -2420,8 +2427,9 @@ function sendCodeButtonView() {
 
 function resendCodeView() {
   const waitSeconds = resendWaitSeconds();
-  if ((state.codeSendCount || 0) >= MAX_CODE_SENDS) {
-    return `<p class="muted">${t("resendLimitReached")}</p>`;
+  const limitWaitSeconds = codeLimitWaitSeconds();
+  if ((state.codeSendCount || 0) >= MAX_CODE_SENDS && limitWaitSeconds > 0) {
+    return `<p class="muted">${t("resendLimitReached")} ${t("tryAgainIn")} ${formatWait(limitWaitSeconds)}.</p>`;
   }
   if (waitSeconds > 0) {
     return `<p class="muted">${t("resendAvailableIn")} ${formatWait(waitSeconds)}</p>`;
@@ -2431,7 +2439,13 @@ function resendCodeView() {
 
 function resendWaitSeconds() {
   if (!state.codeSentAt) return 0;
+  if ((state.codeSendCount || 0) >= MAX_CODE_SENDS) return 0;
   return Math.max(0, Math.ceil((Number(state.codeSentAt) + RESEND_COOLDOWN_MS - Date.now()) / 1000));
+}
+
+function codeLimitWaitSeconds() {
+  if (!state.codeSentAt || (state.codeSendCount || 0) < MAX_CODE_SENDS) return 0;
+  return Math.max(0, Math.ceil((Number(state.codeSentAt) + CODE_LIMIT_COOLDOWN_MS - Date.now()) / 1000));
 }
 
 function formatWait(seconds) {
@@ -2444,7 +2458,7 @@ function formatWait(seconds) {
 function scheduleResendRefresh() {
   clearTimeout(window.sayaratiResendTimer);
   if (state.loginStep !== "code") return;
-  const waitSeconds = resendWaitSeconds();
+  const waitSeconds = Math.max(resendWaitSeconds(), codeLimitWaitSeconds());
   if (waitSeconds > 0) {
     window.sayaratiResendTimer = setTimeout(render, Math.min(waitSeconds * 1000, 60000));
   }
@@ -2603,16 +2617,26 @@ function renderRecordSummaries(carId) {
   return records.map((record) => `
     <article class="record summary-record" data-view-record="${record.id}">
       <div class="record-service-icon">${serviceRecordIcon(record)}</div>
+      <div class="record-date-stack">
+        <span>${record.date || "-"}</span>
+        <strong>${record.mileage || "-"} km</strong>
+      </div>
       <div class="record-body">
         <div class="row">
-          <strong>${formatServices(record)}</strong>
-          <span class="pill gold">${record.date || "-"}</span>
+          <span class="pill gold">${primaryServiceBadge(record)}</span>
+          <span class="record-cost">${record.cost ? formatMoney(record.cost) : "-"}</span>
         </div>
-        <p class="muted">${t("mileage")}: ${record.mileage || "-"} km | ${t("cost")}: ${record.cost || "-"}${record.mechanicName ? ` | ${t("mechanicName")}: ${escapeHtml(record.mechanicName)}` : ""}</p>
+        <strong>${formatServices(record)}</strong>
+        <p class="muted">${record.parts || "-"}${record.mechanicName ? ` | ${t("mechanicName")}: ${escapeHtml(record.mechanicName)}` : ""}</p>
         ${record.nextDue ? `<p><span class="pill green">${t("nextDue")}: ${record.nextDue}</span></p>` : ""}
       </div>
     </article>
   `).join("");
+}
+
+function primaryServiceBadge(record) {
+  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  return serviceLabel(services[0] || "Service");
 }
 
 function serviceRecordIcon(record) {
@@ -2812,7 +2836,7 @@ async function handleLoginSubmit(form) {
 
 async function handleSendCode() {
   const form = document.querySelector("#login-form");
-  if (!form || resendWaitSeconds() > 0 || (state.codeSendCount || 0) >= MAX_CODE_SENDS) return;
+  if (!form || resendWaitSeconds() > 0 || codeLimitWaitSeconds() > 0) return;
   const data = formData(form);
   await requestLoginCode(form, data);
 }
@@ -2833,7 +2857,9 @@ async function requestLoginCode(form, data) {
       notice: t("codeSent"),
     });
   } catch (error) {
-    showLoginError(form, error.message || t("loginFailed"));
+    const message = String(error.message || t("loginFailed"));
+    const isLimitError = /too many|attempt|rate|maximum/i.test(message);
+    showLoginError(form, isLimitError ? `${t("resendLimitReached")} ${t("tryAgainIn")} ${formatWait(CODE_LIMIT_COOLDOWN_MS / 1000)}.` : message);
   }
 }
 

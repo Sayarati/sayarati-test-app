@@ -4030,6 +4030,14 @@ body {
   font-weight: 850;
 }
 
+.login-purpose {
+  margin: 18px 0 4px;
+  color: #ffffff !important;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
 .login-features {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4038,19 +4046,19 @@ body {
 }
 
 .login-feature {
-  min-height: 122px;
+  min-height: 132px;
   display: grid;
   align-content: start;
-  gap: 7px;
-  padding: 12px;
+  gap: 9px;
+  padding: 14px;
   background: #0b0e0f;
   border: 1px solid rgba(255, 210, 31, 0.42);
   border-radius: 14px;
 }
 
 .login-feature span {
-  width: 34px;
-  height: 34px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   background: #020303;
@@ -4060,8 +4068,8 @@ body {
 }
 
 .login-feature svg {
-  width: 18px;
-  height: 18px;
+  width: 27px;
+  height: 27px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
@@ -4069,14 +4077,14 @@ body {
 
 .login-feature strong {
   color: #ffffff;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.15;
   font-weight: 950;
 }
 
 .login-feature small {
   color: #b8c0c5 !important;
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.25;
 }
 
@@ -4090,8 +4098,18 @@ body {
   }
 
   .login-feature {
-    min-height: 116px;
-    padding: 10px;
+    min-height: 124px;
+    padding: 11px;
+  }
+
+  .login-feature span {
+    width: 44px;
+    height: 44px;
+  }
+
+  .login-feature svg {
+    width: 24px;
+    height: 24px;
   }
 
   .login-feature small {
@@ -4207,5 +4225,355 @@ body {
 
   .tour-actions .primary {
     grid-column: 1 / -1;
+  }
+}
+
+/* Premium app polish: shop, garage, and service history */
+.shop-hero-premium {
+  min-height: 255px !important;
+  background: #050606 !important;
+  border-radius: 20px !important;
+  border-color: rgba(255, 210, 31, 0.68) !important;
+}
+
+.shop-hero-premium::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 54%;
+  height: 100%;
+  pointer-events: none;
+  background: url("assets/sayarati-logo-with-online.png?v=1");
+  background-repeat: no-repeat;
+  background-size: 130px auto;
+  background-position: right 18px bottom 18px;
+  opacity: 0.22;
+}
+
+.shop-hero-copy h2,
+.shop-hero-premium h2 {
+  max-width: 230px !important;
+  font-size: clamp(28px, 7vw, 36px) !important;
+}
+
+.shop-hero-actions .primary::before,
+.shop-hero-actions .ghost::before {
+  display: inline-block;
+  margin-inline-end: 8px;
+  font-size: 17px;
+}
+
+.shop-hero-actions .primary::before {
+  content: "▣";
+}
+
+.shop-hero-actions .ghost::before {
+  content: "▢";
+}
+
+.hero-oil {
+  width: 78px !important;
+  height: 154px !important;
+  right: 20px !important;
+  bottom: 28px !important;
+}
+
+.hero-brake {
+  width: 112px !important;
+  height: 112px !important;
+  right: 78px !important;
+  bottom: 30px !important;
+}
+
+.hero-filter {
+  width: 66px !important;
+  height: 86px !important;
+  right: 154px !important;
+  bottom: 18px !important;
+}
+
+.car-card {
+  padding: 18px !important;
+}
+
+.car-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(112px, 38%) 1fr;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.car-card-head > div {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.car-card-head .row {
+  align-items: start;
+  gap: 8px;
+}
+
+.car-card strong {
+  font-size: 22px !important;
+  line-height: 1.08;
+}
+
+.car-card .muted {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.car-card .pill {
+  border-color: rgba(255, 210, 31, 0.72) !important;
+  color: #ffffff !important;
+  background: #101314 !important;
+}
+
+.car-photo,
+.placeholder-car {
+  width: 100% !important;
+  min-width: 108px;
+  height: 150px !important;
+  object-fit: cover !important;
+  border-radius: 18px !important;
+}
+
+.placeholder-car {
+  display: grid !important;
+  place-items: center !important;
+}
+
+.placeholder-car svg {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+.car-card .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.car-card .actions button {
+  min-height: 52px;
+  border-radius: 14px;
+}
+
+.danger {
+  background: #130505 !important;
+  color: #ff6b5f !important;
+  border: 1px solid rgba(255, 107, 95, 0.62) !important;
+}
+
+.dashboard-grid {
+  border: 1px solid rgba(255, 210, 31, 0.38);
+  border-radius: 20px;
+  padding: 10px;
+  background: #050606;
+}
+
+.dashboard-grid .stat {
+  min-height: 104px !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dashboard-grid .stat-icon {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.dashboard-grid .stat-icon svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+#service-history-panel {
+  position: relative;
+}
+
+#service-history-panel .car-picker,
+.service-filters {
+  background: #070909 !important;
+  border: 1px solid rgba(255, 210, 31, 0.42) !important;
+  border-radius: 18px !important;
+  padding: 14px !important;
+}
+
+#service-history-panel .section-head {
+  margin-top: 18px;
+}
+
+#service-history-panel .list {
+  position: relative;
+  gap: 14px;
+}
+
+#service-history-panel .list::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.rtl #service-history-panel .list::before {
+  left: auto;
+  right: 24px;
+}
+
+.summary-record {
+  display: grid !important;
+  grid-template-columns: 50px minmax(82px, 0.5fr) 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 132px;
+  padding: 18px !important;
+  background: #070909 !important;
+}
+
+.summary-record::before {
+  display: none !important;
+}
+
+.record-service-icon {
+  position: relative;
+  z-index: 1;
+  width: 46px !important;
+  height: 46px !important;
+  box-shadow: 0 0 0 8px #070909;
+}
+
+.record-date-stack {
+  display: grid;
+  gap: 8px;
+  padding-inline-end: 12px;
+  border-inline-end: 1px solid rgba(255, 210, 31, 0.35);
+}
+
+.record-date-stack span {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.record-date-stack strong {
+  color: var(--app-yellow) !important;
+  font-size: 18px !important;
+  line-height: 1.12;
+}
+
+.record-body {
+  gap: 7px !important;
+}
+
+.record-body > .row {
+  gap: 8px;
+  align-items: center;
+}
+
+.record-body > strong {
+  color: #ffffff !important;
+  font-size: 18px !important;
+  line-height: 1.15;
+}
+
+.record-cost {
+  margin-inline-start: auto;
+  min-width: 58px;
+  padding: 8px 10px;
+  color: #ffffff;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: #090b0c;
+  font-weight: 950;
+}
+
+.summary-record .pill.gold {
+  background: var(--app-yellow) !important;
+  color: #020303 !important;
+  border-color: var(--app-yellow) !important;
+  font-weight: 950;
+}
+
+.summary-record .pill.green {
+  width: fit-content;
+  background: rgba(24, 112, 70, 0.28) !important;
+  color: #72e2a8 !important;
+  border-color: rgba(114, 226, 168, 0.44) !important;
+}
+
+@media (max-width: 520px) {
+  .shop-hero-premium {
+    grid-template-columns: 1fr 0.8fr !important;
+    min-height: 250px !important;
+  }
+
+  .shop-hero-premium::after {
+    background-size: 94px auto;
+    background-position: right 12px bottom 12px;
+  }
+
+  .hero-oil {
+    width: 58px !important;
+    height: 124px !important;
+    right: 6px !important;
+  }
+
+  .hero-brake {
+    width: 88px !important;
+    height: 88px !important;
+    right: 34px !important;
+  }
+
+  .hero-filter {
+    width: 48px !important;
+    height: 70px !important;
+    right: 94px !important;
+  }
+
+  .car-card-head {
+    grid-template-columns: 116px 1fr;
+    gap: 12px !important;
+  }
+
+  .car-photo,
+  .placeholder-car {
+    height: 132px !important;
+  }
+
+  .car-card strong {
+    font-size: 18px !important;
+  }
+
+  .car-card .actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .car-card .actions .danger {
+    grid-column: 1 / -1;
+  }
+
+  .summary-record {
+    grid-template-columns: 44px 76px 1fr;
+    gap: 10px;
+    padding: 14px !important;
+  }
+
+  .record-date-stack strong {
+    font-size: 15px !important;
+  }
+
+  .record-body > strong {
+    font-size: 16px !important;
+  }
+
+  .record-cost {
+    min-width: 48px;
+    padding: 7px 8px;
   }
 }
