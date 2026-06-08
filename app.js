@@ -1027,7 +1027,8 @@ function dismissAdminMessage(id) {
 }
 
 function setView(view) {
-  setState({ view: view === "overview" ? "cars" : view });
+  const normalizedView = view === "overview" ? "cars" : (view === "service" || view === "history" ? "booklet" : view);
+  setState({ view: normalizedView, serviceMode: normalizedView === "booklet" ? (state.serviceMode || "summary") : state.serviceMode });
 }
 
 function openWhatsAppHotline() {
@@ -1632,7 +1633,7 @@ function carsView() {
     <section class="garage-shell">
       <div class="garage-hero-row">
         <div>
-          <h2>${t("myGarage")}</h2>
+          <h2>${t("myCars")}</h2>
           <p>${t("garageSubtitle")}</p>
         </div>
         <button class="primary garage-add-button" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : `+ ${t("addNewCar")}`}</button>
@@ -1994,6 +1995,17 @@ function isHiddenShopFacet(key, facet) {
 
 function cleanFilterName(key) {
   return key.replace(/^attribute_/, "").replace(/^option_/, "").replace(/_/g, " ");
+}
+
+function runShopSearch(value) {
+  const keyword = String(value || "").trim();
+  shopState = { ...shopState, keyword, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "" };
+  saveShopCache();
+  if (keyword || shopState.categoryId) {
+    loadShopProducts({ reset: true }).then(() => loadShopFacets());
+  } else {
+    render();
+  }
 }
 
 function displayedShopProducts() {
@@ -3302,7 +3314,18 @@ function isValidPhone(value) {
 
 function bindApp() {
   document.querySelectorAll("[data-view]").forEach((button) => {
-    button.addEventListener("click", () => setView(button.dataset.view));
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setView(button.dataset.view);
+    });
+  });
+
+  document.querySelector(".nav")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-view]");
+    if (!button) return;
+    event.preventDefault();
+    setView(button.dataset.view);
   });
 
   document.querySelectorAll("[data-whatsapp-hotline]").forEach((button) => {
@@ -3691,17 +3714,10 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-shop-search]").forEach((input) => {
-    input.addEventListener("input", () => {
-      clearTimeout(window.sayaratiShopSearchTimer);
-      window.sayaratiShopSearchTimer = setTimeout(() => {
-        shopState = { ...shopState, keyword: input.value, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {} };
-        saveShopCache();
-        if (shopState.keyword || shopState.categoryId) {
-          loadShopProducts({ reset: true }).then(() => loadShopFacets());
-        } else {
-          render();
-        }
-      }, 420);
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      runShopSearch(input.value);
     });
   });
 
