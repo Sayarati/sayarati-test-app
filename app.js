@@ -380,7 +380,7 @@ const copy = {
     shopBadgeCheckout: "Secure checkout",
     shopBadgeSupport: "WhatsApp support",
     shopLoading: "Loading Sayarati shop...",
-    shopHome: "Shop home",
+    shopHome: "Home",
     shopBack: "Back",
     searchProducts: "Search products",
     allCategories: "All categories",
@@ -1880,19 +1880,18 @@ function shopView() {
           <strong>${t("shopHeroTitle")}</strong>
           <div class="shop-hero-actions">
             <button class="primary" data-shop-home>${t("shopHome")}</button>
-            <button class="ghost" data-shop-checkout>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
+            <button class="ghost checkout-hero-button" data-shop-checkout><span>${checkoutIcon()}</span>${t("checkout")} ${shopState.cartCount ? `(${shopState.cartCount})` : ""}</button>
           </div>
         </div>
         <div class="shop-hero-visual" aria-hidden="true">
           <img src="assets/shop-hero-banner.png.png" alt="" />
         </div>
-        <div class="hero-dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
       <div class="custom-shop">
         <div class="shop-filters">
           <input type="search" value="${escapeAttr(shopState.keyword)}" placeholder="${t("searchProducts")}" data-shop-search />
           <select data-shop-category>
-            <option value="">${shopState.categoryTrail.length ? t("backToCategories") : t("allCategories")}</option>
+            <option value="">${t("allCategories")}</option>
             ${shopState.categories.map((category) => `<option value="${category.id}" ${String(shopState.categoryId) === String(category.id) ? "selected" : ""}>${escapeHtml(translatedText(category, "name"))}</option>`).join("")}
           </select>
           ${shopState.categoryId ? `
@@ -2049,6 +2048,10 @@ function productCard(product) {
 
 function shareIcon() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.7 15.3 6.3"/><path d="M8.7 13.3 15.3 17.7"/></svg>`;
+}
+
+function checkoutIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2l2.2 10.2a2 2 0 0 0 2 1.6h6.9a2 2 0 0 0 1.9-1.4L21 8H7"/><path d="M10 21h.1"/><path d="M18 21h.1"/></svg>`;
 }
 
 function productDetailView(product) {

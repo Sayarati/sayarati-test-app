@@ -13,6 +13,90 @@
   --shadow: 0 18px 45px rgba(16, 24, 32, 0.12);
 }
 
+/* Final readability fix for premium dark UI icons */
+.main svg,
+.sidebar svg,
+.login-card svg {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.35px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.garage-metric span,
+.service-metric span,
+.car-detail-line > span,
+.car-next-row span,
+.record-service-icon,
+.stat-icon,
+.empty-garage-visual span {
+  color: var(--app-yellow) !important;
+}
+
+.garage-metric span,
+.service-metric span,
+.car-detail-line > span,
+.car-next-row span {
+  background: rgba(255, 210, 31, 0.12) !important;
+  border: 1px solid rgba(255, 210, 31, 0.9) !important;
+  box-shadow: 0 0 18px rgba(255, 210, 31, 0.22) !important;
+}
+
+.car-detail-line > span,
+.car-next-row span {
+  width: 46px !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+}
+
+.car-detail-line svg,
+.car-next-row svg,
+.car-card-actions svg,
+.garage-metric svg,
+.service-metric svg {
+  width: 25px !important;
+  height: 25px !important;
+  color: var(--app-yellow) !important;
+}
+
+.car-card-actions .ghost svg,
+.summary-record .record-service-icon svg {
+  color: var(--app-yellow) !important;
+}
+
+.record-service-icon {
+  background: #060606 !important;
+  border: 2px solid var(--app-yellow) !important;
+  box-shadow: 0 0 0 8px rgba(255, 210, 31, 0.16), 0 0 24px rgba(255, 210, 31, 0.28) !important;
+}
+
+.checkout-hero-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+.checkout-hero-button span {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+}
+
+.checkout-hero-button svg {
+  width: 26px !important;
+  height: 26px !important;
+  color: #ffffff !important;
+}
+
+.hero-dots {
+  display: none !important;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5869,4 +5953,88 @@ small {
       linear-gradient(rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.93)),
       url("assets/service-history-background.png.png") center/cover no-repeat !important;
   }
+}
+
+/* Final override: keep all premium UI icons visible and understandable */
+.main svg,
+.sidebar svg,
+.login-card svg {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.45px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.garage-metric span,
+.service-metric span,
+.car-detail-line > span,
+.car-next-row span,
+.record-service-icon,
+.stat-icon,
+.empty-garage-visual span {
+  color: var(--app-yellow) !important;
+}
+
+.garage-metric span,
+.service-metric span,
+.car-detail-line > span,
+.car-next-row span {
+  background: rgba(255, 210, 31, 0.14) !important;
+  border: 1px solid rgba(255, 210, 31, 0.95) !important;
+  box-shadow: 0 0 18px rgba(255, 210, 31, 0.24) !important;
+}
+
+.car-detail-line > span,
+.car-next-row span {
+  width: 46px !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+}
+
+.car-detail-line svg,
+.car-next-row svg,
+.car-card-actions svg,
+.garage-metric svg,
+.service-metric svg {
+  width: 25px !important;
+  height: 25px !important;
+  color: var(--app-yellow) !important;
+}
+
+.car-card-actions .ghost svg,
+.summary-record .record-service-icon svg {
+  color: var(--app-yellow) !important;
+}
+
+.record-service-icon {
+  background: #060606 !important;
+  border: 2px solid var(--app-yellow) !important;
+  box-shadow: 0 0 0 8px rgba(255, 210, 31, 0.16), 0 0 24px rgba(255, 210, 31, 0.28) !important;
+}
+
+.checkout-hero-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+.checkout-hero-button span {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+}
+
+.checkout-hero-button svg {
+  width: 26px !important;
+  height: 26px !important;
+  color: #ffffff !important;
+}
+
+.hero-dots {
+  display: none !important;
 }
