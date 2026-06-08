@@ -1884,7 +1884,7 @@ function shopView() {
           </div>
         </div>
         <div class="shop-hero-visual" aria-hidden="true">
-          <img src="assets/shop-hero-premium.svg" alt="" />
+          <img src="assets/shop-hero-banner.png.png" alt="" />
         </div>
         <div class="hero-dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
@@ -2639,7 +2639,7 @@ function carPhoto(car) {
   if (car.photo?.dataUrl) {
     return `<img class="car-photo" src="${car.photo.dataUrl}" alt="${carLabel(car)}" />`;
   }
-  return `<div class="car-photo placeholder-car"><span>${navIcon("cars")}</span><small>${t("addCarPhoto")}</small></div>`;
+  return `<img class="car-photo placeholder-car" src="assets/default-car-placeholder.png.png" alt="${t("addCarPhoto")}" />`;
 }
 
 function dashboardCarCard(car) {
