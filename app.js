@@ -352,7 +352,13 @@ const copy = {
     selectedCarHelp: "Select a car first, then view its service history or add a new service.",
     viewHistory: "View history",
     addServiceHistory: "Add service",
+    myGarage: "My Garage",
     garageSubtitle: "Manage your vehicles in one place.",
+    totalMileage: "Total mileage",
+    dueOn: "Due on",
+    serviceTimeline: "Service Timeline",
+    lastService: "Last service",
+    totalSpent: "Total spent",
     servicesFor: "Services for",
     latestRecords: "Latest service records",
     addNewCar: "Add new car",
@@ -702,7 +708,13 @@ copy.ar = {
   selectedCarHelp: "اختر سيارة أولا، ثم شاهد سجل الصيانة أو أضف خدمة جديدة.",
   viewHistory: "عرض السجل",
   addServiceHistory: "إضافة خدمة",
+  myGarage: "مرآبي",
   garageSubtitle: "إدارة سياراتك في مكان واحد.",
+  totalMileage: "إجمالي العداد",
+  dueOn: "مستحقة في",
+  serviceTimeline: "جدول الصيانة",
+  lastService: "آخر صيانة",
+  totalSpent: "إجمالي المصاريف",
   servicesFor: "الخدمات الخاصة بـ",
   latestRecords: "آخر سجلات الصيانة",
   addNewCar: "إضافة سيارة جديدة",
@@ -1115,6 +1127,25 @@ function nextServiceDate(carId) {
   return dates[0] || "-";
 }
 
+function totalMileage() {
+  return state.cars.reduce((sum, car) => sum + Number(car.mileage || 0), 0);
+}
+
+function formatKm(value) {
+  const number = Number(value || 0);
+  return `${Number.isFinite(number) ? number.toLocaleString() : "0"} km`;
+}
+
+function nextServiceForCar(carId) {
+  return state.records
+    .filter((record) => record.carId === carId && record.nextDue)
+    .sort((a, b) => String(a.nextDue).localeCompare(String(b.nextDue)))[0] || null;
+}
+
+function lastServiceDate(carId) {
+  return carRecords(carId)[0]?.date || "-";
+}
+
 function parseCost(value) {
   const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(number) ? number : 0;
@@ -1160,7 +1191,7 @@ function availableYears() {
 function render() {
   document.documentElement.lang = state.lang;
   const app = document.querySelector("#app");
-  app.className = state.lang === "ar" ? "rtl" : "";
+  app.className = [state.lang === "ar" ? "rtl" : "", `view-${state.view || "cars"}`].filter(Boolean).join(" ");
 
   if (!state.user || !state.authToken) {
     app.innerHTML = loginView();
@@ -1290,7 +1321,7 @@ function navIcon(icon) {
 }
 
 function header() {
-  if (state.view === "shop") return "";
+  if (state.view === "shop" || state.view === "cars" || state.view === "overview" || state.view === "booklet") return "";
   return `
     <div class="topbar">
       <div>
@@ -1601,7 +1632,7 @@ function carsView() {
     <section class="garage-shell">
       <div class="garage-hero-row">
         <div>
-          <h2>${t("myCars")}</h2>
+          <h2>${t("myGarage")}</h2>
           <p>${t("garageSubtitle")}</p>
         </div>
         <button class="primary garage-add-button" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : `+ ${t("addNewCar")}`}</button>
@@ -1609,7 +1640,7 @@ function carsView() {
       <div class="garage-stat-strip" data-tour="dashboard-totals">
         ${garageMetric("cars", t("totalCars"), state.cars.length)}
         ${garageMetric("records", t("totalRecords"), state.records.length)}
-        ${garageMetric("calendar", t("nextService"), nextServiceDate())}
+        ${garageMetric("mileage", t("totalMileage"), formatKm(totalMileage()))}
       </div>
       <div class="panel garage-panel" data-tour="garage-list">
         <div class="list">
@@ -1635,7 +1666,6 @@ function carsView() {
         </div>
       ` : ""}
     </section>
-    ${dashboardSummaryView()}
   `;
 }
 
@@ -1716,6 +1746,7 @@ function dashboardStatIcon(type) {
     cars: '<svg viewBox="0 0 24 24"><path d="M5 17h14"/><path d="M6.5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M17.5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M4 17l1.5-5.5A2 2 0 0 1 7.4 10h9.2a2 2 0 0 1 1.9 1.5L20 17"/><path d="M8 10l1.5-4h5L16 10"/></svg>',
     records: '<svg viewBox="0 0 24 24"><path d="M5 4h10a4 4 0 0 1 4 4v12H8a3 3 0 0 1-3-3V4Z"/><path d="M8 4v13a3 3 0 0 0 3 3"/><path d="M9 8h6"/><path d="M9 12h5"/></svg>',
     calendar: '<svg viewBox="0 0 24 24"><path d="M7 3v4"/><path d="M17 3v4"/><path d="M4 8h16"/><path d="M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 13h3"/><path d="M13 13h3"/><path d="M8 17h3"/></svg>',
+    mileage: '<svg viewBox="0 0 24 24"><path d="M4 15a8 8 0 1 1 16 0"/><path d="M12 15l4-5"/><path d="M6.5 15h.1"/><path d="M17.5 15h.1"/><path d="M9 9l.1.1"/><path d="M15 9l.1.1"/></svg>',
     expenses: '<svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 6.5c-1.2-1-2.7-1.5-4.6-1.5-2.6 0-4.4 1.2-4.4 3s1.6 2.6 4.5 3.2c3 .6 4.5 1.5 4.5 3.5 0 1.9-1.8 3.3-4.8 3.3-2.1 0-3.9-.6-5.2-1.8"/></svg>',
   };
   return icons[type] || icons.records;
@@ -1725,7 +1756,7 @@ function bookletView() {
   const car = selectedCar();
   const record = selectedRecord(car?.id);
   return `
-    <section class="grid">
+    <section class="grid service-history-shell">
       <div class="panel" id="service-history-panel" data-tour="service-list">
         <div class="service-page-hero">
           <div>
@@ -1733,16 +1764,19 @@ function bookletView() {
             <p>${t("tour7Text")}</p>
           </div>
         </div>
-        <div class="field car-picker">
-          <label for="bookletCarSelect">${t("chooseCar")}</label>
-          <select id="bookletCarSelect" data-booklet-car>
-            ${state.cars.length ? state.cars.map((item) => `<option value="${item.id}" ${item.id === car?.id ? "selected" : ""}>${carLabel(item)}</option>`).join("") : `<option value="">${t("noCars")}</option>`}
-          </select>
+        <div class="service-control-panel">
+          <div class="field car-picker">
+            <label for="bookletCarSelect">${t("chooseCar")}</label>
+            <select id="bookletCarSelect" data-booklet-car>
+              ${state.cars.length ? state.cars.map((item) => `<option value="${item.id}" ${item.id === car?.id ? "selected" : ""}>${carLabel(item)}</option>`).join("") : `<option value="">${t("noCars")}</option>`}
+            </select>
+          </div>
+          ${car ? serviceHistoryFilters() : ""}
         </div>
-        ${car ? serviceHistoryFilters() : ""}
+        ${car ? serviceHistoryStats(car) : ""}
         <div class="row section-head">
           <div>
-            <h2>${car ? `${t("servicesFor")} ${carLabel(car)}` : t("records")}</h2>
+            <h2>${t("serviceTimeline")}</h2>
             <p class="muted">${car ? `${t("mileage")}: ${car.mileage || "-"} | ${t("records")}: ${filteredCarRecords(car.id).length}` : t("noCars")}</p>
           </div>
           <div class="actions">
@@ -1812,6 +1846,28 @@ function serviceFormView(car) {
   `;
 }
 
+function serviceHistoryStats(car) {
+  const records = carRecords(car.id);
+  return `
+    <div class="service-stat-strip">
+      ${serviceMetric("records", t("totalRecords"), records.length)}
+      ${serviceMetric("expenses", t("totalSpent"), formatMoney(totalExpenses(car.id)))}
+      ${serviceMetric("calendar", t("lastService"), lastServiceDate(car.id))}
+      ${serviceMetric("mileage", t("nextService"), nextServiceDate(car.id))}
+    </div>
+  `;
+}
+
+function serviceMetric(type, label, value) {
+  return `
+    <div class="service-metric">
+      <span>${dashboardStatIcon(type)}</span>
+      <small>${label}</small>
+      <strong>${value}</strong>
+    </div>
+  `;
+}
+
 function shopView() {
   setTimeout(() => ensureShopLoaded(), 80);
   const activeCategory = shopState.categories.find((category) => String(category.id) === String(shopState.categoryId));
@@ -1828,8 +1884,9 @@ function shopView() {
           </div>
         </div>
         <div class="shop-hero-visual" aria-hidden="true">
-          <img src="assets/shop-hero-parts.svg" alt="" />
+          <img src="assets/shop-hero-premium.svg" alt="" />
         </div>
+        <div class="hero-dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
       <div class="custom-shop">
         <div class="shop-filters">
@@ -2609,25 +2666,31 @@ function dashboardCarCard(car) {
 
 function carCard(car) {
   const records = carRecords(car.id).length;
+  const next = nextServiceForCar(car.id);
   return `
-    <article class="car-card ${selectedCar()?.id === car.id ? "selected" : ""}" data-select-car="${car.id}">
+    <article class="car-card premium-car-card ${selectedCar()?.id === car.id ? "selected" : ""}" data-select-car="${car.id}">
       <div class="car-card-head">
         <label class="photo-upload-trigger" title="${t("addCarPhoto")}">
           ${carPhoto(car)}
           <input type="file" accept="image/*" data-update-car-photo="${car.id}" />
         </label>
-        <div>
-      <div class="row">
-        <strong>${carLabel(car)}</strong>
-        <span class="pill">${records} ${t("records")}</span>
-      </div>
-      <div class="muted">${t("plate")}: ${car.plate || "-"} | ${t("mileage")}: ${car.mileage || "-"} km</div>
-      <div class="muted">${t("vin")}: ${car.vin || "-"}</div>
+        <div class="car-info-panel">
+          <div class="row">
+            <strong>${carLabel(car)}</strong>
+            <span class="pill gold">${records} ${t("records")}</span>
+          </div>
+          <div class="car-detail-line"><span>${navIcon("cars")}</span><p>${t("plate")}<strong>${car.plate || "-"}</strong></p></div>
+          <div class="car-detail-line"><span>${dashboardStatIcon("mileage")}</span><p>${t("mileage")}<strong>${formatKm(car.mileage)}</strong></p></div>
+          <div class="car-detail-line"><span>${serviceRecordIcon({ serviceType: "Service" })}</span><p>${t("vin")}<strong>${car.vin || "-"}</strong></p></div>
         </div>
       </div>
-      <div class="actions">
-        <button class="ghost" data-open-history="${car.id}" data-tour="view-history">${t("viewHistory")}</button>
-        <button class="ghost" data-edit-car="${car.id}">${t("editCar")}</button>
+      <div class="car-next-row">
+        <div><span class="check-dot">${serviceRecordIcon({ serviceType: "Service" })}</span><p>${t("nextService")}<strong>${next?.nextServiceNote || "-"}</strong></p></div>
+        <div><span>${dashboardStatIcon("calendar")}</span><p>${t("dueOn")}<strong>${next?.nextDue || "-"}</strong></p></div>
+      </div>
+      <div class="actions car-card-actions">
+        <button class="ghost" data-open-history="${car.id}" data-tour="view-history">${serviceRecordIcon({ serviceType: "Service" })}${t("viewHistory")}</button>
+        <button class="ghost" data-edit-car="${car.id}">${serviceRecordIcon({ serviceType: "Other" })}${t("editCar")}</button>
         <button class="danger" data-delete-car="${car.id}">${t("delete")}</button>
       </div>
       ${car.notes ? `<div>${car.notes}</div>` : ""}
