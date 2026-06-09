@@ -883,6 +883,11 @@ function loadState() {
   if (saved) {
     try {
       const parsed = { ...defaults, ...JSON.parse(saved), carFormOpen: false };
+      parsed.cars = normalizeArray(parsed.cars).filter((car) => car && typeof car === "object");
+      parsed.records = normalizeArray(parsed.records).filter((record) => record && typeof record === "object");
+      parsed.dismissedServiceReminders = parsed.dismissedServiceReminders && typeof parsed.dismissedServiceReminders === "object" ? parsed.dismissedServiceReminders : {};
+      parsed.serviceFilter = parsed.serviceFilter || "all";
+      parsed.serviceMode = parsed.serviceMode || "summary";
       if (parsed.demoMode && !parsed.tourActive) {
         parsed.demoMode = false;
         parsed.cars = [];
@@ -895,6 +900,18 @@ function loadState() {
     }
   }
   return defaults;
+}
+
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function safeCars() {
+  return normalizeArray(state.cars);
+}
+
+function safeRecords() {
+  return normalizeArray(state.records);
 }
 
 function saveState() {
@@ -1107,12 +1124,13 @@ async function applyInitialShopLink() {
 }
 
 function selectedCar() {
-  return state.cars.find((car) => car.id === state.selectedCarId) || state.cars[0];
+  const cars = safeCars();
+  return cars.find((car) => car.id === state.selectedCarId) || cars[0] || null;
 }
 
 function carRecords(carId) {
-  return state.records
-    .filter((record) => record.carId === carId)
+  return safeRecords()
+    .filter((record) => record?.carId === carId)
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 
@@ -1173,7 +1191,8 @@ function totalExpenses(carId) {
 }
 
 function formatMoney(value) {
-  return value ? `$${value.toFixed(2)}` : "$0.00";
+  const amount = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(amount) && amount ? `$${amount.toFixed(2)}` : "$0.00";
 }
 
 function recordMatchesExpenseFilter(record) {
@@ -2772,13 +2791,22 @@ function renderRecordSummaries(carId) {
   `).join("");
 }
 
+function recordServices(record) {
+  if (!record || typeof record !== "object") return [];
+  if (Array.isArray(record.serviceTypes)) return record.serviceTypes.filter(Boolean);
+  if (typeof record.serviceTypes === "string" && record.serviceTypes.trim()) {
+    return record.serviceTypes.split(",").map((service) => service.trim()).filter(Boolean);
+  }
+  return [record.serviceType].filter(Boolean);
+}
+
 function primaryServiceBadge(record) {
-  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  const services = recordServices(record);
   return serviceLabel(services[0] || "Service");
 }
 
 function serviceRecordIcon(record) {
-  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  const services = recordServices(record);
   const primary = String(services[0] || "").toLowerCase();
   if (primary.includes("oil")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l1 5v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9l1-5Zm0 5h9M10 13h4" /></svg>`;
   if (primary.includes("brake")) return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3v10M8 12h8" /></svg>`;
@@ -2826,7 +2854,7 @@ function selectedRecord(carId) {
 }
 
 function formatServices(record) {
-  const services = record.serviceTypes?.length ? record.serviceTypes : [record.serviceType].filter(Boolean);
+  const services = recordServices(record);
   const namedServices = services.map((service) => {
     if (service === "Other" && record.otherServiceDetails) return `${serviceLabel(service)}: ${record.otherServiceDetails}`;
     return serviceLabel(service);
