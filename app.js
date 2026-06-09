@@ -431,6 +431,8 @@ const copy = {
     notificationsUnavailable: "Notifications are not available on this browser. On iPhone, add the app to Home Screen first.",
     notificationsDenied: "Notifications are blocked. You can enable them from your phone/browser settings.",
     notificationsFailed: "Could not enable notifications. Please try again.",
+    appRecoveryTitle: "App loading issue",
+    appRecoveryText: "One section did not load correctly. Open My Cars or refresh the page.",
     linkCopied: "Link copied.",
     tourNext: "Next",
     tourBack: "Back",
@@ -787,6 +789,8 @@ copy.ar = {
   notificationsUnavailable: "الإشعارات غير متاحة في هذا المتصفح. على آيفون، أضف التطبيق إلى الشاشة الرئيسية أولا.",
   notificationsDenied: "الإشعارات محظورة. يمكنك تفعيلها من إعدادات الهاتف أو المتصفح.",
   notificationsFailed: "تعذر تفعيل الإشعارات. يرجى المحاولة مرة أخرى.",
+  appRecoveryTitle: "مشكلة في تحميل التطبيق",
+  appRecoveryText: "لم يتم تحميل أحد الأقسام بشكل صحيح. افتح صفحة سياراتي أو حدّث الصفحة.",
   linkCopied: "تم نسخ الرابط.",
   tourNext: "التالي",
   tourBack: "رجوع",
@@ -920,7 +924,16 @@ function loadShopCache() {
   };
 
   try {
-    return { ...empty, ...JSON.parse(localStorage.getItem(shopCacheKey()) || "{}") };
+    const cached = { ...empty, ...JSON.parse(localStorage.getItem(shopCacheKey()) || "{}") };
+    return {
+      ...cached,
+      categories: Array.isArray(cached.categories) ? cached.categories : [],
+      products: Array.isArray(cached.products) ? cached.products : [],
+      categoryTrail: Array.isArray(cached.categoryTrail) ? cached.categoryTrail : [],
+      filterFields: Array.isArray(cached.filterFields) ? cached.filterFields : [],
+      facets: cached.facets && typeof cached.facets === "object" ? cached.facets : {},
+      appliedFacets: cached.appliedFacets && typeof cached.appliedFacets === "object" ? cached.appliedFacets : {},
+    };
   } catch {
     return empty;
   }
@@ -1192,6 +1205,7 @@ function availableYears() {
 function render() {
   document.documentElement.lang = state.lang;
   const app = document.querySelector("#app");
+  if (!app) return;
   app.className = [state.lang === "ar" ? "rtl" : "", `view-${state.view || "cars"}`].filter(Boolean).join(" ");
 
   if (!state.user || !state.authToken) {
@@ -1230,13 +1244,17 @@ function render() {
         ${state.notice ? `<div class="notice">${state.notice}</div>` : ""}
         ${adminMessageBanner()}
         ${upcomingServiceReminder()}
-        ${currentView()}
+        ${safeCurrentView()}
         ${tourOverlay()}
       </main>
     </div>
   `;
 
-  bindApp();
+  try {
+    bindApp();
+  } catch (error) {
+    console.error("App binding failed", error);
+  }
   loadCustomerDataOnce();
   loadAdminMessagesOnce();
   trackAppOpenOnce();
@@ -1351,6 +1369,24 @@ function currentView() {
   if (state.view === "shop") return shopView();
   if (state.view === "profile") return profileView();
   return carsView();
+}
+
+function safeCurrentView() {
+  try {
+    return currentView();
+  } catch (error) {
+    console.error("View failed", error);
+    return `
+      <section class="panel recovery-panel">
+        <h2>${escapeHtml(t("appRecoveryTitle") || "App loading issue")}</h2>
+        <p class="muted">${escapeHtml(t("appRecoveryText") || "Please go back to My Cars or refresh the page.")}</p>
+        <div class="actions">
+          <button class="primary" data-view="cars">${escapeHtml(t("myCars") || "My Cars")}</button>
+          <button class="ghost" type="button" onclick="window.location.reload()">${escapeHtml(t("refreshShop") || "Refresh")}</button>
+        </div>
+      </section>
+    `;
+  }
 }
 
 function adminMessageBanner() {
@@ -2902,7 +2938,7 @@ function bindLogin() {
   document.querySelector("[data-send-code]")?.addEventListener("click", handleSendCode);
   document.querySelector("[data-resend-code]")?.addEventListener("click", handleSendCode);
 
-  document.querySelector("#login-form").addEventListener("submit", (event) => {
+  document.querySelector("#login-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
     handleLoginSubmit(event.currentTarget);
   });
@@ -3322,7 +3358,8 @@ function bindApp() {
   });
 
   document.querySelector(".nav")?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-view]");
+    const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+    const button = target?.closest?.("[data-view]");
     if (!button) return;
     event.preventDefault();
     setView(button.dataset.view);
