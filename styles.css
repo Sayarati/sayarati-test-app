@@ -97,6 +97,181 @@
   display: none !important;
 }
 
+/* Final live overrides: safer compact copy and RTL shop hero placement */
+.garage-hero-row h2,
+.service-page-hero h2,
+.section-head h2 {
+  font-size: clamp(26px, 6vw, 48px) !important;
+  line-height: 1.05 !important;
+}
+
+.garage-hero-row p,
+.service-page-hero p,
+.shop-filters input,
+.shop-filters select,
+.car-detail-line,
+.service-metric small,
+.garage-metric small,
+.summary-record p,
+.muted {
+  font-size: 0.92rem !important;
+}
+
+.premium-car-card .row strong,
+.summary-record h3,
+.product-card strong,
+.category-tile strong {
+  font-size: 0.94em !important;
+  line-height: 1.15 !important;
+}
+
+.garage-metric b,
+.service-metric b {
+  font-size: clamp(24px, 5.8vw, 34px) !important;
+}
+
+.shop-empty {
+  padding: 24px !important;
+  border: 1px solid rgba(255, 210, 31, 0.38) !important;
+  border-radius: 20px !important;
+  background: rgba(7, 9, 10, 0.92) !important;
+  color: #ffffff !important;
+}
+
+.shop-empty strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--app-yellow) !important;
+}
+
+.rtl .shop-hero-premium {
+  direction: ltr !important;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.26) 45%, rgba(0, 0, 0, 0.02) 100%),
+    url("assets/shop-hero-banner.png.png") center/cover no-repeat !important;
+}
+
+.rtl .shop-hero-copy {
+  direction: rtl !important;
+  text-align: right !important;
+  justify-self: start !important;
+  max-width: 50% !important;
+}
+
+.rtl .shop-hero-actions {
+  justify-content: flex-start !important;
+}
+
+@media (max-width: 700px) {
+  .shop-hero-copy h2,
+  .shop-hero-premium h2 {
+    font-size: 25px !important;
+    line-height: 1.08 !important;
+  }
+
+  .shop-hero-copy strong,
+  .shop-hero-premium strong {
+    font-size: 14px !important;
+    max-width: 170px !important;
+  }
+
+  .rtl .shop-hero-copy {
+    max-width: 52% !important;
+  }
+
+  .rtl .shop-hero-actions {
+    max-width: 220px !important;
+  }
+}
+
+/* Final spacing pass: keep the premium look but make copy less bulky */
+.garage-hero-row h2,
+.service-page-hero h2,
+.section-head h2 {
+  font-size: clamp(26px, 6vw, 48px) !important;
+  line-height: 1.05 !important;
+}
+
+.garage-hero-row p,
+.service-page-hero p,
+.shop-filters input,
+.shop-filters select,
+.car-detail-line,
+.service-metric small,
+.garage-metric small,
+.summary-record p,
+.muted {
+  font-size: 0.92rem !important;
+}
+
+.premium-car-card .row strong,
+.summary-record h3,
+.product-card strong,
+.category-tile strong {
+  font-size: 0.94em !important;
+  line-height: 1.15 !important;
+}
+
+.garage-metric b,
+.service-metric b {
+  font-size: clamp(24px, 5.8vw, 34px) !important;
+}
+
+.shop-empty {
+  padding: 24px !important;
+  border: 1px solid rgba(255, 210, 31, 0.38) !important;
+  border-radius: 20px !important;
+  background: rgba(7, 9, 10, 0.92) !important;
+  color: #ffffff !important;
+}
+
+.shop-empty strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--app-yellow) !important;
+}
+
+/* Arabic shop hero: keep Arabic copy away from the product image */
+.rtl .shop-hero-premium {
+  direction: ltr !important;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.26) 45%, rgba(0, 0, 0, 0.02) 100%),
+    url("assets/shop-hero-banner.png.png") center/cover no-repeat !important;
+}
+
+.rtl .shop-hero-copy {
+  direction: rtl !important;
+  text-align: right !important;
+  justify-self: start !important;
+  max-width: 50% !important;
+}
+
+.rtl .shop-hero-actions {
+  justify-content: flex-start !important;
+}
+
+@media (max-width: 700px) {
+  .shop-hero-copy h2,
+  .shop-hero-premium h2 {
+    font-size: 25px !important;
+    line-height: 1.08 !important;
+  }
+
+  .shop-hero-copy strong,
+  .shop-hero-premium strong {
+    font-size: 14px !important;
+    max-width: 170px !important;
+  }
+
+  .rtl .shop-hero-copy {
+    max-width: 52% !important;
+  }
+
+  .rtl .shop-hero-actions {
+    max-width: 220px !important;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -6037,4 +6212,91 @@ small {
 
 .hero-dots {
   display: none !important;
+}
+
+/* Final live overrides: safer compact copy and RTL shop hero placement */
+.garage-hero-row h2,
+.service-page-hero h2,
+.section-head h2 {
+  font-size: clamp(26px, 6vw, 48px) !important;
+  line-height: 1.05 !important;
+}
+
+.garage-hero-row p,
+.service-page-hero p,
+.shop-filters input,
+.shop-filters select,
+.car-detail-line,
+.service-metric small,
+.garage-metric small,
+.summary-record p,
+.muted {
+  font-size: 0.92rem !important;
+}
+
+.premium-car-card .row strong,
+.summary-record h3,
+.product-card strong,
+.category-tile strong {
+  font-size: 0.94em !important;
+  line-height: 1.15 !important;
+}
+
+.garage-metric b,
+.service-metric b {
+  font-size: clamp(24px, 5.8vw, 34px) !important;
+}
+
+.shop-empty {
+  padding: 24px !important;
+  border: 1px solid rgba(255, 210, 31, 0.38) !important;
+  border-radius: 20px !important;
+  background: rgba(7, 9, 10, 0.92) !important;
+  color: #ffffff !important;
+}
+
+.shop-empty strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--app-yellow) !important;
+}
+
+.rtl .shop-hero-premium {
+  direction: ltr !important;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.26) 45%, rgba(0, 0, 0, 0.02) 100%),
+    url("assets/shop-hero-banner.png.png") center/cover no-repeat !important;
+}
+
+.rtl .shop-hero-copy {
+  direction: rtl !important;
+  text-align: right !important;
+  justify-self: start !important;
+  max-width: 50% !important;
+}
+
+.rtl .shop-hero-actions {
+  justify-content: flex-start !important;
+}
+
+@media (max-width: 700px) {
+  .shop-hero-copy h2,
+  .shop-hero-premium h2 {
+    font-size: 25px !important;
+    line-height: 1.08 !important;
+  }
+
+  .shop-hero-copy strong,
+  .shop-hero-premium strong {
+    font-size: 14px !important;
+    max-width: 170px !important;
+  }
+
+  .rtl .shop-hero-copy {
+    max-width: 52% !important;
+  }
+
+  .rtl .shop-hero-actions {
+    max-width: 220px !important;
+  }
 }

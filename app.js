@@ -395,7 +395,7 @@ const copy = {
     outOfStock: "Out of stock",
     shopUpdated: "Shop updated.",
     shopError: "Could not load shop products. Try refresh.",
-    noProducts: "No products found in this category.",
+    noProducts: "No products found. Try another search or category.",
     refreshShop: "Refresh shop",
     addCarPhoto: "Add car photo",
     serviceFilter: "Service filter",
@@ -753,7 +753,7 @@ copy.ar = {
   outOfStock: "غير متوفر",
   shopUpdated: "تم تحديث المتجر.",
   shopError: "تعذر تحميل منتجات المتجر. جرب التحديث.",
-  noProducts: "لا توجد منتجات في هذه الفئة.",
+  noProducts: "لا توجد منتجات. جرّب بحثاً أو فئة أخرى.",
   refreshShop: "تحديث المتجر",
   addCarPhoto: "إضافة صورة السيارة",
   serviceFilter: "فلتر الصيانة",
@@ -938,6 +938,7 @@ function loadShopCache() {
     selectedProduct: null,
     cartCount: 0,
     lastLoaded: "",
+    lastProductQuery: "",
   };
 
   try {
@@ -950,6 +951,7 @@ function loadShopCache() {
       filterFields: Array.isArray(cached.filterFields) ? cached.filterFields : [],
       facets: cached.facets && typeof cached.facets === "object" ? cached.facets : {},
       appliedFacets: cached.appliedFacets && typeof cached.appliedFacets === "object" ? cached.appliedFacets : {},
+      lastProductQuery: cached.lastProductQuery || "",
     };
   } catch {
     return empty;
@@ -973,6 +975,7 @@ function saveShopCache() {
     filterFields: shopState.filterFields,
     cartCount: shopState.cartCount,
     lastLoaded: shopState.lastLoaded,
+    lastProductQuery: shopState.lastProductQuery,
   }));
 }
 
@@ -1160,7 +1163,7 @@ function nextServiceDate(carId) {
 }
 
 function totalMileage() {
-  return state.cars.reduce((sum, car) => sum + Number(car.mileage || 0), 0);
+  return safeCars().reduce((sum, car) => sum + Number(car.mileage || 0), 0);
 }
 
 function formatKm(value) {
@@ -1184,7 +1187,7 @@ function parseCost(value) {
 }
 
 function totalExpenses(carId) {
-  const records = carId ? state.records.filter((record) => record.carId === carId) : state.records;
+  const records = carId ? safeRecords().filter((record) => record.carId === carId) : safeRecords();
   return records
     .filter(recordMatchesExpenseFilter)
     .reduce((sum, record) => sum + parseCost(record.cost), 0);
@@ -1694,9 +1697,9 @@ function carsView() {
         <button class="primary garage-add-button" data-toggle-car-form data-tour="add-car">${state.carFormOpen ? t("close") : `+ ${t("addNewCar")}`}</button>
       </div>
       <div class="garage-stat-strip" data-tour="dashboard-totals">
-        ${garageMetric("cars", t("totalCars"), state.cars.length)}
-        ${garageMetric("records", t("totalRecords"), state.records.length)}
-        ${garageMetric("mileage", t("totalMileage"), formatKm(totalMileage()))}
+        ${garageMetric("cars", t("totalCars"), safeCars().length)}
+        ${garageMetric("records", t("totalRecords"), safeRecords().length)}
+        ${garageMetric("expenses", t("totalExpenses"), formatMoney(totalExpenses()))}
       </div>
       <div class="panel garage-panel" data-tour="garage-list">
         <div class="list">
@@ -2011,7 +2014,7 @@ function productGridView() {
       <div class="product-grid">
         ${products.map(productCard).join("")}
       </div>
-    ` : `<p class="muted">${shopState.loading ? t("shopLoading") : t("noProducts")}</p>`}
+    ` : `<div class="shop-empty"><strong>${t("noProducts")}</strong><p class="muted">${t("searchProducts")}</p></div>`}
     <div class="shop-footer-actions">
       <span class="muted">${products.length} / ${shopState.total || shopState.products.length}</span>
       ${shopState.products.length < shopState.total ? `<button class="primary" data-load-more-products ${shopState.loading ? "disabled" : ""}>${shopState.loading ? t("shopLoading") : t("loadMore")}</button>` : ""}
@@ -2054,10 +2057,10 @@ function cleanFilterName(key) {
 
 function runShopSearch(value) {
   const keyword = String(value || "").trim();
-  shopState = { ...shopState, keyword, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "" };
+  shopState = { ...shopState, keyword, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", lastProductQuery: "" };
   saveShopCache();
   if (keyword || shopState.categoryId) {
-    loadShopProducts({ reset: true }).then(() => loadShopFacets());
+    loadShopProducts({ reset: true }).then(() => loadShopFacets()).catch(() => render());
   } else {
     render();
   }
@@ -2111,6 +2114,16 @@ function productCard(product) {
       </div>
     </article>
   `;
+}
+
+function shopProductQueryKey() {
+  return JSON.stringify({
+    keyword: shopState.keyword || "",
+    categoryId: String(shopState.categoryId || ""),
+    stockFilter: shopState.stockFilter || "all",
+    sortBy: shopState.sortBy || "default",
+    appliedFacets: shopState.appliedFacets || {},
+  });
 }
 
 function shareIcon() {
@@ -2176,7 +2189,9 @@ async function ensureShopLoaded() {
   if (state.view !== "shop" || shopState.loading) return;
   loadEcwidCartScript();
   if (!shopState.categories.length) await loadShopCategories(shopState.parentCategoryId || 0);
-  if ((shopState.categoryId || shopState.keyword) && !shopState.products.length && !shopState.error) {
+  const needsProducts = Boolean(shopState.categoryId || shopState.keyword);
+  const queryKey = shopProductQueryKey();
+  if (needsProducts && shopState.lastProductQuery !== queryKey && !shopState.error) {
     await loadShopProducts({ reset: true });
     loadShopFacets();
   }
@@ -2252,6 +2267,7 @@ async function loadShopCategories(parentCategoryId = 0) {
 async function loadShopProducts({ reset = false } = {}) {
   if (shopState.loading) return;
   const offset = reset ? 0 : shopState.products.length;
+  const queryKey = shopProductQueryKey();
   updateShopState({ loading: true, error: "" });
   try {
     const params = shopProductParams({ offset });
@@ -2268,10 +2284,11 @@ async function loadShopProducts({ reset = false } = {}) {
       loading: false,
       selectedProduct: null,
       lastLoaded: new Date().toISOString(),
+      lastProductQuery: queryKey,
       error: "",
     });
   } catch {
-    updateShopState({ loading: false, products: reset ? [] : shopState.products, total: reset ? 0 : shopState.total, error: t("shopError") });
+    updateShopState({ loading: false, products: reset ? [] : shopState.products, total: reset ? 0 : shopState.total, lastProductQuery: queryKey, error: t("shopError") });
   }
 }
 
@@ -2400,7 +2417,7 @@ function addFacetValue(facet, title) {
 
 async function openShopCategory(categoryId) {
   if (!categoryId) {
-    shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false };
+    shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false, lastProductQuery: "" };
     saveShopCache();
     render();
     await loadShopCategories(0);
@@ -2427,6 +2444,7 @@ async function openShopCategory(categoryId) {
         total: 0,
         selectedProduct: null,
         loading: true,
+        lastProductQuery: "",
       };
       saveShopCache();
       render();
@@ -2434,7 +2452,7 @@ async function openShopCategory(categoryId) {
       return;
     }
 
-    shopState = { ...shopState, categoryId, products: [], total: 0, selectedProduct: null, loading: false, appliedFacets: {}, facets: {} };
+    shopState = { ...shopState, categoryId, products: [], total: 0, selectedProduct: null, loading: false, appliedFacets: {}, facets: {}, lastProductQuery: "" };
     saveShopCache();
     render();
     await loadShopProducts({ reset: true });
@@ -2497,7 +2515,7 @@ function openCheckout() {
 }
 
 function resetShopHome() {
-  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", appliedFacets: {}, facets: {}, selectedProduct: null, products: [], total: 0, categories: [] };
+  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", appliedFacets: {}, facets: {}, selectedProduct: null, products: [], total: 0, categories: [], lastProductQuery: "" };
   saveShopCache();
   render();
   loadShopCategories(0);
@@ -3765,6 +3783,7 @@ function bindApp() {
         appliedFacets: {},
         facets: {},
         selectedProduct: null,
+        lastProductQuery: "",
         error: "",
       };
       saveShopCache();
@@ -3794,7 +3813,7 @@ function bindApp() {
 
   document.querySelectorAll("[data-shop-stock]").forEach((select) => {
     select.addEventListener("change", () => {
-      shopState = { ...shopState, stockFilter: select.value, products: [], total: 0, selectedProduct: null };
+      shopState = { ...shopState, stockFilter: select.value, products: [], total: 0, selectedProduct: null, lastProductQuery: "" };
       saveShopCache();
       loadShopProducts({ reset: true }).then(() => loadShopFacets());
     });
@@ -3802,7 +3821,7 @@ function bindApp() {
 
   document.querySelectorAll("[data-shop-sort]").forEach((select) => {
     select.addEventListener("change", () => {
-      shopState = { ...shopState, sortBy: select.value, products: [], total: 0, selectedProduct: null };
+      shopState = { ...shopState, sortBy: select.value, products: [], total: 0, selectedProduct: null, lastProductQuery: "" };
       saveShopCache();
       loadShopProducts({ reset: true });
     });
@@ -3813,7 +3832,7 @@ function bindApp() {
       const appliedFacets = { ...(shopState.appliedFacets || {}) };
       if (select.value) appliedFacets[select.dataset.shopFacet] = select.value;
       else delete appliedFacets[select.dataset.shopFacet];
-      shopState = { ...shopState, appliedFacets, products: [], total: 0, selectedProduct: null };
+      shopState = { ...shopState, appliedFacets, products: [], total: 0, selectedProduct: null, lastProductQuery: "" };
       saveShopCache();
       loadShopProducts({ reset: true }).then(() => loadShopFacets());
     });
