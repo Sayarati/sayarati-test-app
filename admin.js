@@ -172,6 +172,9 @@ function customerCard(customer) {
   const cars = carsFor(customer.id);
   const records = recordsFor(customer.id);
   const spent = records.reduce((sum, record) => sum + Number(record.cost || 0), 0);
+  const firstInstall = customer.first_app_installed_at
+    ? formatDateTime(customer.first_app_installed_at)
+    : "Not recorded yet";
   return `
     <article class="customer-card">
       <div class="customer-head">
@@ -179,6 +182,8 @@ function customerCard(customer) {
           <h3>${escapeHtml(customer.name || "Customer")}</h3>
           <p class="muted">${escapeHtml(customer.phone || "")}</p>
           <p class="muted">Category: ${customerTypeLabel(customer.customer_type || "personal")}</p>
+          <p class="muted">Registered: ${formatDateTime(customer.created_at) || "Not recorded"}</p>
+          <p class="muted">First app install: ${firstInstall}</p>
           <p class="muted">Home Screen: ${customer.app_installed ? "Yes" : "No"}${customer.last_app_opened_at ? ` · Last app open: ${formatDateTime(customer.last_app_opened_at)}` : ""}</p>
           <p class="muted">Notifications: ${customer.notifications_enabled ? "Enabled" : "Not enabled"}</p>
         </div>
@@ -397,22 +402,29 @@ async function api(url, body) {
 
 function filterCustomers(data) {
   const term = adminState.search.trim().toLowerCase();
-  return data.customers.filter((customer) => {
-    const cars = carsFor(customer.id);
-    const customerType = customer.customer_type || "personal";
-    const matchesType = !adminState.customerTypeFilter || customerType === adminState.customerTypeFilter;
-    const matchesBrand = !adminState.brandFilter || cars.some((car) => car.brand === adminState.brandFilter);
-    const matchesModel = !adminState.modelFilter || cars.some((car) => car.model === adminState.modelFilter);
-    if (!matchesType || !matchesBrand || !matchesModel) return false;
-    if (!term) return true;
-    const text = [
-      customer.name,
-      customer.phone,
-      customer.customer_type,
-      ...cars.flatMap((car) => [car.brand, car.model, car.year, car.plate, car.vin]),
-    ].join(" ").toLowerCase();
-    return text.includes(term);
-  });
+  return [...data.customers]
+    .sort((a, b) => customerCreatedTime(b) - customerCreatedTime(a))
+    .filter((customer) => {
+      const cars = carsFor(customer.id);
+      const customerType = customer.customer_type || "personal";
+      const matchesType = !adminState.customerTypeFilter || customerType === adminState.customerTypeFilter;
+      const matchesBrand = !adminState.brandFilter || cars.some((car) => car.brand === adminState.brandFilter);
+      const matchesModel = !adminState.modelFilter || cars.some((car) => car.model === adminState.modelFilter);
+      if (!matchesType || !matchesBrand || !matchesModel) return false;
+      if (!term) return true;
+      const text = [
+        customer.name,
+        customer.phone,
+        customer.customer_type,
+        ...cars.flatMap((car) => [car.brand, car.model, car.year, car.plate, car.vin]),
+      ].join(" ").toLowerCase();
+      return text.includes(term);
+    });
+}
+
+function customerCreatedTime(customer) {
+  const time = new Date(customer?.created_at || 0).getTime();
+  return Number.isNaN(time) ? 0 : time;
 }
 
 function carsFor(customerId) {
@@ -453,6 +465,8 @@ function exportAdminData() {
     "Customer name",
     "Phone",
     "Customer category",
+    "Registered date",
+    "First app install",
     "Home Screen installed/opened",
     "Last app open",
     "Last browser open",
@@ -503,6 +517,8 @@ function customerExportRow(customer, car = {}, record = {}) {
     customer.name || "Customer",
     customer.phone || "",
     customerTypeLabel(customer.customer_type || "personal"),
+    formatDateTime(customer.created_at),
+    formatDateTime(customer.first_app_installed_at),
     customer.app_installed ? "Yes" : "No",
     formatDateTime(customer.last_app_opened_at),
     formatDateTime(customer.last_browser_opened_at),
