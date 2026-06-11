@@ -2110,7 +2110,7 @@ function productCard(product) {
       <div>
         <strong>${escapeHtml(productName)}</strong>
         <span>${product.defaultDisplayedPriceFormatted || product.priceInProductList || product.price || ""}</span>
-        <small class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</small>
+        ${product.inStock === false ? `<small class="stock-out">${t("outOfStock")}</small>` : ""}
       </div>
     </article>
   `;
@@ -2146,7 +2146,7 @@ function productDetailView(product) {
           ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}
         </div>
         <div>
-          <span class="${product.inStock === false ? "stock-out" : "stock-in"}">${product.inStock === false ? t("outOfStock") : t("inStock")}</span>
+          ${product.inStock === false ? `<span class="stock-out">${t("outOfStock")}</span>` : ""}
           <h2>${escapeHtml(productName)}</h2>
           <strong class="product-price">${product.defaultDisplayedPriceFormatted || product.price || ""}</strong>
           <div class="product-description">${productDescription || ""}</div>

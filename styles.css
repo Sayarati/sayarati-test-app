@@ -236,6 +236,35 @@
   }
 }
 
+/* Final product detail readability and stock badge cleanup */
+.product-description,
+.product-detail .product-description,
+.product-detail p,
+.product-detail li {
+  color: rgba(255, 255, 255, 0.88) !important;
+  line-height: 1.55 !important;
+}
+
+.product-detail h2 {
+  color: #ffffff !important;
+}
+
+.stock-in {
+  display: none !important;
+}
+
+.stock-out {
+  width: fit-content !important;
+  padding: 5px 9px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #121212 !important;
+  border: 1px solid rgba(255, 210, 31, 0.30) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  box-shadow: none !important;
+}
+
 /* Final spacing pass: keep the premium look but make copy less bulky */
 .garage-hero-row h2,
 .service-page-hero h2,
