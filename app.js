@@ -5,6 +5,7 @@ const ECWID_PUBLIC_TOKEN = "public_m7Uc3kWiEZRAV2yHGuVc2yEWqEfUdsw2";
 const WHATSAPP_HOTLINE_NUMBER = "96171925299";
 const STORAGE_KEY = "sayarati-test-app";
 const SHOP_CACHE_KEY = "sayarati-shop-cache-v10";
+const SHOP_CART_KEY = "sayarati-shop-cart-v1";
 const SHOP_PAGE_SIZE = 24;
 const IMAGE_MAX_EDGE = 900;
 const IMAGE_QUALITY = 0.64;
@@ -391,6 +392,7 @@ const copy = {
     addToCart: "Add to cart",
     checkout: "Checkout",
     addedToCart: "Added to cart.",
+    cartEmpty: "Your cart is empty.",
     inStock: "In stock",
     outOfStock: "Out of stock",
     shopUpdated: "Shop updated.",
@@ -749,6 +751,7 @@ copy.ar = {
   addToCart: "إضافة إلى السلة",
   checkout: "الدفع",
   addedToCart: "تمت الإضافة إلى السلة.",
+  cartEmpty: "سلة التسوق فارغة.",
   inStock: "متوفر",
   outOfStock: "غير متوفر",
   shopUpdated: "تم تحديث المتجر.",
@@ -832,6 +835,7 @@ copy.ar = {
 };
 
 let state = loadState();
+let shopCart = loadShopCart();
 let shopState = loadShopCache();
 let adminMessages = [];
 let adminMessagesLoaded = false;
@@ -918,6 +922,43 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, notice: "" }));
 }
 
+function loadShopCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SHOP_CART_KEY) || "[]");
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .map((item) => ({
+        id: Number(item?.id),
+        quantity: Math.max(1, Number(item?.quantity) || 1),
+      }))
+      .filter((item) => Number.isFinite(item.id) && item.id > 0);
+  } catch {
+    return [];
+  }
+}
+
+function saveShopCart() {
+  localStorage.setItem(SHOP_CART_KEY, JSON.stringify(shopCart));
+}
+
+function shopCartQuantity() {
+  return shopCart.reduce((total, item) => total + Math.max(1, Number(item.quantity) || 1), 0);
+}
+
+function addLocalCartItem(productId, quantity = 1) {
+  const id = Number(productId);
+  if (!Number.isFinite(id) || id <= 0) return false;
+
+  const existing = shopCart.find((item) => item.id === id);
+  if (existing) {
+    existing.quantity += Math.max(1, Number(quantity) || 1);
+  } else {
+    shopCart.push({ id, quantity: Math.max(1, Number(quantity) || 1) });
+  }
+  saveShopCart();
+  return true;
+}
+
 function loadShopCache() {
   const empty = {
     categories: [],
@@ -936,7 +977,7 @@ function loadShopCache() {
     loading: false,
     error: "",
     selectedProduct: null,
-    cartCount: 0,
+    cartCount: shopCartQuantity(),
     lastLoaded: "",
     lastProductQuery: "",
   };
@@ -952,6 +993,7 @@ function loadShopCache() {
       facets: cached.facets && typeof cached.facets === "object" ? cached.facets : {},
       appliedFacets: cached.appliedFacets && typeof cached.appliedFacets === "object" ? cached.appliedFacets : {},
       lastProductQuery: cached.lastProductQuery || "",
+      cartCount: shopCartQuantity(),
     };
   } catch {
     return empty;
@@ -2481,37 +2523,102 @@ async function openProductDetails(productId) {
 }
 
 function loadEcwidCartScript() {
-  if (document.getElementById("ecwid-script")) return;
-  window.ecwid_script_defer = true;
-  const script = document.createElement("script");
-  script.id = "ecwid-script";
-  script.charset = "utf-8";
-  script.type = "text/javascript";
-  script.src = `https://app.ecwid.com/script.js?${ECWID_STORE_ID}&data_platform=code`;
-  document.body.appendChild(script);
+  if (window.Ecwid?.Cart) return Promise.resolve(window.Ecwid);
+
+  let script = document.getElementById("ecwid-script");
+  if (!script) {
+    window.ecwid_script_defer = true;
+    script = document.createElement("script");
+    script.id = "ecwid-script";
+    script.charset = "utf-8";
+    script.type = "text/javascript";
+    script.src = `https://app.ecwid.com/script.js?${ECWID_STORE_ID}&data_platform=code`;
+    document.body.appendChild(script);
+  }
+
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+    const waitForApi = () => {
+      if (window.Ecwid?.Cart) {
+        resolve(window.Ecwid);
+        return;
+      }
+      if (Date.now() - startedAt >= 8000) {
+        reject(new Error("Ecwid cart API did not load"));
+        return;
+      }
+      window.setTimeout(waitForApi, 150);
+    };
+    waitForApi();
+  });
 }
 
-function addEcwidProduct(productId) {
-  loadEcwidCartScript();
-  const add = () => {
-    if (!window.Ecwid?.Cart?.addProduct) {
-      window.open(`${SHOP_URL}#!/~/cart/create=${encodeURIComponent(JSON.stringify({ products: [{ id: Number(productId), quantity: 1 }] }))}`, "_blank", "noopener,noreferrer");
+function getEcwidCart() {
+  return new Promise((resolve) => {
+    if (!window.Ecwid?.Cart?.get) {
+      resolve(null);
       return;
     }
+    window.Ecwid.Cart.get((cart) => resolve(cart || null));
+  });
+}
+
+function prefilledCheckoutUrl() {
+  const cart = {
+    gotoCheckout: true,
+    products: shopCart.map((item) => ({
+      id: Number(item.id),
+      quantity: Math.max(1, Number(item.quantity) || 1),
+    })),
+  };
+  return `${SHOP_URL}#!/~/cart/create=${encodeURIComponent(JSON.stringify(cart))}`;
+}
+
+async function addEcwidProduct(productId) {
+  if (!addLocalCartItem(productId)) {
+    notify(t("shopError"));
+    return;
+  }
+
+  updateShopState({ cartCount: shopCartQuantity() });
+  notify(t("addedToCart"));
+
+  try {
+    await loadEcwidCartScript();
     window.Ecwid.Cart.addProduct({
       id: Number(productId),
       quantity: 1,
       callback: (success, product, cart) => {
-        updateShopState({ cartCount: cart?.items?.length || shopState.cartCount + 1 });
-        notify(success ? t("addedToCart") : t("shopError"));
+        if (!success) return;
+        const ecwidQuantity = Number(cart?.productsQuantity);
+        if (Number.isFinite(ecwidQuantity) && ecwidQuantity > shopState.cartCount) {
+          updateShopState({ cartCount: ecwidQuantity });
+        }
       },
     });
-  };
-  setTimeout(add, 300);
+  } catch {
+    // The local cart remains available for the pre-filled checkout fallback.
+  }
 }
 
-function openCheckout() {
-  window.open(`${SHOP_URL}#!/~/cart`, "_blank", "noopener,noreferrer");
+async function openCheckout() {
+  try {
+    await loadEcwidCartScript();
+    const ecwidCart = await getEcwidCart();
+    if (ecwidCart?.items?.length && window.Ecwid?.Cart?.gotoCheckout) {
+      window.Ecwid.Cart.gotoCheckout();
+      return;
+    }
+  } catch {
+    // Continue with Ecwid's documented pre-filled checkout URL.
+  }
+
+  if (!shopCart.length) {
+    notify(t("cartEmpty"));
+    return;
+  }
+
+  window.open(prefilledCheckoutUrl(), "_blank", "noopener,noreferrer");
 }
 
 function resetShopHome() {
@@ -3376,6 +3483,7 @@ async function deleteOwnAccount() {
     if (!result.ok) throw new Error(result.error || t("accountDeleteFailed"));
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(SHOP_CACHE_KEY);
+    localStorage.removeItem(SHOP_CART_KEY);
     state = loadState();
     customerDataLoaded = false;
     adminMessagesLoaded = false;
