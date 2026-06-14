@@ -13,6 +13,7 @@ const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_CODE_SENDS = 3;
 const CODE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 let deferredInstallPrompt = null;
+let ecwidOrderListenerBound = false;
 
 const baseCarCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -393,6 +394,14 @@ const copy = {
     checkout: "Checkout",
     addedToCart: "Added to cart.",
     cartEmpty: "Your cart is empty.",
+    cartTitle: "Your cart",
+    cartReview: "Review your items before secure checkout.",
+    cartSubtotal: "Subtotal",
+    continueShopping: "Continue shopping",
+    secureCheckout: "Secure checkout",
+    removeItem: "Remove",
+    decreaseQuantity: "Decrease quantity",
+    increaseQuantity: "Increase quantity",
     inStock: "In stock",
     outOfStock: "Out of stock",
     shopUpdated: "Shop updated.",
@@ -752,6 +761,14 @@ copy.ar = {
   checkout: "الدفع",
   addedToCart: "تمت الإضافة إلى السلة.",
   cartEmpty: "سلة التسوق فارغة.",
+  cartTitle: "سلة التسوق",
+  cartReview: "راجع المنتجات قبل الانتقال إلى الدفع الآمن.",
+  cartSubtotal: "المجموع",
+  continueShopping: "متابعة التسوق",
+  secureCheckout: "الدفع الآمن",
+  removeItem: "حذف",
+  decreaseQuantity: "تقليل الكمية",
+  increaseQuantity: "زيادة الكمية",
   inStock: "متوفر",
   outOfStock: "غير متوفر",
   shopUpdated: "تم تحديث المتجر.",
@@ -930,6 +947,10 @@ function loadShopCart() {
       .map((item) => ({
         id: Number(item?.id),
         quantity: Math.max(1, Number(item?.quantity) || 1),
+        name: String(item?.name || ""),
+        image: String(item?.image || ""),
+        price: Number(item?.price || 0),
+        priceFormatted: String(item?.priceFormatted || ""),
       }))
       .filter((item) => Number.isFinite(item.id) && item.id > 0);
   } catch {
@@ -949,14 +970,45 @@ function addLocalCartItem(productId, quantity = 1) {
   const id = Number(productId);
   if (!Number.isFinite(id) || id <= 0) return false;
 
+  const product = shopProductById(id);
   const existing = shopCart.find((item) => item.id === id);
   if (existing) {
     existing.quantity += Math.max(1, Number(quantity) || 1);
   } else {
-    shopCart.push({ id, quantity: Math.max(1, Number(quantity) || 1) });
+    shopCart.push({
+      id,
+      quantity: Math.max(1, Number(quantity) || 1),
+      name: translatedText(product, "name"),
+      image: product?.thumbnailUrl || product?.imageUrl || LOGO_URL,
+      price: Number(product?.price ?? product?.defaultDisplayedPrice ?? 0) || 0,
+      priceFormatted: product?.defaultDisplayedPriceFormatted || product?.priceInProductList || "",
+    });
   }
   saveShopCart();
   return true;
+}
+
+function updateLocalCartQuantity(productId, change) {
+  const id = Number(productId);
+  const item = shopCart.find((entry) => entry.id === id);
+  if (!item) return;
+  item.quantity = Math.max(0, Number(item.quantity || 0) + Number(change || 0));
+  shopCart = shopCart.filter((entry) => entry.quantity > 0);
+  saveShopCart();
+  updateShopState({ cartCount: shopCartQuantity() });
+}
+
+function removeLocalCartItem(productId) {
+  const id = Number(productId);
+  shopCart = shopCart.filter((entry) => entry.id !== id);
+  saveShopCart();
+  updateShopState({ cartCount: shopCartQuantity() });
+}
+
+function clearLocalShopCart() {
+  shopCart = [];
+  saveShopCart();
+  updateShopState({ cartCount: 0, cartOpen: false });
 }
 
 function loadShopCache() {
@@ -977,6 +1029,7 @@ function loadShopCache() {
     loading: false,
     error: "",
     selectedProduct: null,
+    cartOpen: false,
     cartCount: shopCartQuantity(),
     lastLoaded: "",
     lastProductQuery: "",
@@ -2014,6 +2067,7 @@ function shopView() {
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
         ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : (shopState.categoryId || shopState.keyword) ? productGridView() : categoryLandingView(activeCategory)}
       </div>
+      ${shopState.cartOpen ? shopCartView() : ""}
     </section>
   `;
 }
@@ -2148,6 +2202,7 @@ function productCard(product) {
   return `
     <article class="product-card">
       <button class="card-share" data-share-product="${product.id}" aria-label="${t("shareProduct")}">${shareIcon()}</button>
+      ${product.inStock === false ? "" : `<button class="card-add-cart" data-add-product="${product.id}" aria-label="${t("addToCart")}">${cartPlusIcon()}</button>`}
       <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" data-product-id="${product.id}" />
       <div>
         <strong>${escapeHtml(productName)}</strong>
@@ -2174,6 +2229,84 @@ function shareIcon() {
 
 function checkoutIcon() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2l2.2 10.2a2 2 0 0 0 2 1.6h6.9a2 2 0 0 0 1.9-1.4L21 8H7"/><path d="M10 21h.1"/><path d="M18 21h.1"/></svg>`;
+}
+
+function cartPlusIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.1a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 1.9-1.4L20 8H6"/><path d="M12 5v6"/><path d="M9 8h6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>`;
+}
+
+function shopProductById(productId) {
+  const id = String(productId);
+  if (String(shopState.selectedProduct?.id || "") === id) return shopState.selectedProduct;
+  return shopState.products.find((product) => String(product.id) === id) || null;
+}
+
+function cartItemDetails(item) {
+  const product = shopProductById(item.id);
+  return {
+    ...item,
+    name: translatedText(product, "name") || item.name || `#${item.id}`,
+    image: product?.thumbnailUrl || product?.imageUrl || item.image || LOGO_URL,
+    price: Number(product?.price ?? product?.defaultDisplayedPrice ?? item.price ?? 0) || 0,
+    priceFormatted: product?.defaultDisplayedPriceFormatted || product?.priceInProductList || item.priceFormatted || "",
+  };
+}
+
+function shopCartSubtotal() {
+  return shopCart.reduce((sum, item) => {
+    const details = cartItemDetails(item);
+    return sum + details.price * Math.max(1, Number(item.quantity) || 1);
+  }, 0);
+}
+
+function shopCartView() {
+  const items = shopCart.map(cartItemDetails);
+  return `
+    <div class="shop-cart-backdrop" data-cart-close>
+      <div class="shop-cart-sheet" role="dialog" aria-modal="true" aria-label="${escapeAttr(t("cartTitle"))}" data-cart-sheet>
+        <div class="shop-cart-head">
+          <div>
+            <h2>${t("cartTitle")}</h2>
+            <p>${t("cartReview")}</p>
+          </div>
+          <button class="cart-close" data-cart-close aria-label="${t("close")}">&times;</button>
+        </div>
+        ${items.length ? `
+          <div class="shop-cart-items">
+            ${items.map((item) => `
+              <article class="shop-cart-item">
+                <img src="${escapeAttr(item.image)}" alt="${escapeAttr(item.name)}" />
+                <div class="shop-cart-item-copy">
+                  <strong>${escapeHtml(item.name)}</strong>
+                  <span>${escapeHtml(item.priceFormatted || formatMoney(item.price))}</span>
+                  <button data-cart-remove="${item.id}">${t("removeItem")}</button>
+                </div>
+                <div class="cart-quantity">
+                  <button data-cart-quantity="${item.id}" data-cart-change="-1" aria-label="${t("decreaseQuantity")}">−</button>
+                  <b>${Math.max(1, Number(item.quantity) || 1)}</b>
+                  <button data-cart-quantity="${item.id}" data-cart-change="1" aria-label="${t("increaseQuantity")}">+</button>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+          <div class="shop-cart-total">
+            <span>${t("cartSubtotal")}</span>
+            <strong>${formatMoney(shopCartSubtotal())}</strong>
+          </div>
+          <div class="shop-cart-actions">
+            <button class="ghost" data-cart-close>${t("continueShopping")}</button>
+            <button class="primary" data-cart-proceed>${checkoutIcon()} ${t("secureCheckout")}</button>
+          </div>
+        ` : `
+          <div class="shop-cart-empty">
+            ${checkoutIcon()}
+            <strong>${t("cartEmpty")}</strong>
+            <button class="primary" data-cart-close>${t("continueShopping")}</button>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
 }
 
 function productDetailView(product) {
@@ -2523,7 +2656,10 @@ async function openProductDetails(productId) {
 }
 
 function loadEcwidCartScript() {
-  if (window.Ecwid?.Cart) return Promise.resolve(window.Ecwid);
+  if (window.Ecwid?.Cart) {
+    bindEcwidOrderCompletion();
+    return Promise.resolve(window.Ecwid);
+  }
 
   let script = document.getElementById("ecwid-script");
   if (!script) {
@@ -2540,6 +2676,7 @@ function loadEcwidCartScript() {
     const startedAt = Date.now();
     const waitForApi = () => {
       if (window.Ecwid?.Cart) {
+        bindEcwidOrderCompletion();
         resolve(window.Ecwid);
         return;
       }
@@ -2553,6 +2690,12 @@ function loadEcwidCartScript() {
   });
 }
 
+function bindEcwidOrderCompletion() {
+  if (ecwidOrderListenerBound || !window.Ecwid?.OnOrderPlaced?.add) return;
+  window.Ecwid.OnOrderPlaced.add(() => clearLocalShopCart());
+  ecwidOrderListenerBound = true;
+}
+
 function getEcwidCart() {
   return new Promise((resolve) => {
     if (!window.Ecwid?.Cart?.get) {
@@ -2561,6 +2704,44 @@ function getEcwidCart() {
     }
     window.Ecwid.Cart.get((cart) => resolve(cart || null));
   });
+}
+
+function clearEcwidCart() {
+  return new Promise((resolve, reject) => {
+    if (!window.Ecwid?.Cart?.clear) {
+      reject(new Error("Ecwid cart clear API is unavailable"));
+      return;
+    }
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      resolve();
+    };
+    window.Ecwid.Cart.clear(done);
+    window.setTimeout(done, 1200);
+  });
+}
+
+function addEcwidCartItem(item) {
+  return new Promise((resolve, reject) => {
+    if (!window.Ecwid?.Cart?.addProduct) {
+      reject(new Error("Ecwid add product API is unavailable"));
+      return;
+    }
+    window.Ecwid.Cart.addProduct({
+      id: Number(item.id),
+      quantity: Math.max(1, Number(item.quantity) || 1),
+      callback: (success) => success ? resolve() : reject(new Error("Ecwid rejected a cart item")),
+    });
+  });
+}
+
+async function syncEcwidCartFromLocal() {
+  await clearEcwidCart();
+  for (const item of shopCart) {
+    await addEcwidCartItem(item);
+  }
 }
 
 function prefilledCheckoutUrl() {
@@ -2588,34 +2769,34 @@ async function addEcwidProduct(productId) {
     window.Ecwid.Cart.addProduct({
       id: Number(productId),
       quantity: 1,
-      callback: (success, product, cart) => {
-        if (!success) return;
-        const ecwidQuantity = Number(cart?.productsQuantity);
-        if (Number.isFinite(ecwidQuantity) && ecwidQuantity > shopState.cartCount) {
-          updateShopState({ cartCount: ecwidQuantity });
-        }
-      },
+      callback: () => {},
     });
   } catch {
     // The local cart remains available for the pre-filled checkout fallback.
   }
 }
 
-async function openCheckout() {
+function openCheckout() {
+  updateShopState({ cartOpen: true });
+}
+
+async function proceedToCheckout() {
+  if (!shopCart.length) {
+    notify(t("cartEmpty"));
+    return;
+  }
+
   try {
     await loadEcwidCartScript();
+    await syncEcwidCartFromLocal();
     const ecwidCart = await getEcwidCart();
     if (ecwidCart?.items?.length && window.Ecwid?.Cart?.gotoCheckout) {
+      updateShopState({ cartOpen: false });
       window.Ecwid.Cart.gotoCheckout();
       return;
     }
   } catch {
     // Continue with Ecwid's documented pre-filled checkout URL.
-  }
-
-  if (!shopCart.length) {
-    notify(t("cartEmpty"));
-    return;
   }
 
   window.open(prefilledCheckoutUrl(), "_blank", "noopener,noreferrer");
@@ -3905,6 +4086,25 @@ function bindApp() {
     shopButton.addEventListener("click", openCheckout);
   });
 
+  document.querySelectorAll("[data-cart-close]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      if (event.target.closest("[data-cart-sheet]") && !event.target.closest(".cart-close, [data-cart-close]:not(.shop-cart-backdrop)")) return;
+      updateShopState({ cartOpen: false });
+    });
+  });
+
+  document.querySelectorAll("[data-cart-quantity]").forEach((button) => {
+    button.addEventListener("click", () => updateLocalCartQuantity(button.dataset.cartQuantity, button.dataset.cartChange));
+  });
+
+  document.querySelectorAll("[data-cart-remove]").forEach((button) => {
+    button.addEventListener("click", () => removeLocalCartItem(button.dataset.cartRemove));
+  });
+
+  document.querySelectorAll("[data-cart-proceed]").forEach((button) => {
+    button.addEventListener("click", proceedToCheckout);
+  });
+
   document.querySelectorAll("[data-shop-search]").forEach((input) => {
     input.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return;
@@ -3983,7 +4183,10 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-add-product]").forEach((button) => {
-    button.addEventListener("click", () => addEcwidProduct(button.dataset.addProduct));
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      addEcwidProduct(button.dataset.addProduct);
+    });
   });
 
   document.querySelectorAll("[data-dismiss-service-reminder]").forEach((button) => {
