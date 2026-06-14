@@ -14,6 +14,9 @@ const MAX_CODE_SENDS = 3;
 const CODE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 let deferredInstallPrompt = null;
 let ecwidOrderListenerBound = false;
+let recentlyAddedProductId = "";
+let recentlyAddedTimer = null;
+let shopNavigationStack = [];
 
 const baseCarCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -996,6 +999,10 @@ function updateLocalCartQuantity(productId, change) {
   shopCart = shopCart.filter((entry) => entry.quantity > 0);
   saveShopCart();
   updateShopState({ cartCount: shopCartQuantity() });
+}
+
+function cartItemQuantity(productId) {
+  return Math.max(0, Number(shopCart.find((item) => item.id === Number(productId))?.quantity) || 0);
 }
 
 function removeLocalCartItem(productId) {
@@ -2042,6 +2049,7 @@ function shopView() {
         </div>
       </div>
       <div class="custom-shop">
+        ${shopCanGoBack() ? `<button class="shop-global-back" data-shop-back>${backArrowIcon()} <span>${t("shopBack")}</span></button>` : ""}
         <div class="shop-filters">
           <input type="search" value="${escapeAttr(shopState.keyword)}" placeholder="${t("searchProducts")}" data-shop-search />
           <select data-shop-category>
@@ -2063,7 +2071,6 @@ function shopView() {
           ` : ""}
         </div>
         ${(shopState.categoryId || shopState.keyword) ? shopFacetControls() : ""}
-        ${shopState.categoryTrail.length ? `<button class="ghost category-back" data-category-back>${t("backToCategories")}</button>` : ""}
         ${shopState.error ? `<div class="notice shop-error">${shopState.error}</div>` : ""}
         ${shopState.selectedProduct ? productDetailView(shopState.selectedProduct) : (shopState.categoryId || shopState.keyword) ? productGridView() : categoryLandingView(activeCategory)}
       </div>
@@ -2153,6 +2160,7 @@ function cleanFilterName(key) {
 
 function runShopSearch(value) {
   const keyword = String(value || "").trim();
+  if (keyword !== String(shopState.keyword || "").trim()) pushShopNavigation();
   shopState = { ...shopState, keyword, products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", lastProductQuery: "" };
   saveShopCache();
   if (keyword || shopState.categoryId) {
@@ -2199,10 +2207,18 @@ function translatedValue(item) {
 
 function productCard(product) {
   const productName = translatedText(product, "name");
+  const quantity = cartItemQuantity(product.id);
+  const wasJustAdded = recentlyAddedProductId === String(product.id);
   return `
     <article class="product-card">
       <button class="card-share" data-share-product="${product.id}" aria-label="${t("shareProduct")}">${shareIcon()}</button>
-      ${product.inStock === false ? "" : `<button class="card-add-cart" data-add-product="${product.id}" aria-label="${t("addToCart")}">${cartPlusIcon()}</button>`}
+      ${product.inStock === false ? "" : quantity ? `
+        <div class="card-cart-control ${wasJustAdded ? "is-added" : ""}" aria-label="${t("addToCart")}">
+          <button data-cart-quantity="${product.id}" data-cart-change="-1" aria-label="${t("decreaseQuantity")}">−</button>
+          <span aria-live="polite">${wasJustAdded ? checkIcon() : quantity}</span>
+          <button data-add-product="${product.id}" aria-label="${t("increaseQuantity")}">+</button>
+        </div>
+      ` : `<button class="card-add-cart" data-add-product="${product.id}" aria-label="${t("addToCart")}">${cartPlusIcon()}</button>`}
       <img src="${product.thumbnailUrl || product.imageUrl || LOGO_URL}" alt="${escapeAttr(productName)}" data-product-id="${product.id}" />
       <div>
         <strong>${escapeHtml(productName)}</strong>
@@ -2229,6 +2245,14 @@ function shareIcon() {
 
 function checkoutIcon() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2l2.2 10.2a2 2 0 0 0 2 1.6h6.9a2 2 0 0 0 1.9-1.4L21 8H7"/><path d="M10 21h.1"/><path d="M18 21h.1"/></svg>`;
+}
+
+function backArrowIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>`;
+}
+
+function checkIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>`;
 }
 
 function cartPlusIcon() {
@@ -2315,7 +2339,6 @@ function productDetailView(product) {
   const productDescription = translatedText(product, "description");
   return `
     <div class="product-detail" id="shop-detail">
-      <button class="ghost back-to-products" data-close-product>&larr; ${t("shopBack")}</button>
       <div class="product-detail-grid">
         <div class="product-images">
           ${images.slice(0, 4).map((image) => `<img src="${image.url || image.thumbnailUrl}" alt="${escapeAttr(product.name)}" />`).join("")}
@@ -2592,6 +2615,7 @@ function addFacetValue(facet, title) {
 
 async function openShopCategory(categoryId) {
   if (!categoryId) {
+    if (shopState.categoryId || shopState.parentCategoryId || shopState.keyword || shopState.selectedProduct) pushShopNavigation();
     shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false, lastProductQuery: "" };
     saveShopCache();
     render();
@@ -2599,6 +2623,7 @@ async function openShopCategory(categoryId) {
     return;
   }
 
+  pushShopNavigation();
   const category = shopState.categories.find((item) => String(item.id) === String(categoryId));
   updateShopState({ loading: true, error: "" });
   try {
@@ -2633,24 +2658,83 @@ async function openShopCategory(categoryId) {
     await loadShopProducts({ reset: true });
     loadShopFacets();
   } catch {
+    shopNavigationStack.pop();
     updateShopState({ loading: false, error: t("shopError") });
   }
 }
 
-async function backShopCategory() {
-  shopState = { ...shopState, categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false };
+function shopNavigationSnapshot() {
+  return {
+    state: JSON.parse(JSON.stringify({
+      categories: shopState.categories,
+      products: shopState.products,
+      total: shopState.total,
+      offset: shopState.offset,
+      keyword: shopState.keyword,
+      categoryId: shopState.categoryId,
+      parentCategoryId: shopState.parentCategoryId,
+      categoryTrail: shopState.categoryTrail,
+      sortBy: shopState.sortBy,
+      stockFilter: shopState.stockFilter,
+      facets: shopState.facets,
+      appliedFacets: shopState.appliedFacets,
+      filterFields: shopState.filterFields,
+      selectedProduct: shopState.selectedProduct,
+      lastLoaded: shopState.lastLoaded,
+      lastProductQuery: shopState.lastProductQuery,
+    })),
+    scrollY: window.scrollY || 0,
+  };
+}
+
+function pushShopNavigation() {
+  shopNavigationStack.push(shopNavigationSnapshot());
+  if (shopNavigationStack.length > 12) shopNavigationStack.shift();
+}
+
+function shopCanGoBack() {
+  return Boolean(
+    shopNavigationStack.length
+    || shopState.selectedProduct
+    || shopState.categoryId
+    || shopState.parentCategoryId
+    || shopState.categoryTrail.length
+    || shopState.keyword
+  );
+}
+
+async function backShopPage() {
+  const previous = shopNavigationStack.pop();
+  if (previous) {
+    shopState = {
+      ...shopState,
+      ...previous.state,
+      loading: false,
+      error: "",
+      cartOpen: false,
+      cartCount: shopCartQuantity(),
+    };
+    saveShopCache();
+    render();
+    window.setTimeout(() => window.scrollTo({ top: previous.scrollY, behavior: "auto" }), 0);
+    return;
+  }
+
+  shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], products: [], total: 0, selectedProduct: null, appliedFacets: {}, facets: {}, error: "", loading: false, lastProductQuery: "" };
   saveShopCache();
   render();
   await loadShopCategories(0);
 }
 
 async function openProductDetails(productId) {
+  pushShopNavigation();
   updateShopState({ loading: true, error: "" });
   try {
     const product = await ecwidFetch(`/products/${productId}`);
     updateShopState({ selectedProduct: product, loading: false, error: "" });
     scrollAfterRender("shop-detail");
   } catch {
+    shopNavigationStack.pop();
     updateShopState({ loading: false, error: t("shopError") });
   }
 }
@@ -2761,8 +2845,15 @@ async function addEcwidProduct(productId) {
     return;
   }
 
+  recentlyAddedProductId = String(productId);
+  window.clearTimeout(recentlyAddedTimer);
   updateShopState({ cartCount: shopCartQuantity() });
   notify(t("addedToCart"));
+  recentlyAddedTimer = window.setTimeout(() => {
+    if (recentlyAddedProductId !== String(productId)) return;
+    recentlyAddedProductId = "";
+    if (state.view === "shop") render();
+  }, 1100);
 
   try {
     await loadEcwidCartScript();
@@ -2803,6 +2894,7 @@ async function proceedToCheckout() {
 }
 
 function resetShopHome() {
+  shopNavigationStack = [];
   shopState = { ...shopState, keyword: "", categoryId: "", parentCategoryId: 0, categoryTrail: [], sortBy: "default", stockFilter: "all", appliedFacets: {}, facets: {}, selectedProduct: null, products: [], total: 0, categories: [], lastProductQuery: "" };
   saveShopCache();
   render();
@@ -4094,7 +4186,10 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-cart-quantity]").forEach((button) => {
-    button.addEventListener("click", () => updateLocalCartQuantity(button.dataset.cartQuantity, button.dataset.cartChange));
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      updateLocalCartQuantity(button.dataset.cartQuantity, button.dataset.cartChange);
+    });
   });
 
   document.querySelectorAll("[data-cart-remove]").forEach((button) => {
@@ -4159,8 +4254,8 @@ function bindApp() {
     });
   });
 
-  document.querySelectorAll("[data-category-back]").forEach((button) => {
-    button.addEventListener("click", backShopCategory);
+  document.querySelectorAll("[data-shop-back]").forEach((button) => {
+    button.addEventListener("click", backShopPage);
   });
 
   document.querySelectorAll("[data-load-more-products]").forEach((button) => {
@@ -4179,7 +4274,7 @@ function bindApp() {
   });
 
   document.querySelectorAll("[data-close-product]").forEach((button) => {
-    button.addEventListener("click", () => updateShopState({ selectedProduct: null }));
+    button.addEventListener("click", backShopPage);
   });
 
   document.querySelectorAll("[data-add-product]").forEach((button) => {
