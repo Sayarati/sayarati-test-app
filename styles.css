@@ -1907,6 +1907,65 @@ button:disabled {
   margin: 12px 0;
 }
 
+.detail-add-cart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.detail-add-cart svg {
+  width: 20px;
+  height: 20px;
+}
+
+.detail-cart-control {
+  display: inline-grid;
+  grid-template-columns: 44px minmax(44px, auto) 44px;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid var(--app-yellow);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(3, 5, 6, 0.96);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+}
+
+.detail-cart-control button {
+  width: 44px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--app-yellow);
+  color: #050505;
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.detail-cart-control span {
+  min-width: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0 12px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.detail-cart-control span svg {
+  width: 20px;
+  height: 20px;
+  color: #20d96b;
+}
+
+.detail-cart-control.is-added {
+  animation: cart-added-pulse 0.55s ease-out 2;
+}
+
 .shop-error {
   position: static;
   box-shadow: none;

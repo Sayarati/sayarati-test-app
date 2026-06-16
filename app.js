@@ -2337,6 +2337,8 @@ function productDetailView(product) {
   const images = product.galleryImages?.length ? product.galleryImages : [{ url: product.imageUrl || product.thumbnailUrl || LOGO_URL }];
   const productName = translatedText(product, "name");
   const productDescription = translatedText(product, "description");
+  const quantity = cartItemQuantity(product.id);
+  const wasJustAdded = recentlyAddedProductId === String(product.id);
   return `
     <div class="product-detail" id="shop-detail">
       <div class="product-detail-grid">
@@ -2349,12 +2351,25 @@ function productDetailView(product) {
           <strong class="product-price">${product.defaultDisplayedPriceFormatted || product.price || ""}</strong>
           <div class="product-description">${productDescription || ""}</div>
           <div class="actions">
-            <button class="primary" data-add-product="${product.id}" ${product.inStock === false ? "disabled" : ""}>${t("addToCart")}</button>
+            ${product.inStock === false ? `<button class="primary" disabled>${t("outOfStock")}</button>` : productDetailCartControl(product.id, quantity, wasJustAdded)}
             <button class="ghost" data-shop-checkout>${t("checkout")}</button>
             <button class="ghost" data-share-product="${product.id}">${t("shareProduct")}</button>
           </div>
         </div>
       </div>
+    </div>
+  `;
+}
+
+function productDetailCartControl(productId, quantity, wasJustAdded) {
+  if (!quantity) {
+    return `<button class="primary detail-add-cart" data-add-product="${productId}">${cartPlusIcon()} ${t("addToCart")}</button>`;
+  }
+  return `
+    <div class="detail-cart-control ${wasJustAdded ? "is-added" : ""}" aria-label="${t("addToCart")}">
+      <button data-cart-quantity="${productId}" data-cart-change="-1" aria-label="${t("decreaseQuantity")}">−</button>
+      <span>${wasJustAdded ? checkIcon() : quantity}</span>
+      <button data-add-product="${productId}" aria-label="${t("increaseQuantity")}">+</button>
     </div>
   `;
 }
