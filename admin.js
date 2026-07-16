@@ -72,6 +72,7 @@ function dashboardView() {
   const totalExpenses = data.records.reduce((sum, record) => sum + Number(record.cost || 0), 0);
   const installedCount = data.customers.filter((customer) => customer.app_installed).length;
   const notificationCount = data.customers.filter((customer) => customer.notifications_enabled).length;
+  const shopVisitorCount = data.customers.filter((customer) => customer.last_shop_opened_at).length;
   const filteredCustomers = filterCustomers(data);
   const brandOptions = uniqueValues(data.cars.map((car) => car.brand));
   const modelOptions = uniqueValues(data.cars
@@ -88,6 +89,7 @@ function dashboardView() {
       ${stat("Total expenses", formatMoney(totalExpenses))}
       ${stat("Home Screen", installedCount)}
       ${stat("Notifications", notificationCount)}
+      ${stat("Shop visitors", shopVisitorCount)}
     </div>
     ${messageComposer(data.messages)}
     <section class="panel">
@@ -175,6 +177,8 @@ function customerCard(customer) {
   const firstInstall = customer.first_app_installed_at
     ? formatDateTime(customer.first_app_installed_at)
     : "Not recorded yet";
+  const shopVisits = Number(customer.shop_visit_count || 0);
+  const lastCartValue = Number(customer.last_shop_cart_value || 0);
   return `
     <article class="customer-card">
       <div class="customer-head">
@@ -186,6 +190,8 @@ function customerCard(customer) {
           <p class="muted">First app install: ${firstInstall}</p>
           <p class="muted">Home Screen: ${customer.app_installed ? "Yes" : "No"}${customer.last_app_opened_at ? ` · Last app open: ${formatDateTime(customer.last_app_opened_at)}` : ""}</p>
           <p class="muted">Notifications: ${customer.notifications_enabled ? "Enabled" : "Not enabled"}</p>
+          <p class="muted">Shop: ${shopVisits} visits${customer.last_shop_opened_at ? ` - Last visit: ${formatDateTime(customer.last_shop_opened_at)}` : ""}</p>
+          <p class="muted">Last cart: ${formatMoney(lastCartValue)} / ${Number(customer.last_shop_cart_items || 0)} items${customer.last_checkout_started_at ? ` - Checkout opened: ${formatDateTime(customer.last_checkout_started_at)}` : ""}</p>
         </div>
         <span class="pill">${cars.length} cars / ${records.length} records</span>
       </div>
@@ -197,6 +203,10 @@ function customerCard(customer) {
         <div class="mini">
           <strong>Total spent</strong>
           <p class="muted">${formatMoney(spent)}</p>
+        </div>
+        <div class="mini">
+          <strong>Shopping interest</strong>
+          <p class="muted">${shopVisits ? `${shopVisits} visits - last cart ${formatMoney(lastCartValue)}` : "No shop visits yet"}</p>
         </div>
       </div>
       <div class="card-actions">
@@ -471,6 +481,13 @@ function exportAdminData() {
     "Last app open",
     "Last browser open",
     "Notifications enabled",
+    "Shop visits",
+    "Last shop visit",
+    "Last shop action",
+    "Last shop event",
+    "Last cart items",
+    "Last cart value",
+    "Last checkout opened",
     "Car brand",
     "Car model",
     "Car year",
@@ -523,6 +540,13 @@ function customerExportRow(customer, car = {}, record = {}) {
     formatDateTime(customer.last_app_opened_at),
     formatDateTime(customer.last_browser_opened_at),
     customer.notifications_enabled ? "Yes" : "No",
+    customer.shop_visit_count || 0,
+    formatDateTime(customer.last_shop_opened_at),
+    formatDateTime(customer.last_shop_action_at),
+    customer.last_shop_event || "",
+    customer.last_shop_cart_items || 0,
+    customer.last_shop_cart_value || 0,
+    formatDateTime(customer.last_checkout_started_at),
     car.brand || "",
     car.model || "",
     car.year || "",

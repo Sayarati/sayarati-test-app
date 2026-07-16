@@ -17,6 +17,8 @@ let ecwidOrderListenerBound = false;
 let recentlyAddedProductId = "";
 let recentlyAddedTimer = null;
 let shopNavigationStack = [];
+let lastShopViewTrackedAt = 0;
+let shopActivityTimer = null;
 
 const baseCarCatalog = [
   { brand: "Acura", models: ["ILX", "Integra", "MDX", "RDX", "TLX"] },
@@ -988,6 +990,7 @@ function addLocalCartItem(productId, quantity = 1) {
     });
   }
   saveShopCart();
+  scheduleShopActivity("cart_updated");
   return true;
 }
 
@@ -999,6 +1002,7 @@ function updateLocalCartQuantity(productId, change) {
   shopCart = shopCart.filter((entry) => entry.quantity > 0);
   saveShopCart();
   updateShopState({ cartCount: shopCartQuantity() });
+  scheduleShopActivity("cart_updated");
 }
 
 function cartItemQuantity(productId) {
@@ -1010,12 +1014,14 @@ function removeLocalCartItem(productId) {
   shopCart = shopCart.filter((entry) => entry.id !== id);
   saveShopCart();
   updateShopState({ cartCount: shopCartQuantity() });
+  scheduleShopActivity("cart_updated");
 }
 
 function clearLocalShopCart() {
   shopCart = [];
   saveShopCart();
   updateShopState({ cartCount: 0, cartOpen: false });
+  scheduleShopActivity("cart_updated");
 }
 
 function loadShopCache() {
@@ -1100,10 +1106,14 @@ function uid(prefix) {
 }
 
 function setState(update) {
+  const previousView = state.view;
   state = { ...state, ...update };
   saveState();
   render();
   syncTourHighlight();
+  if (previousView !== "shop" && state.view === "shop") {
+    trackShopActivity("shop_view");
+  }
 }
 
 function notify(message) {
@@ -2400,6 +2410,7 @@ function escapeAttr(value = "") {
 
 async function ensureShopLoaded() {
   if (state.view !== "shop" || shopState.loading) return;
+  trackShopActivity("shop_view");
   loadEcwidCartScript();
   if (!shopState.categories.length) await loadShopCategories(shopState.parentCategoryId || 0);
   const needsProducts = Boolean(shopState.categoryId || shopState.keyword);
@@ -2891,6 +2902,8 @@ async function proceedToCheckout() {
     notify(t("cartEmpty"));
     return;
   }
+
+  trackShopActivity("checkout_started");
 
   try {
     await loadEcwidCartScript();
@@ -3646,6 +3659,30 @@ async function trackAppOpenOnce(forceInstalled = false) {
     });
   } catch {
     // This is only for admin analytics; it should never interrupt customers.
+  }
+}
+
+function scheduleShopActivity(eventType = "cart_updated") {
+  window.clearTimeout(shopActivityTimer);
+  shopActivityTimer = window.setTimeout(() => trackShopActivity(eventType), 800);
+}
+
+async function trackShopActivity(eventType = "shop_view") {
+  if (state.demoMode || !state.authToken) return;
+  if (eventType === "shop_view") {
+    const now = Date.now();
+    if (now - lastShopViewTrackedAt < 5 * 60 * 1000) return;
+    lastShopViewTrackedAt = now;
+  }
+
+  try {
+    await apiPost("/.netlify/functions/track-shop-activity", {
+      eventType,
+      cartItems: shopCartQuantity(),
+      cartValue: shopCartSubtotal(),
+    });
+  } catch {
+    // Shopping analytics are admin-only and should never interrupt customers.
   }
 }
 
