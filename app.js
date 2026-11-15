@@ -991,6 +991,7 @@ function addLocalCartItem(productId, quantity = 1) {
   }
   saveShopCart();
   scheduleShopActivity("cart_updated");
+  if (!state.demoMode) window.SayaratiAnalytics?.event("add_to_cart", { page: "shop", productId: String(id), productName: translatedText(product, "name"), quantity: Math.max(1, Number(quantity) || 1), cartItems: shopCartQuantity(), cartValue: shopCartSubtotal() }, state.authToken);
   return true;
 }
 
@@ -1003,6 +1004,7 @@ function updateLocalCartQuantity(productId, change) {
   saveShopCart();
   updateShopState({ cartCount: shopCartQuantity() });
   scheduleShopActivity("cart_updated");
+  if (!state.demoMode && Number(change) > 0) window.SayaratiAnalytics?.event("add_to_cart", { page: "cart", productId: String(id), productName: item.name || "", quantity: Number(change), cartItems: shopCartQuantity(), cartValue: shopCartSubtotal() }, state.authToken);
 }
 
 function cartItemQuantity(productId) {
@@ -1336,7 +1338,20 @@ function availableYears() {
   return Array.from(years).sort((a, b) => b - a);
 }
 
+function trackReportPage() {
+  if (state.demoMode) return;
+  const token = state.authToken || "";
+  let page = !state.user || !token ? "login" : state.view || "cars";
+  const product = page === "shop" ? shopState.selectedProduct : null;
+  if (page === "shop" && shopState.cartOpen) page = "cart";
+  else if (product) page = "product";
+  else if (page === "shop" && shopState.categoryId) page = "category";
+  if (!["login","overview","cars","booklet","service","shop","profile","install","product","category","cart"].includes(page)) page = "other";
+  window.SayaratiAnalytics?.page({page, productId: product ? String(product.id) : "", productName: product ? translatedText(product,"name") : "", categoryId: page === "category" ? String(shopState.categoryId) : ""}, token);
+}
+
 function render() {
+  try { trackReportPage(); } catch { /* Analytics must never interrupt the app. */ }
   document.documentElement.lang = state.lang;
   const app = document.querySelector("#app");
   if (!app) return;
@@ -3669,6 +3684,9 @@ function scheduleShopActivity(eventType = "cart_updated") {
 
 async function trackShopActivity(eventType = "shop_view") {
   if (state.demoMode || !state.authToken) return;
+  if (eventType === "checkout_started" || eventType === "cart_updated") {
+    window.SayaratiAnalytics?.event(eventType, { page: "shop", cartItems: shopCartQuantity(), cartValue: shopCartSubtotal() }, state.authToken);
+  }
   if (eventType === "shop_view") {
     const now = Date.now();
     if (now - lastShopViewTrackedAt < 5 * 60 * 1000) return;

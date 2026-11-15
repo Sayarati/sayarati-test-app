@@ -34,6 +34,7 @@ function render() {
     </section>
   `;
   bind();
+  window.SayaratiReports?.bind(adminState.token);
 }
 
 function loginView() {
@@ -91,6 +92,7 @@ function dashboardView() {
       ${stat("Notifications", notificationCount)}
       ${stat("Shop visitors", shopVisitorCount)}
     </div>
+    ${window.SayaratiReports?.view() || ""}
     ${messageComposer(data.messages)}
     <section class="panel">
       <div class="toolbar">
