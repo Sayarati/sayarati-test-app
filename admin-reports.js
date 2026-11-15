@@ -16,6 +16,11 @@ window.SayaratiReports = (() => {
     const rows=data.daily, max=Math.max(1,...rows.map(r=>r.visitors));
     return `<div class="visitor-chart" role="img" aria-label="Daily unique visitors in Beirut time. Exact values are in the daily report below.">${rows.map(row=>`<div class="visitor-day" title="${esc(row.day)}: ${row.visitors} visitors"><div class="visitor-bar" style="height:${Math.max(0,Number(row.visitors)/max*100)}%"></div><span>${esc(row.day.slice(5))}</span></div>`).join('')}</div>`;
   }
+  function topViewedProducts(products) {
+    return products.filter(product => product.views > 0).slice(0, 5)
+      .map((product, index) => ({ rank: index + 1, ...product }));
+  }
+
   function contents() {
     if(loading) return '<p role="status">Loading reports…</p>';
     if(error) return `<p class="error" role="alert">${esc(error)}</p>`;
@@ -29,8 +34,12 @@ window.SayaratiReports = (() => {
       <h3>Daily visitors</h3>${chart()}
       <details><summary>Daily figures and shopping activity</summary>${table(data.daily,[['day','Date'],['visitors','Visitors'],['sessions','Visits'],['page_views','Page views'],['product_views','Product views'],['cart_additions','Cart additions'],['checkouts','Checkouts started']])}</details>
       <h3>Sections visited</h3>${table(data.pages,[['page','Section',pretty],['views','Views'],['visitors','Visitors']])}
-      <h3>Product interest</h3><p class="muted">Top ${data.limits.products} products by views. Additions count actions; units added count quantities.</p>
+      <h3>Top 5 most viewed products</h3>
+      ${table(topViewedProducts(data.products),[['rank','Rank'],['product_name','Product',(v,r)=>v || `Product ${r.product_id}`],['views','Views'],['visitors','Unique viewers']])}
+      <details><summary>Full product interest report</summary>
+      <p class="muted">Top ${data.limits.products} products by views. Additions count actions; units added count quantities.</p>
       ${table(data.products,[['product_name','Product',(v,r)=>v || `Product ${r.product_id}`],['product_id','Product ID'],['views','Views'],['visitors','Visitors'],['additions','Cart additions'],['units_added','Units added']])}
+      </details>
       <h3>Customer activity</h3><p class="muted">Most recent ${data.limits.customers} signed-in customers active in the period. Latest cart value is a snapshot in the selected period, not sales.</p>
       ${table(data.customers,[['name','Customer'],['phone','Phone'],['sessions','Visits'],['page_views','Page views'],['product_views','Product views'],['cart_additions','Cart additions'],['checkouts','Checkouts'],['last_cart_value','Latest cart value'],['last_activity','Last activity',when]])}
       <h3>Recent activity</h3><p class="muted">Latest ${data.limits.recent} events. Anonymous activity has no customer identity.</p>
@@ -85,7 +94,7 @@ window.SayaratiReports = (() => {
     const sheets={
       'Read me':[{item:'Period',value:`${data.range.start} to ${data.range.end}`},{item:'Timezone',value:'Asia/Beirut'},{item:'First event',value:when(data.firstEvent)},{item:'Definition',value:'Visitors estimate browsers/devices. Visit timeout: 30 minutes. Tracking is not retroactive. Daily unique counts are not additive.'},{item:'Sales',value:'Cart additions and checkout starts are interest, not paid orders or revenue.'},{item:'Limits',value:'Products: top 1000; customers: latest 1000; recent activity: latest 200. Summary and daily totals use all events in period.'}],
       Summary:Object.entries(labels).map(([key,metric])=>({metric,current:Number(data.summary[key] || 0),previous:data.previous ? Number(data.previous[key] || 0) : 'Unavailable'})),
-      Daily:data.daily,Sections:data.pages,Products:data.products,Customers:data.customers,
+      Daily:data.daily,Sections:data.pages,'Top 5 products':topViewedProducts(data.products),Products:data.products,Customers:data.customers,
       Activity:data.recent.map(row=>({...row,created_at:when(row.created_at)}))
     };
     const workbook='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+Object.entries(sheets).map(([name,rows])=>{
