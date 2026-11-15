@@ -2,7 +2,9 @@ window.SayaratiReports = (() => {
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const date = () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const shift = (day,n) => new Date(Date.parse(day+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
-  let start=shift(date(),-29), end=date(), data=null, error='', loading=false, auth='', generation=0;
+  const firstReportDay = '2026-11-15';
+  const clampStart = day => day < firstReportDay ? firstReportDay : day;
+  let start=clampStart(shift(date(),-29)), end=date(), data=null, error='', loading=false, auth='', generation=0;
   const labels={visitors:'Unique visitors',sessions:'Visits',page_views:'Page views',product_views:'Product views',cart_additions:'Cart additions',checkouts:'Checkouts started',new_visitors:'New visitors',returning_visitors:'Returning visitors',anonymous_visitors:'Anonymous visitors',customers:'Signed-in customers'};
   const pretty = value => String(value || '').replace(/_/g,' ').replace(/^./,c=>c.toUpperCase());
   const when = value => value ? new Date(value).toLocaleString('en-GB',{timeZone:'Asia/Beirut'}) : '—';
@@ -20,9 +22,9 @@ window.SayaratiReports = (() => {
     if(!data) return '<p class="muted">Select a period and load reports.</p>';
     return `<p class="muted">${esc(data.range.start)} to ${esc(data.range.end)} · Beirut time · First recorded activity: ${esc(when(data.firstEvent))}</p>
       <div class="stats">${Object.entries(labels).map(([key,label])=>{
-        const value=Number(data.summary[key] || 0), previous=Number(data.previous[key] || 0);
+        const value=Number(data.summary[key] || 0), previous=Number(data.previous?.[key] || 0);
         const change=previous ? `${value>=previous?'+':''}${Math.round((value-previous)/previous*100)}%` : value ? 'No previous baseline' : 'No change';
-        return `<div class="stat"><span>${label}</span><strong>${value.toLocaleString()}</strong><small>${change} vs previous ${data.daily.length} days (${previous})</small></div>`;
+        return `<div class="stat"><span>${label}</span><strong>${value.toLocaleString()}</strong>${data.previous ? `<small>${change} vs previous ${data.daily.length} days (${previous})</small>` : ''}</div>`;
       }).join('')}</div>
       <h3>Daily visitors</h3>${chart()}
       <details><summary>Daily figures and shopping activity</summary>${table(data.daily,[['day','Date'],['visitors','Visitors'],['sessions','Visits'],['page_views','Page views'],['product_views','Product views'],['cart_additions','Cart additions'],['checkouts','Checkouts started']])}</details>
@@ -39,12 +41,13 @@ window.SayaratiReports = (() => {
       <p class="muted">Traffic, product interest and shopping activity. Paid orders and revenue require Ecwid order integration.</p>
       <form class="report-filters" data-report-filters>
         <label for="report-period">Period<select id="report-period" name="preset" data-report-preset><option value="custom">Custom dates</option><option value="1">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select></label>
-        <label for="report-start">From<input id="report-start" type="date" name="start" max="${date()}" value="${esc(start)}" required></label>
-        <label for="report-end">To<input id="report-end" type="date" name="end" max="${date()}" value="${esc(end)}" required></label>
+        <label for="report-start">From<input id="report-start" type="date" name="start" min="${firstReportDay}" max="${date()}" value="${esc(start)}" required></label>
+        <label for="report-end">To<input id="report-end" type="date" name="end" min="${firstReportDay}" max="${date()}" value="${esc(end)}" required></label>
         <button class="primary" ${loading?'disabled':''}>Load reports</button>
         <button class="secondary" type="button" data-report-export ${!data || loading || error?'disabled':''}>Export Excel workbook</button>
       </form>
       <p class="muted report-definitions">Visitors are estimated browsers/devices, not people. A visit ends after 30 minutes of inactivity. New means first recorded visit; returning means seen before the selected period. Daily uniques do not add up to period uniques. Anonymous and signed-in counts can overlap after login. Browser privacy settings, cleared storage, offline use and bots can affect counts. Tracking starts after this feature is published.</p>
+      <p class="muted">Reports start on November 15, 2026.</p>
       <div data-report-results aria-live="polite">${contents()}</div></section>`;
   }
   function draw() {
@@ -71,7 +74,7 @@ window.SayaratiReports = (() => {
     form.onsubmit=e=>{e.preventDefault();const values=new FormData(form);start=values.get('start');end=values.get('end');load();};
     form.querySelector('[data-report-preset]').onchange=e=>{
       if(e.target.value==='custom') return;
-      form.elements.end.value=date();form.elements.start.value=shift(date(),1-Number(e.target.value));
+      form.elements.end.value=date();form.elements.start.value=clampStart(shift(date(),1-Number(e.target.value)));
     };
     document.querySelector('[data-report-export]').onclick=exportWorkbook;
     if(auth && !data && !loading && !error) load();
@@ -81,7 +84,7 @@ window.SayaratiReports = (() => {
     const xml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
     const sheets={
       'Read me':[{item:'Period',value:`${data.range.start} to ${data.range.end}`},{item:'Timezone',value:'Asia/Beirut'},{item:'First event',value:when(data.firstEvent)},{item:'Definition',value:'Visitors estimate browsers/devices. Visit timeout: 30 minutes. Tracking is not retroactive. Daily unique counts are not additive.'},{item:'Sales',value:'Cart additions and checkout starts are interest, not paid orders or revenue.'},{item:'Limits',value:'Products: top 1000; customers: latest 1000; recent activity: latest 200. Summary and daily totals use all events in period.'}],
-      Summary:Object.entries(labels).map(([key,metric])=>({metric,current:Number(data.summary[key] || 0),previous:Number(data.previous[key] || 0)})),
+      Summary:Object.entries(labels).map(([key,metric])=>({metric,current:Number(data.summary[key] || 0),previous:data.previous ? Number(data.previous[key] || 0) : 'Unavailable'})),
       Daily:data.daily,Sections:data.pages,Products:data.products,Customers:data.customers,
       Activity:data.recent.map(row=>({...row,created_at:when(row.created_at)}))
     };

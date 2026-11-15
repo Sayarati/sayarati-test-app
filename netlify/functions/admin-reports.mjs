@@ -1,5 +1,5 @@
 import { bearerToken, dbRows, isAdminPhone, response, verifySession } from './shared.mjs';
-import { reportRange } from './activity-validation.mjs';
+import { REPORT_START, reportRange } from './activity-validation.mjs';
 
 const totals = `select count(distinct e.visitor_id)::int visitors, count(distinct e.session_id)::int sessions,
  count(*) filter(where event_type='page_view')::int page_views,
@@ -23,11 +23,12 @@ export default async function handler(request) {
     try { range = reportRange(new URL(request.url).searchParams); }
     catch (error) { return response(400, {error:error.message}); }
     const args = [range.start, range.end];
+    const previousStart = 2 * Date.parse(range.start) - Date.parse(range.end) - 86400000;
     const bounds = `with bounds as (select $1::date::timestamp at time zone 'Asia/Beirut' lo, ($2::date+1)::timestamp at time zone 'Asia/Beirut' hi),`;
     const selected = bounds + ` selected as (select e.* from activity_events e cross join bounds b where e.created_at>=b.lo and e.created_at<b.hi) `;
     const [summary, previous, daily, pages, products, customers, recent, coverage] = await Promise.all([
       dbRows(bounds.slice(0,-1)+' '+totals,args),
-      dbRows(`with bounds as (select ($1::date-($2::date-$1::date+1))::timestamp at time zone 'Asia/Beirut' lo, $1::date::timestamp at time zone 'Asia/Beirut' hi) `+totals,args),
+      previousStart >= Date.parse(REPORT_START) ? dbRows(`with bounds as (select ($1::date-($2::date-$1::date+1))::timestamp at time zone 'Asia/Beirut' lo, $1::date::timestamp at time zone 'Asia/Beirut' hi) `+totals,args) : [],
       dbRows(selected+`select d::date::text as "day",count(distinct e.visitor_id)::int visitors,count(distinct e.session_id)::int sessions,
         count(e.id) filter(where event_type='page_view')::int page_views,
         count(e.id) filter(where event_type='product_view')::int product_views,

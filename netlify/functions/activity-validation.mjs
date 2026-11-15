@@ -12,11 +12,14 @@ export function cleanEvent(value) {
     quantity: integer(value.quantity, 9999), cartItems: integer(value.cartItems, 9999),
     cartValue: Math.round(Math.max(0, Math.min(999999, Number(value.cartValue) || 0)) * 100) / 100 };
 }
+export const REPORT_START = '2026-11-15';
 export function reportRange(search, now = new Date()) {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Beirut', year:'numeric', month:'2-digit', day:'2-digit' }).format(now);
   const end = search.get('end') || today;
-  const start = search.get('start') || new Date(Date.parse(today + 'T12:00:00Z') - 29 * 86400000).toISOString().slice(0,10);
+  const defaultStart = new Date(Date.parse(end + 'T12:00:00Z') - 29 * 86400000);
+  const start = search.get('start') || (defaultStart > new Date(REPORT_START) ? defaultStart.toISOString().slice(0,10) : REPORT_START);
   const valid = v => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10) === v;
   if (!valid(start) || !valid(end) || start > end || end > today || (Date.parse(end)-Date.parse(start))/86400000 > 365) throw new Error('Choose valid dates, up to 366 days, ending today or earlier.');
+  if (start < REPORT_START) throw new Error('Reports start on November 15, 2026.');
   return { start, end };
 }
